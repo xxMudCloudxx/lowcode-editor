@@ -13,6 +13,8 @@
     "@tailwindcss/vite": "^4.1.8",
     "allotment": "^1.20.3",
     "react": "^18.2.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "tailwindcss": "^4.1.8",
     "zustand": "^5.0.5"
@@ -22,6 +24,7 @@
     "@types/react": "^18.2.22",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.4.1",
+    "antd": "^5.25.3",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
