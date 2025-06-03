@@ -7,6 +7,7 @@ export interface ComponentConfig {
   name: string;
   defaultProps: Record<string, any>;
   component: any;
+  desc: string;
 }
 
 interface State {
@@ -19,11 +20,13 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
   componentConfig: {
     Container: {
       name: "Container",
+      desc: "容器",
       defaultProps: {},
       component: Container,
     },
     Button: {
       name: "Button",
+      desc: "按钮",
       defaultProps: {
         type: "primary",
         text: "按钮",
@@ -32,6 +35,7 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
     },
     Page: {
       name: "Page",
+      desc: "页面",
       defaultProps: {},
       component: Page,
     },

@@ -21,10 +21,15 @@ function HoverMask({
     labelTop: 0,
     labelLeft: 0,
   });
+  const { components } = useComponetsStore();
 
   useEffect(() => {
     updatePosition();
   }, [componentId]);
+
+  useEffect(() => {
+    updatePosition();
+  }, [components]);
 
   function updatePosition() {
     if (!componentId) return;
@@ -59,7 +64,6 @@ function HoverMask({
     return document.querySelector(`.${portalWrapperClassName}`);
   }, []);
 
-  const { components } = useComponetsStore();
   const curComponent = useMemo(() => {
     return getComponentById(componentId, components);
   }, [componentId]);
@@ -102,7 +106,7 @@ function HoverMask({
             whiteSpace: "nowrap",
           }}
         >
-          {curComponent?.name}
+          {curComponent?.desc}
         </div>
       </div>
     </>,
