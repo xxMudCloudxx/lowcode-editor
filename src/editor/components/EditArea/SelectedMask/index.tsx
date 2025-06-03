@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { getComponentById, useComponetsStore } from "../../stores/components";
+import {
+  getComponentById,
+  useComponetsStore,
+} from "../../../stores/components";
 import { Dropdown, Popconfirm, Space } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 
@@ -32,7 +35,9 @@ function SelectedMask({
   }, [componentId]);
 
   useEffect(() => {
-    updatePosition();
+    setTimeout(() => {
+      updatePosition();
+    }, 200);
   }, [components]);
 
   useEffect(() => {

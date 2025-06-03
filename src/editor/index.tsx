@@ -1,6 +1,6 @@
 import { Allotment } from "allotment";
 import "allotment/dist/style.css";
-import { Header } from "./components/Header";
+import { Header } from "./components/Header/Header";
 import { Material } from "./components/Material";
 import { EditArea } from "./components/EditArea";
 import { Setting } from "./components/Setting";

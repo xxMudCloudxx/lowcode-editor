@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { getComponentById, useComponetsStore } from "../../stores/components";
+import {
+  getComponentById,
+  useComponetsStore,
+} from "../../../stores/components";
 
 interface HoverMaskProps {
   portalWrapperClassName: string;
@@ -61,7 +64,7 @@ function HoverMask({
   }
 
   const el = useMemo(() => {
-    return document.querySelector(`.${portalWrapperClassName}`);
+    return document.querySelector(`.${portalWrapperClassName}`)!;
   }, []);
 
   const curComponent = useMemo(() => {
@@ -110,7 +113,7 @@ function HoverMask({
         </div>
       </div>
     </>,
-    el!
+    el
   );
 }
 
