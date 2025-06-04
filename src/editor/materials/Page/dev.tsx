@@ -1,21 +1,18 @@
 import type { CommonComponentProps } from "../../interface";
 import { useMaterailDrop } from "../../hooks/useMatrialDrop";
 
-const Container = ({ id, children, styles }: CommonComponentProps) => {
+function PageDev({ children, id, name, styles }: CommonComponentProps) {
   const { canDrop, drop } = useMaterailDrop(["Button", "Container"], id);
-
   return (
     <div
       ref={drop}
-      className={`min-h-[100px] p-[20px] ${
-        canDrop ? "border-[2px] border-[blue]" : "border-[1px] border-[#000]"
-      }`}
+      className="p-[20px] h-[100%] box-border"
+      style={{ ...styles, border: canDrop ? "2px solid blue" : "none" }}
       data-component-id={id}
-      style={styles}
     >
       {children}
     </div>
   );
-};
+}
 
-export default Container;
+export default PageDev;
