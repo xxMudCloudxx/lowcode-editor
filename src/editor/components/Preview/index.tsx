@@ -28,13 +28,16 @@ export function Preview() {
               }
             } else if (action.type === "customJs") {
               const func = new Function("context", "args", action.code);
-              func({
-                name: component.name,
-                props: component.props,
-                ShowMessage(content: string) {
-                  message.success(content);
+              func(
+                {
+                  name: component.name,
+                  props: component.props,
+                  ShowMessage(content: string) {
+                    message.success(content);
+                  },
                 },
-              });
+                args
+              );
             } else if (action.type == "componentMethod") {
               const component =
                 componentRefs.current[action.config.componentId];
