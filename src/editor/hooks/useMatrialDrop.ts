@@ -1,30 +1,41 @@
 import { useDrop } from "react-dnd";
 import { useComponentConfigStore } from "../stores/component-config";
-import { useComponetsStore } from "../stores/components";
+import { getComponentById, useComponetsStore } from "../stores/components";
 
+export interface ItemType {
+  type: string;
+  dragType?: "move" | "add";
+  id: number;
+}
 export function useMaterailDrop(accept: string[], id: number) {
-  const { addComponent } = useComponetsStore();
+  const { addComponent, components, deleteComponent } = useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
 
   const [{ canDrop }, drop] = useDrop(() => ({
     accept,
-    drop: (item: { type: string }, monitor) => {
+    drop: (item: ItemType, monitor) => {
       const didDrop = monitor.didDrop();
       if (didDrop) {
         return;
       }
+      if (item.dragType === "move") {
+        const component = getComponentById(item.id, components)!;
 
-      const config = componentConfig[item.type];
+        deleteComponent(item.id);
+        addComponent(component, id);
+      } else {
+        const config = componentConfig[item.type];
 
-      addComponent(
-        {
-          desc: config.desc,
-          id: new Date().getTime(),
-          name: item.type,
-          props: config.defaultProps,
-        },
-        id
-      );
+        addComponent(
+          {
+            desc: config.desc,
+            id: new Date().getTime(),
+            name: item.type,
+            props: config.defaultProps,
+          },
+          id
+        );
+      }
     },
     collect: (monitor) => ({
       canDrop: monitor.canDrop(),
