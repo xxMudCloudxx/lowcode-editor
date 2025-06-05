@@ -3,7 +3,7 @@ import { useMaterailDrop } from "../../hooks/useMatrialDrop";
 
 function PageDev({ children, id, name, styles }: CommonComponentProps) {
   const { canDrop, drop } = useMaterailDrop(
-    ["Button", "Container", "Modal"],
+    ["Button", "Container", "Modal", "Table", "Form"],
     id
   );
   return (
