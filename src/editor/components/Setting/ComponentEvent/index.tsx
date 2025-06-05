@@ -5,19 +5,19 @@ import {
 } from "../../../stores/component-config";
 import { useComponetsStore } from "../../../stores/components";
 import { useState } from "react";
-import { ActionModal } from "./ActionModal";
-import type { GoToLinkConfig } from "./actions/GoToLink";
-import type { ShowMessageConfig } from "./actions/ShowMessage";
-import { DeleteOutlined } from "@ant-design/icons";
+import { ActionModal, type ActionConfig } from "./ActionModal";
+import { ActionCard } from "./ActionCard";
 
 export function ComponentEvent() {
-  const { curComponentId, curComponent, updateComponentProps } =
-    useComponetsStore();
+  const { curComponent, updateComponentProps } = useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [curEvent, setCurEvent] = useState<ComponentEvent>();
+  const [curAction, setCurAction] = useState<ActionConfig>();
+  const [curActionIndex, setCurActionIndex] = useState<number>();
 
   if (!curComponent) return null;
+
   function deleteAction(event: ComponentEvent, index: number) {
     if (!curComponent) {
       return;
@@ -29,10 +29,20 @@ export function ComponentEvent() {
 
     updateComponentProps(curComponent.id, {
       [event.name]: {
-        action: actions,
+        actions: actions,
       },
     });
   }
+
+  function editAction(config: ActionConfig, index: number) {
+    if (!curComponent) {
+      return;
+    }
+    setCurAction(config);
+    setCurActionIndex(index);
+    setActionModalOpen(true);
+  }
+
   const items: CollapseProps["items"] = (
     componentConfig[curComponent.name].events || []
   ).map((event) => {
@@ -45,6 +55,7 @@ export function ComponentEvent() {
             type="primary"
             onClick={(e) => {
               e.stopPropagation();
+
               setCurEvent(event);
               setActionModalOpen(true);
             }}
@@ -56,32 +67,30 @@ export function ComponentEvent() {
       children: (
         <div>
           {(curComponent.props[event.name]?.actions || []).map(
-            (item: GoToLinkConfig | ShowMessageConfig, index: number) => {
+            (item: ActionConfig, index: number) => {
+              const commonProps = {
+                onEdit: () => editAction(item, index),
+                onDelete: () => deleteAction(event, index),
+              };
               return (
                 <div>
                   {item.type === "goToLink" ? (
-                    <div className="border border-[#aaa] m-[10px] p-[10px] relative">
-                      <div className="text-[blue]">跳转链接</div>
+                    <ActionCard key={index} title="跳转链接" {...commonProps}>
                       <div>{item.url}</div>
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 10,
-                          right: 10,
-                          cursor: "pointer",
-                        }}
-                        onClick={() => deleteAction(event, index)}
-                      >
-                        <DeleteOutlined />
-                      </div>
-                    </div>
+                    </ActionCard>
                   ) : null}
                   {item.type === "showMessage" ? (
-                    <div className="border border-[#aaa] m-[10px] p-[10px]">
-                      <div className="text-[blue]">消息弹窗</div>
+                    <ActionCard key={index} title="消息弹窗" {...commonProps}>
                       <div>{item.config.type}</div>
                       <div>{item.config.text}</div>
-                    </div>
+                    </ActionCard>
+                  ) : null}
+                  {item.type === "customJs" ? (
+                    <ActionCard
+                      key={index}
+                      title="自定义 JS"
+                      {...commonProps}
+                    ></ActionCard>
                   ) : null}
                 </div>
               );
@@ -92,20 +101,35 @@ export function ComponentEvent() {
     };
   });
 
-  function handleModalOk(config?: GoToLinkConfig | ShowMessageConfig) {
+  function handleModalOk(config?: ActionConfig) {
     if (!config || !curEvent || !curComponent) {
       return;
     }
+    /**
+     *保存的时候如果有 curAction，就是修改，没有的话才是新增
+     */
+    if (curAction) {
+      updateComponentProps(curComponent.id, {
+        [curEvent.name]: {
+          actions: curComponent.props[curEvent.name]?.actions.map(
+            (item: ActionConfig, index: number) => {
+              return index === curActionIndex ? config : item;
+            }
+          ),
+        },
+      });
+    } else {
+      updateComponentProps(curComponent.id, {
+        [curEvent.name]: {
+          actions: [
+            ...(curComponent.props[curEvent.name]?.actions || []),
+            config,
+          ],
+        },
+      });
+    }
 
-    updateComponentProps(curComponent.id, {
-      [curEvent.name]: {
-        actions: [
-          ...(curComponent.props[curEvent.name]?.actions || []),
-          config,
-        ],
-      },
-    });
-
+    setCurAction(undefined);
     setActionModalOpen(false);
   }
 
@@ -121,6 +145,7 @@ export function ComponentEvent() {
       <ActionModal
         visible={actionModalOpen}
         handleOk={handleModalOk}
+        action={curAction}
         handleCancel={() => {
           setActionModalOpen(false);
         }}
