@@ -3,13 +3,17 @@ import {
   type ComponentEvent,
   useComponentConfigStore,
 } from "../../../stores/component-config";
-import { useComponetsStore } from "../../../stores/components";
+import {
+  getComponentById,
+  useComponetsStore,
+} from "../../../stores/components";
 import { useState } from "react";
 import { ActionModal, type ActionConfig } from "./ActionModal";
 import { ActionCard } from "./ActionCard";
 
 export function ComponentEvent() {
-  const { curComponent, updateComponentProps } = useComponetsStore();
+  const { curComponent, updateComponentProps, components } =
+    useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [curEvent, setCurEvent] = useState<ComponentEvent>();
@@ -91,6 +95,18 @@ export function ComponentEvent() {
                       title="自定义 JS"
                       {...commonProps}
                     ></ActionCard>
+                  ) : null}
+                  {item.type === "componentMethod" ? (
+                    <ActionCard key={index} title="组件方法" {...commonProps}>
+                      <div>
+                        {
+                          getComponentById(item.config.componentId, components)
+                            ?.desc
+                        }
+                      </div>
+                      <div>{item.config.componentId}</div>
+                      <div>{item.config.method}</div>
+                    </ActionCard>
                   ) : null}
                 </div>
               );
