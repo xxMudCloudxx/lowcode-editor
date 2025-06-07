@@ -109,13 +109,15 @@ export function EditArea() {
       {renderComponents(components)}
 
       {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
-      {hoverComponentId && hoverComponentId !== curComponentId && (
-        <HoverMask
-          portalWrapperClassName="portal-wrapper"
-          containerClassName="edit-area"
-          componentId={hoverComponentId}
-        />
-      )}
+      {hoverComponentId &&
+        hoverComponentId !== curComponentId &&
+        hoverComponentId !== 1 && (
+          <HoverMask
+            portalWrapperClassName="portal-wrapper"
+            containerClassName="edit-area"
+            componentId={hoverComponentId}
+          />
+        )}
 
       {/* 当有选中组件时，显示选中遮罩 */}
       {curComponentId && (
