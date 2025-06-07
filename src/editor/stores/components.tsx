@@ -186,6 +186,32 @@ export function getComponentById(
   return null;
 }
 
+/**
+ * @description 【新增】检查一个组件是否是另一个组件的后代。
+ * 通过从 "childId" 开始，沿着 parentId 向上追溯，看是否能找到 "ancestorId"。
+ * @param {number} childId - “后代”组件的 ID。
+ * @param {number} ancestorId - “祖先”组件的 ID。
+ * @param {Component[]} components - 完整的组件树。
+ * @returns {boolean} - 如果是后代，则返回 true，否则返回 false。
+ */
+export function isDescendantOf(
+  childId: number,
+  ancestorId: number,
+  components: Component[]
+): boolean {
+  let current = getComponentById(childId, components);
+
+  // 向上遍历父节点
+  while (current && current.parentId) {
+    if (current.parentId === ancestorId) {
+      return true; // 找到了祖先
+    }
+    current = getComponentById(current.parentId, components);
+  }
+
+  return false; // 遍历到根节点都未找到
+}
+
 // 使用 `create` 函数创建 store
 export const useComponetsStore = create<State & Action>()(
   // 使用 persist 中间件来包裹 creator

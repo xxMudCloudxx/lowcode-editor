@@ -1,6 +1,10 @@
 import { useDrop } from "react-dnd";
 import { useComponentConfigStore } from "../stores/component-config";
-import { getComponentById, useComponetsStore } from "../stores/components";
+import {
+  getComponentById,
+  isDescendantOf,
+  useComponetsStore,
+} from "../stores/components";
 
 export interface ItemType {
   type: string;
@@ -27,12 +31,27 @@ export function useMaterailDrop(accept: string[], id: number) {
   const [{ canDrop }, drop] = useDrop(() => ({
     accept,
     drop: (item: ItemType, monitor) => {
+      if (item.dragType !== "move") {
+        // 如果是新增组件，直接执行后续逻辑
+      } else {
+        // --- 防止放置到自身 ---
+        if (item.id === id) {
+          return;
+        }
+
+        // --- 防止父组件放置到后代组件中 ---
+        // isDescendantOf(放置目标的ID, 被拖拽组件的ID, 整个组件树)
+        if (isDescendantOf(id, item.id, components)) {
+          console.warn("无效操作：不能将父组件拖拽到其子组件中。");
+          return;
+        }
+      }
+
       // 防止在嵌套的放置目标中触发drop
       const didDrop = monitor.didDrop();
       if (didDrop) {
         return;
       }
-
       // 根据拖拽来源是"移动"还是"新增"来执行不同的逻辑
       if (item.dragType === "move") {
         const component = getComponentById(item.id, components)!;
