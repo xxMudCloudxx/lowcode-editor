@@ -5,11 +5,8 @@ import { useMaterailDrop } from "../../hooks/useMatrialDrop";
  * @description Page 组件的“开发”版本，用于编辑器画布内。
  * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
  */
-function PageDev({ children, id, styles }: CommonComponentProps) {
-  const { canDrop, drop } = useMaterailDrop(
-    ["Button", "Container", "Modal", "Table", "Form"],
-    id
-  );
+function PageDev({ children, id, styles, name }: CommonComponentProps) {
+  const { canDrop, drop } = useMaterailDrop(id, name);
   return (
     <div
       ref={drop}

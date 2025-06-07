@@ -67,6 +67,7 @@ export interface ComponentConfig {
   name: string; // 组件的唯一英文名，用作类型标识
   defaultProps: Record<string, any>; // 组件被拖拽生成时的默认 props
   desc: string; // 组件的中文描述，显示在物料面板
+  parentTypes?: string[]; // 组件允许接收的父组件类型列表
   setter?: ComponentSetter[]; // 属性设置器配置
   styleSetter?: ComponentSetter[]; // 样式设置器配置
   events?: ComponentEvent[]; // 事件配置
@@ -93,6 +94,8 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
       defaultProps: {},
       dev: ContainerDev,
       prod: ContainerProd,
+      // 容器自身也可以被放置在“页面”或另一个“容器”或“弹窗”中
+      parentTypes: ["Page", "Container", "Modal"],
     },
     Button: {
       name: "Button",
@@ -141,6 +144,8 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
       ],
       dev: ButtonDev,
       prod: ButtonProd,
+      // 按钮可以被放置在“页面”、“容器”或“弹窗”中
+      parentTypes: ["Page", "Container", "Modal"],
     },
     Page: {
       name: "Page",
@@ -148,6 +153,7 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
       defaultProps: {},
       dev: PageDev,
       prod: PageProd,
+      // Page 是根组件，它没有父组件，所以不需要 parentTypes
     },
     Table: {
       name: "Table",
@@ -162,6 +168,8 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
       ],
       dev: TableDev,
       prod: TableProd,
+      // 表格可以被放置在“页面”、“容器”或“弹窗”中
+      parentTypes: ["Page", "Container", "Modal"],
     },
     Modal: {
       name: "Modal",
@@ -199,6 +207,8 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
       desc: "弹窗",
       dev: ModalDev,
       prod: ModalProd,
+      // 弹窗本身作为一个可拖拽的配置项，可以被放置在“页面”上
+      parentTypes: ["Page"],
     },
     TableColumn: {
       name: "TableColumn",
@@ -236,6 +246,8 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
       ],
       dev: TableColumnDev,
       prod: TableColumnProd,
+      // 表格列只能被放置在“表格”组件中
+      parentTypes: ["Table"],
     },
     Form: {
       name: "Form",
@@ -262,6 +274,8 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
       ],
       dev: FormDev,
       prod: FormDev,
+      // 表单可以被放置在“页面”、“容器”或“弹窗”中
+      parentTypes: ["Page", "Container", "Modal"],
     },
     FormItem: {
       name: "FormItem",
@@ -310,6 +324,8 @@ export const useComponentConfigStore = create<State & Action>((set) => ({
           ],
         },
       ],
+      // 表单项只能被放置在“表单”组件中
+      parentTypes: ["Form"],
     },
   },
   registerComponent: (name, componentConfig) =>

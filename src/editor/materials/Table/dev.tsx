@@ -9,7 +9,7 @@ import { Table as AntdTable } from "antd";
  * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
  */
 function TableDev({ id, name, children, styles }: CommonComponentProps) {
-  const { canDrop, drop } = useMaterailDrop(["TableColumn"], id);
+  const { canDrop, drop } = useMaterailDrop(id, name);
 
   const divRef = useRef<HTMLDivElement>(null);
 
