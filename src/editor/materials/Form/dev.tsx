@@ -11,7 +11,7 @@ import { useDrag } from "react-dnd";
 function FormDev({ id, name, children, onFinish }: CommonComponentProps) {
   const [form] = AntdForm.useForm();
 
-  const { canDrop, drop } = useMaterailDrop(["FormItem"], id);
+  const { canDrop, drop } = useMaterailDrop(id, name);
 
   const divRef = useRef<HTMLDivElement>(null);
 

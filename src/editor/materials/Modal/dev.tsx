@@ -5,11 +5,8 @@ import type { CommonComponentProps } from "../../interface";
  * @description Modal 组件的“开发”版本，用于编辑器画布内。
  * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
  */
-function ModalDev({ id, children, title, styles }: CommonComponentProps) {
-  const { canDrop, drop } = useMaterailDrop(
-    ["Button", "Container", "Table", "Form"],
-    id
-  );
+function ModalDev({ id, children, title, styles, name }: CommonComponentProps) {
+  const { canDrop, drop } = useMaterailDrop(id, name);
 
   return (
     <div

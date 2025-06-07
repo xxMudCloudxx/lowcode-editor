@@ -8,10 +8,7 @@ import { useDrag } from "react-dnd";
  * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
  */
 const ContainerDev = ({ id, children, styles, name }: CommonComponentProps) => {
-  const { canDrop, drop } = useMaterailDrop(
-    ["Button", "Container", "Table", "Form"],
-    id
-  );
+  const { canDrop, drop } = useMaterailDrop(id, name);
 
   const divRef = useRef<HTMLDivElement>(null);
 
