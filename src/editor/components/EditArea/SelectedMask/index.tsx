@@ -1,3 +1,14 @@
+/**
+ * @file /src/editor/components/EditArea/SelectedMask/index.tsx
+ * @description
+ * 一个用于在编辑器画布中高亮“选中”组件的遮罩层。
+ * 功能与 HoverMask 类似，但增加了额外的交互功能：
+ * - 显示组件层级关系（父组件面包屑）。
+ * - 提供删除组件的操作。
+ * 同样使用 React Portal 进行渲染。
+ * @module Components/EditArea/SelectedMask
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -18,6 +29,7 @@ function SelectedMask({
   portalWrapperClassName,
   componentId,
 }: SelectedMaskProps) {
+  // ... (position state 和 updatePosition 函数与 HoverMask 完全相同)
   const [position, setPosition] = useState({
     left: 0,
     top: 0,
@@ -43,6 +55,8 @@ function SelectedMask({
     }, 200);
   }, [components]);
 
+  // FIXME：如果突然全屏，不会更新位置
+  // 监听窗口大小变化，以重新计算位置
   useEffect(() => {
     const resizeHandler = () => {
       updatePosition();
@@ -108,6 +122,7 @@ function SelectedMask({
 
   return createPortal(
     <>
+      {/* 遮罩层 */}
       <div
         style={{
           position: "absolute",
@@ -123,6 +138,8 @@ function SelectedMask({
           boxSizing: "border-box",
         }}
       />
+
+      {/* 交互标签区域 */}
       <div
         style={{
           position: "absolute",
@@ -135,6 +152,7 @@ function SelectedMask({
         }}
       >
         <Space>
+          {/* 父组件层级面包屑 */}
           <Dropdown
             menu={{
               items: parentComponents.map((item) => ({
@@ -142,6 +160,7 @@ function SelectedMask({
                 label: item.desc,
               })),
               onClick: ({ key }) => {
+                // 允许用户通过面包屑快速选中父组件
                 setCurComponentId(+key);
               },
             }}
@@ -160,6 +179,7 @@ function SelectedMask({
               {curComponent?.desc}
             </div>
           </Dropdown>
+          {/* 删除按钮 (根 Page 组件不允许删除) */}
           {curComponentId !== 1 && (
             <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
               <Popconfirm

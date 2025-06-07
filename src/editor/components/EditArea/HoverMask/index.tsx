@@ -1,3 +1,12 @@
+/**
+ * @file /src/editor/components/EditArea/HoverMask/index.tsx
+ * @description
+ * 一个用于在编辑器画布中高亮“悬浮”组件的遮罩层。
+ * 它会根据目标组件的位置和大小动态定位，并使用 React Portal 将自身渲染到顶层 DOM，
+ * 以避免被父组件的 CSS `overflow` 或 `z-index` 限制。
+ * @module Components/EditArea/HoverMask
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -6,9 +15,9 @@ import {
 } from "../../../stores/components";
 
 interface HoverMaskProps {
-  portalWrapperClassName: string;
-  containerClassName: string;
-  componentId: number;
+  portalWrapperClassName: string; // Portal 的目标容器 DOM 节点的类名
+  containerClassName: string; // 画布容器的类名，用于计算相对位置
+  componentId: number; // 要高亮的目标组件 ID
 }
 
 function HoverMask({
@@ -26,24 +35,30 @@ function HoverMask({
   });
   const { components } = useComponetsStore();
 
+  // 当目标组件 ID 变化时，重新计算位置
   useEffect(() => {
     updatePosition();
   }, [componentId]);
 
+  // 当整个组件树发生变化时，也可能需要更新位置（例如组件被移动或删除）
   useEffect(() => {
     updatePosition();
   }, [components]);
 
+  /**
+   * @description 核心函数：计算并更新遮罩层的位置和大小。
+   */
   function updatePosition() {
     if (!componentId) return;
 
     const container = document.querySelector(`.${containerClassName}`);
     if (!container) return;
 
+    // 查找目标组件对应的 DOM 节点
     const node = document.querySelector(`[data-component-id="${componentId}"]`);
     if (!node) return;
 
-    // getBoundingClientRect() 获取的是元素相对于浏览器视口的位置
+    // getBoundingClientRect() 返回的是元素相对于浏览器视口的位置
     const { top, left, width, height } = node.getBoundingClientRect();
     const { top: containerTop, left: containerLeft } =
       container.getBoundingClientRect();
@@ -54,7 +69,7 @@ function HoverMask({
       labelTop += 20;
     }
 
-    // 核心逻辑：将组件的“视口坐标”转换为“相对于画布容器的坐标”。
+    // 核心逻辑：将组件的“视口坐标”转换为“相对于滚动画布容器的坐标”。
     // 必须减去容器的视口偏移，并加上容器自身的滚动距离，
     // 这样遮罩层才能在画布滚动后依然正确定位。
     setPosition({
@@ -67,16 +82,23 @@ function HoverMask({
     });
   }
 
+  // 使用 useMemo 缓存 Portal 目标节点的查询，避免重复 DOM 操作
   const el = useMemo(() => {
     return document.querySelector(`.${portalWrapperClassName}`)!;
   }, []);
 
+  // 获取当前组件的元数据，用于显示描述信息
   const curComponent = useMemo(() => {
     return getComponentById(componentId, components);
   }, [componentId]);
 
+  // 如果目标节点不存在，不渲染任何东西
+  if (!el) return null;
+
+  // 使用 React Portal 将遮罩层渲染到指定的 portalWrapper 节点中
   return createPortal(
     <>
+      {/* 遮罩层本身 */}
       <div
         style={{
           position: "absolute",
@@ -84,7 +106,7 @@ function HoverMask({
           top: position.top,
           backgroundColor: "rgba(0, 0, 255, 0.05)",
           border: "1px dashed blue",
-          pointerEvents: "none",
+          pointerEvents: "none", // 允许鼠标事件穿透遮罩层
           width: position.width,
           height: position.height,
           zIndex: 12,
@@ -92,6 +114,8 @@ function HoverMask({
           boxSizing: "border-box",
         }}
       />
+
+      {/* 显示组件描述的标签 */}
       <div
         style={{
           position: "absolute",
