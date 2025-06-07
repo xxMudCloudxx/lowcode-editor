@@ -89,11 +89,6 @@ function HoverMask({
     });
   }
 
-  // 使用 useMemo 缓存 Portal 目标节点的查询，避免重复 DOM 操作
-  const el = useMemo(() => {
-    return document.querySelector(`.${portalWrapperClassName}`)!;
-  }, []);
-
   // 获取当前组件的元数据，用于显示描述信息
   const curComponent = useMemo(() => {
     return getComponentById(componentId, components);
