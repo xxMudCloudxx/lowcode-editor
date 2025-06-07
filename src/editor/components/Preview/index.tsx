@@ -27,6 +27,10 @@ export function Preview() {
                 message.error(action.config.text);
               }
             } else if (action.type === "customJs") {
+              // 警告：使用 new Function 动态执行代码存在安全风险。
+              // 在生产环境中，必须确保 action.code 的来源是可信的，
+              // 或者在沙箱(sandbox)环境中执行，以防止恶意代码注入。
+              // 此处为了实现灵活性而采用，上下文(context)中暴露了有限的 API。
               const func = new Function("context", "args", action.code);
               func(
                 {

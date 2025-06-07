@@ -35,6 +35,9 @@ function SelectedMask({
   }, [componentId]);
 
   useEffect(() => {
+    // FIXME: 使用 setTimeout(200) 来等待 DOM 更新可能不稳定，
+    // 在某些情况下可能导致定位不准。
+    // 考虑使用 useLayoutEffect 或 ResizeObserver 来更可靠地在 DOM 变更后更新位置。
     setTimeout(() => {
       updatePosition();
     }, 200);

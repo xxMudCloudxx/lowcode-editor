@@ -1,3 +1,15 @@
+/**
+ * @file /src/editor/stores/component-config.tsx
+ * @description
+ * 使用 Zustand 管理所有“物料组件”的配置信息。
+ * 这个文件是低代码编辑器的“物料注册中心”，定义了每个组件的：
+ * - 基础信息 (name, desc)
+ * - 默认属性 (defaultProps)
+ * - 在右侧“设置”面板中对应的属性、样式、事件、方法的配置器 (setter, styleSetter, events, methods)
+ * - 在“编辑”模式下的渲染组件 (dev)
+ * - 在“预览”模式下的渲染组件 (prod)
+ * @module Stores/ComponentConfig
+ */
 import { create } from "zustand";
 import ContainerDev from "../materials/Container/dev";
 import ContainerProd from "../materials/Container/prod";
@@ -15,39 +27,62 @@ import FormDev from "../materials/Form/dev";
 import FormItemDev from "../materials/FormItem/dev";
 import FormItemProd from "../materials/FormItem/prod";
 
+/**
+ * @interface ComponentSetter
+ * @description 定义了组件在“设置”面板中的一个配置项。
+ * 它描述了如何渲染一个表单控件来修改组件的某个 prop。
+ */
 export interface ComponentSetter {
-  name: string;
-  label: string;
-  type: string;
-  [key: string]: any;
+  name: string; // 对应组件 props 的字段名
+  label: string; // 在设置面板中显示的标签
+  type: string; // 决定渲染哪种类型的输入控件，如 'input', 'select', 'inputNumber'
+  [key: string]: any; // 其他属性，例如 'select' 的 options
 }
 
+/**
+ * @interface ComponentEvent
+ * @description 定义了组件可以对外触发的事件。
+ */
 export interface ComponentEvent {
-  name: string;
-  label: string;
+  name: string; // 事件名，如 'onClick'
+  label: string; // 在设置面板中显示的事件标签，如 '点击事件'
 }
 
+/**
+ * @interface ComponentMethod
+ * @description 定义了组件可以被外部调用的方法。
+ */
 export interface ComponentMethod {
-  name: string;
-  label: string;
+  name: string; // 方法名，如 'open'
+  label: string; // 在设置面板中显示的方法标签，如 '打开弹窗'
 }
 
+/**
+ * @interface ComponentConfig
+ * @description
+ * 单个物料组件的完整配置定义。
+ * 这是整个物料系统的核心数据结构。
+ */
 export interface ComponentConfig {
-  name: string;
-  defaultProps: Record<string, any>;
-  desc: string;
-  setter?: ComponentSetter[];
-  styleSetter?: ComponentSetter[];
-  events?: ComponentEvent[];
-  methods?: ComponentMethod[];
-  dev: any;
-  prod: any;
+  name: string; // 组件的唯一英文名，用作类型标识
+  defaultProps: Record<string, any>; // 组件被拖拽生成时的默认 props
+  desc: string; // 组件的中文描述，显示在物料面板
+  setter?: ComponentSetter[]; // 属性设置器配置
+  styleSetter?: ComponentSetter[]; // 样式设置器配置
+  events?: ComponentEvent[]; // 事件配置
+  methods?: ComponentMethod[]; // 方法配置
+
+  // 关键设计点：区分开发和生产环境的组件渲染
+  dev: any; // 组件在编辑器画布中的渲染形态，通常包含拖拽、选中等交互逻辑
+  prod: any; // 组件在预览/最终发布时的真实渲染形态，是纯净的业务组件
 }
 
 interface State {
+  // 使用字典结构，以组件名作为 key，快速查找组件配置
   componentConfig: { [key: string]: ComponentConfig };
 }
 interface Action {
+  // 预留的 action，用于未来动态注册新组件
   registerComponent: (name: string, componentConfig: ComponentConfig) => void;
 }
 export const useComponentConfigStore = create<State & Action>((set) => ({

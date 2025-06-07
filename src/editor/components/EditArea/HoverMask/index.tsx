@@ -43,16 +43,20 @@ function HoverMask({
     const node = document.querySelector(`[data-component-id="${componentId}"]`);
     if (!node) return;
 
+    // getBoundingClientRect() 获取的是元素相对于浏览器视口的位置
     const { top, left, width, height } = node.getBoundingClientRect();
     const { top: containerTop, left: containerLeft } =
       container.getBoundingClientRect();
 
     let labelTop = top - containerTop + container.scrollTop;
-    let labelLeft = left - containerLeft + width;
+    const labelLeft = left - containerLeft + width;
     if (labelTop <= 0) {
       labelTop += 20;
     }
 
+    // 核心逻辑：将组件的“视口坐标”转换为“相对于画布容器的坐标”。
+    // 必须减去容器的视口偏移，并加上容器自身的滚动距离，
+    // 这样遮罩层才能在画布滚动后依然正确定位。
     setPosition({
       top: top - containerTop + container.scrollTop,
       left: left - containerLeft + container.scrollLeft,
