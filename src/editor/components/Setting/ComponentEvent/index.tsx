@@ -1,3 +1,10 @@
+/**
+ * @file /src/editor/components/Setting/ComponentEvent/index.tsx
+ * @description
+ * “事件”设置面板。
+ * 负责管理和展示组件所有可配置的事件及其绑定的动作列表。
+ * @module Components/Setting/ComponentEvent
+ */
 import { Button, Collapse, type CollapseProps } from "antd";
 import {
   type ComponentEvent,
@@ -15,13 +22,18 @@ export function ComponentEvent() {
   const { curComponent, updateComponentProps, components } =
     useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
-  const [actionModalOpen, setActionModalOpen] = useState(false);
-  const [curEvent, setCurEvent] = useState<ComponentEvent>();
-  const [curAction, setCurAction] = useState<ActionConfig>();
-  const [curActionIndex, setCurActionIndex] = useState<number>();
+
+  // --- Modal and Action State Management ---
+  const [actionModalOpen, setActionModalOpen] = useState(false); // 控制动作配置模态框的显隐
+  const [curEvent, setCurEvent] = useState<ComponentEvent>(); // 记录当前正在配置哪个事件 (e.g., 'onClick')
+  const [curAction, setCurAction] = useState<ActionConfig>(); // 记录当前正在编辑的动作，用于模态框回显
+  const [curActionIndex, setCurActionIndex] = useState<number>(); // 记录当前编辑的动作在数组中的索引
 
   if (!curComponent) return null;
 
+  /**
+   * @description 删除指定事件下的一个动作。
+   */
   function deleteAction(event: ComponentEvent, index: number) {
     if (!curComponent) {
       return;
@@ -38,6 +50,9 @@ export function ComponentEvent() {
     });
   }
 
+  /**
+   * @description 打开模态框以编辑一个已有的动作。
+   */
   function editAction(config: ActionConfig, index: number) {
     if (!curComponent) {
       return;
@@ -47,6 +62,7 @@ export function ComponentEvent() {
     setActionModalOpen(true);
   }
 
+  // 将组件的事件配置转换为 antd Collapse 的数据源
   const items: CollapseProps["items"] = (
     componentConfig[curComponent.name].events || []
   ).map((event) => {
@@ -58,9 +74,10 @@ export function ComponentEvent() {
           <Button
             type="primary"
             onClick={(e) => {
-              e.stopPropagation();
-
-              setCurEvent(event);
+              e.stopPropagation(); // 阻止 Collapse 的折叠/展开
+              setCurEvent(event); // 记录当前事件
+              setCurAction(undefined); // 清空上一次的编辑状态
+              setCurActionIndex(undefined);
               setActionModalOpen(true);
             }}
           >
@@ -68,6 +85,7 @@ export function ComponentEvent() {
           </Button>
         </div>
       ),
+      // 渲染已配置的动作列表
       children: (
         <div>
           {(curComponent.props[event.name]?.actions || []).map(
@@ -117,6 +135,9 @@ export function ComponentEvent() {
     };
   });
 
+  /**
+   * @description 模态框确认回调，用于新增或更新动作。
+   */
   function handleModalOk(config?: ActionConfig) {
     if (!config || !curEvent || !curComponent) {
       return;

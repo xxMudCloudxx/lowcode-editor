@@ -1,3 +1,10 @@
+/**
+ * @file /src/editor/components/Setting/ComponentEvent/ActionModal/index.tsx
+ * @description
+ * 配置“动作”的模态框。它同样是一个分发器，
+ * 根据用户选择的动作类型，渲染对应的配置表单。
+ * @module Components/Setting/ComponentEvent/ActionModal
+ */
 import { useEffect, useState } from "react";
 import { Modal, Segmented } from "antd";
 import { GoToLink, type GoToLinkConfig } from "../actions/GoToLink";
@@ -8,6 +15,7 @@ import {
   type ComponentMethodConfig,
 } from "../actions/ComponentMethod";
 
+// 定义所有可能的动作配置类型
 export type ActionConfig =
   | GoToLinkConfig
   | ShowMessageConfig
@@ -16,7 +24,7 @@ export type ActionConfig =
 
 interface ActionModalProps {
   visible: boolean;
-  action?: ActionConfig;
+  action?: ActionConfig; // 传入的动作配置，用于编辑时回显
   handleOk: (config?: ActionConfig) => void;
   handleCancel: () => void;
 }
@@ -24,7 +32,9 @@ interface ActionModalProps {
 export function ActionModal(props: ActionModalProps) {
   const { visible, handleCancel, handleOk, action } = props;
 
+  // State: 当前选中的动作类型 Tab
   const [key, setKey] = useState<string>("访问链接");
+  // State: 当前模态框中正在编辑的动作配置对象
   const [curConfig, setCurConfig] = useState<ActionConfig>();
 
   const map = {
@@ -34,6 +44,7 @@ export function ActionModal(props: ActionModalProps) {
     componentMethod: "组件方法",
   };
 
+  // Effect Hook: 当传入的 action 变化时 (编辑模式)，同步更新 Tab 和表单的初始值
   useEffect(() => {
     if (action?.type) {
       setKey(map[action.type]);

@@ -1,6 +1,10 @@
-// ActionCard.tsx
+/**
+ * @file /src/editor/components/Setting/ComponentEvent/ActionCard/index.tsx
+ * @description
+ * 一个纯展示组件，用于在事件面板中以卡片形式显示一个已配置的动作。
+ * @module Components/Setting/ComponentEvent/ActionCard
+ */
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import React from "react";
 
 export interface ActionCardProps {
   title: string;
