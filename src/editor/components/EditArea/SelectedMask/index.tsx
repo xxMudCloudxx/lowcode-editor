@@ -42,6 +42,13 @@ function SelectedMask({
   const { components, curComponentId, deleteComponent, setCurComponentId } =
     useComponetsStore();
 
+  const [portalEl, setPortalEl] = useState<Element | null>(null);
+
+  useEffect(() => {
+    const el = document.querySelector(`.${portalWrapperClassName}`);
+    setPortalEl(el);
+  }, [portalWrapperClassName]);
+
   useEffect(() => {
     updatePosition();
   }, [componentId]);
@@ -52,7 +59,7 @@ function SelectedMask({
     // 考虑使用 useLayoutEffect 或 ResizeObserver 来更可靠地在 DOM 变更后更新位置。
     setTimeout(() => {
       updatePosition();
-    }, 200);
+    }, 20);
   }, [components]);
 
   // FIXME：如果突然全屏，不会更新位置
@@ -97,10 +104,6 @@ function SelectedMask({
     });
   }
 
-  const el = useMemo(() => {
-    return document.querySelector(`.${portalWrapperClassName}`)!;
-  }, []);
-
   const curComponent = useMemo(() => {
     return getComponentById(componentId, components);
   }, [componentId]);
@@ -119,6 +122,8 @@ function SelectedMask({
     }
     return parentComponents;
   }, [curComponent]);
+
+  if (!portalEl) return null;
 
   return createPortal(
     <>
@@ -195,7 +200,7 @@ function SelectedMask({
         </Space>
       </div>
     </>,
-    el
+    portalEl
   );
 }
 

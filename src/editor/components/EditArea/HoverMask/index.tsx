@@ -35,6 +35,13 @@ function HoverMask({
   });
   const { components } = useComponetsStore();
 
+  const [portalEl, setPortalEl] = useState<Element | null>(null);
+
+  useEffect(() => {
+    const el = document.querySelector(`.${portalWrapperClassName}`);
+    setPortalEl(el);
+  }, [portalWrapperClassName]);
+
   // 当目标组件 ID 变化时，重新计算位置
   useEffect(() => {
     updatePosition();
@@ -93,7 +100,7 @@ function HoverMask({
   }, [componentId]);
 
   // 如果目标节点不存在，不渲染任何东西
-  if (!el) return null;
+  if (!portalEl) return null;
 
   // 使用 React Portal 将遮罩层渲染到指定的 portalWrapper 节点中
   return createPortal(
@@ -141,7 +148,7 @@ function HoverMask({
         </div>
       </div>
     </>,
-    el
+    portalEl
   );
 }
 
