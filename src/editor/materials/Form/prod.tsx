@@ -11,6 +11,10 @@ export interface FormRef {
   submit: () => void;
 }
 
+/**
+ * @description Form 组件的“预览”版本，用于预览和最终渲染。
+ * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
+ */
 const Form: ForwardRefRenderFunction<
   FormRef,
   Omit<CommonComponentProps, "ref">

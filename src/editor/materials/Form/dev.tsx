@@ -4,6 +4,10 @@ import type { CommonComponentProps } from "../../interface";
 import { Form as AntdForm, Input } from "antd";
 import { useDrag } from "react-dnd";
 
+/**
+ * @description Form 组件的“生产”版本，用于编辑器画布内。
+ * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
+ */
 function FormDev({ id, name, children, onFinish }: CommonComponentProps) {
   const [form] = AntdForm.useForm();
 

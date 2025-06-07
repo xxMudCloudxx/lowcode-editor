@@ -3,6 +3,10 @@ import { useMaterailDrop } from "../../hooks/useMatrialDrop";
 import { useEffect, useRef } from "react";
 import { useDrag } from "react-dnd";
 
+/**
+ * @description Container 组件的“开发”版本，用于编辑器画布内。
+ * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
+ */
 const ContainerDev = ({ id, children, styles, name }: CommonComponentProps) => {
   const { canDrop, drop } = useMaterailDrop(
     ["Button", "Container", "Table", "Form"],

@@ -8,6 +8,10 @@ export interface ModalRef {
   close: () => void;
 }
 
+/**
+ * @description Modal 组件的“生产”版本，用于预览和最终渲染。
+ * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
+ */
 const ModalProd: React.ForwardRefRenderFunction<
   ModalRef,
   Omit<CommonComponentProps, "ref">
