@@ -56,6 +56,7 @@ interface Action {
   ) => void;
   setCurComponentId: (componetId: number | null) => void;
   setMode: (mode: State["mode"]) => void;
+  resetComponents: () => void;
 }
 
 /**
@@ -158,6 +159,20 @@ const creator: StateCreator<State & Action> = (set, get) => ({
       }
 
       return { components: [...state.components] };
+    }),
+
+  resetComponents: () =>
+    set({
+      components: [
+        {
+          id: 1,
+          name: "Page",
+          props: {},
+          desc: "页面",
+        },
+      ],
+      curComponent: null,
+      curComponentId: null,
     }),
 });
 

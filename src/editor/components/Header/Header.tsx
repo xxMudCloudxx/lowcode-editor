@@ -6,7 +6,7 @@
  * @module Components/Header
  */
 
-import { Button, Space } from "antd";
+import { Button, Space, Popconfirm } from "antd";
 import { useComponetsStore } from "../../stores/components";
 
 /**
@@ -15,7 +15,12 @@ import { useComponetsStore } from "../../stores/components";
  * 通过 Zustand store (`useComponetsStore`) 来获取和控制当前的编辑器模式。
  */
 export function Header() {
-  const { mode, setMode, setCurComponentId } = useComponetsStore();
+  const { mode, setMode, setCurComponentId, resetComponents } =
+    useComponetsStore();
+
+  const handleReset = () => {
+    resetComponents();
+  };
 
   return (
     <div className="w-[100%] h-[100%]">
@@ -25,19 +30,30 @@ export function Header() {
 
         {/* 交互按钮区域 */}
         <Space>
-          {/* 当处于“编辑”模式时，显示“预览”按钮 */}
+          {/* 当处于“编辑”模式时，显示“预览”和“重置”按钮 */}
           {mode === "edit" && (
-            <Button
-              onClick={() => {
-                setMode("preview");
-                // 关键：进入预览模式时，清空当前选中的组件，
-                // 避免在预览时还保留着编辑状态的选中框或设置面板。
-                setCurComponentId(null);
-              }}
-              type="primary"
-            >
-              预览
-            </Button>
+            <>
+              <Popconfirm
+                title="确认重置画布？"
+                description="此操作将清空所有组件，且无法撤销。"
+                onConfirm={handleReset}
+                okText="确认重置"
+                cancelText="取消"
+                placement="bottomRight"
+              >
+                <Button danger>重置</Button>
+              </Popconfirm>
+
+              <Button
+                onClick={() => {
+                  setMode("preview");
+                  setCurComponentId(null);
+                }}
+                type="primary"
+              >
+                预览
+              </Button>
+            </>
           )}
 
           {/* 当处于“预览”模式时，显示“退出预览”按钮 */}
