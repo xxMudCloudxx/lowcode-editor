@@ -40,16 +40,24 @@ export function ActionModal(props: ActionModalProps) {
   const map = {
     goToLink: "访问链接",
     showMessage: "消息提示",
-    customJs: "自定义JS",
+    customJs: "自定义 JS",
     componentMethod: "组件方法",
   };
 
-  // Effect Hook: 当传入的 action 变化时 (编辑模式)，同步更新 Tab 和表单的初始值
+  // 1. 使用 effect 在模态框可见时，用 action prop 初始化内部状态
   useEffect(() => {
-    if (action?.type) {
-      setKey(map[action.type]);
+    if (visible) {
+      // 将外部的 action 同步到内部的 curConfig state
+      setCurConfig(action);
+
+      // 根据 action 设置 Tab，如果是新增则设为默认值
+      if (action?.type) {
+        setKey(map[action.type]);
+      } else {
+        setKey("访问链接");
+      }
     }
-  }, [action]);
+  }, [visible, action]);
 
   return (
     <Modal
@@ -60,6 +68,8 @@ export function ActionModal(props: ActionModalProps) {
       cancelText="取消"
       onOk={() => handleOk(curConfig)}
       onCancel={handleCancel}
+      // 关键：添加 destroyOnClose，确保每次打开都是一个全新的干净状态，避免旧 state 的干扰
+      destroyOnHidden
     >
       <div className="h-[500px]">
         <Segmented
@@ -68,10 +78,11 @@ export function ActionModal(props: ActionModalProps) {
           block
           options={["访问链接", "消息提示", "自定义 JS", "组件方法"]}
         />
+        {/* 所有表单的 value 都从 curConfig 读取，形成数据闭环 */}
         {key === "访问链接" && (
           <GoToLink
             key="goToLink"
-            value={action?.type === "goToLink" ? action.url : ""}
+            value={curConfig?.type === "goToLink" ? curConfig.url : ""}
             onChange={(config) => {
               setCurConfig(config);
             }}
@@ -80,7 +91,9 @@ export function ActionModal(props: ActionModalProps) {
         {key === "消息提示" && (
           <ShowMessage
             key="showMessage"
-            value={action?.type === "showMessage" ? action.config : undefined}
+            value={
+              curConfig?.type === "showMessage" ? curConfig.config : undefined
+            }
             onChange={(config) => {
               setCurConfig(config);
             }}
@@ -90,7 +103,9 @@ export function ActionModal(props: ActionModalProps) {
           <ComponentMethod
             key="showMessage"
             value={
-              action?.type === "componentMethod" ? action.config : undefined
+              curConfig?.type === "componentMethod"
+                ? curConfig.config
+                : undefined
             }
             onChange={(config) => {
               setCurConfig(config);
@@ -100,7 +115,7 @@ export function ActionModal(props: ActionModalProps) {
         {key === "自定义 JS" && (
           <CustomJS
             key="customJS"
-            value={action?.type === "customJs" ? action.code : ""}
+            value={curConfig?.type === "customJs" ? curConfig.code : ""}
             onChange={(config) => {
               setCurConfig(config);
             }}
