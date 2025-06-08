@@ -43,23 +43,23 @@ export function useMaterailDrop(containerId: number, containerName: string) {
   const [{ canDrop }, drop] = useDrop(() => ({
     // 使用动态计算出的 accept 列表
     accept,
-    drop: (item: ItemType, monitor) => {
-      if (item.dragType !== "move") {
-        // 如果是新增组件，直接执行后续逻辑
-      } else {
-        // --- 防止放置到自身 ---
-        if (item.id === containerId) {
-          return;
-        }
-
-        // --- 防止父组件放置到后代组件中 ---
-        // isDescendantOf(放置目标的ID, 被拖拽组件的ID, 整个组件树)
-        if (isDescendantOf(containerId, item.id, components)) {
-          console.warn("无效操作：不能将父组件拖拽到其子组件中。");
-          return;
-        }
+    canDrop: (item: ItemType) => {
+      // 1. 防止放置到自身
+      if (item.dragType === "move" && item.id === containerId) {
+        return false;
       }
 
+      // 2. 防止父组件放置到后代组件中
+      if (
+        item.dragType === "move" &&
+        isDescendantOf(containerId, item.id, components)
+      ) {
+        return false;
+      }
+
+      return true; // 其他情况允许放置
+    },
+    drop: (item: ItemType, monitor) => {
       // 防止在嵌套的放置目标中重复触发 drop
       const didDrop = monitor.didDrop();
       if (didDrop) {
@@ -89,6 +89,7 @@ export function useMaterailDrop(containerId: number, containerName: string) {
     },
     collect: (monitor) => ({
       canDrop: monitor.canDrop(),
+      isOver: monitor.isOver(),
     }),
   }));
 
