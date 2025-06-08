@@ -9,7 +9,7 @@
  * @module Components/EditArea/SelectedMask
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   getComponentById,
@@ -44,6 +44,8 @@ function SelectedMask({
 
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
+  const [updateTrigger, setUpdateTrigger] = useState(0);
+
   useEffect(() => {
     const el = document.querySelector(`.${portalWrapperClassName}`);
     setPortalEl(el);
@@ -54,7 +56,7 @@ function SelectedMask({
   }, [componentId]);
 
   useEffect(() => {
-    // FIXME: 使用 setTimeout(200) 来等待 DOM 更新可能不稳定，
+    // FIXME: 使用 setTimeout(20) 来等待 DOM 更新可能不稳定，
     // 在某些情况下可能导致定位不准。
     // 考虑使用 useLayoutEffect 或 ResizeObserver 来更可靠地在 DOM 变更后更新位置。
     setTimeout(() => {
@@ -62,17 +64,64 @@ function SelectedMask({
     }, 20);
   }, [components]);
 
-  // FIXME：如果突然全屏，不会更新位置
   // 监听窗口大小变化，以重新计算位置
+  // ResizeObserver 现在只负责“触发更新”，不再直接调用 updatePosition
   useEffect(() => {
-    const resizeHandler = () => {
-      updatePosition();
-    };
-    window.addEventListener("resize", resizeHandler);
+    const container = document.querySelector(`.${containerClassName}`);
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      // 当容器尺寸变化，我们只更新触发器 state
+      setUpdateTrigger((v) => v + 1);
+    });
+
+    resizeObserver.observe(container);
+
     return () => {
-      window.removeEventListener("resize", resizeHandler);
+      resizeObserver.disconnect();
     };
-  }, []);
+  }, [containerClassName]);
+
+  // 将所有更新逻辑统一到 useLayoutEffect 中
+  useLayoutEffect(() => {
+    // 把 updatePosition 的逻辑放在 effect 内部，确保它能访问到最新的所有依赖
+    const updatePosition = () => {
+      if (!componentId) return;
+
+      const container = document.querySelector(`.${containerClassName}`);
+      if (!container) return;
+
+      const node = document.querySelector(
+        `[data-component-id="${componentId}"]`
+      );
+      if (!node) return;
+
+      const { top, left, width, height } = node.getBoundingClientRect();
+      const { top: containerTop, left: containerLeft } =
+        container.getBoundingClientRect();
+
+      let labelTop = top - containerTop + container.scrollTop;
+      let labelLeft = left - containerLeft + width;
+
+      if (labelTop <= 0) {
+        labelTop -= -20;
+      }
+
+      setPosition({
+        top: top - containerTop + container.scrollTop,
+        left: left - containerLeft + container.scrollLeft, // 确保 scrollLeft 的修正是保留的
+        width,
+        height,
+        labelTop,
+        labelLeft,
+      });
+    };
+
+    updatePosition();
+
+    // 依赖项现在包含了组件ID、组件树、以及我们的resize触发器
+    // 任何一个发生变化，都会在最正确的时机重新计算位置
+  }, [componentId, components, updateTrigger, containerClassName]);
 
   function updatePosition() {
     if (!componentId) return;
@@ -96,7 +145,7 @@ function SelectedMask({
 
     setPosition({
       top: top - containerTop + container.scrollTop,
-      left: left - containerLeft + container.scrollTop,
+      left: left - containerLeft + container.scrollLeft,
       width,
       height,
       labelTop,
