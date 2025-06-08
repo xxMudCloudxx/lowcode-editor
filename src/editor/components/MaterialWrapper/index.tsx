@@ -2,7 +2,7 @@ import { Segmented } from "antd";
 import { useState } from "react";
 import { Material } from "./Material";
 import { Outline } from "./Outline";
-import { Source } from "./Source.tsx";
+import { Source } from "./Source/index.tsx";
 
 export function MaterialWrapper() {
   const [key, setKey] = useState<string>("物料");
