@@ -32,27 +32,129 @@ materials/
 
 ---
 
-## 如何新增一个物料组件 (以 `Tag` 组件为例)
+## SOP: 新增一个物料组件
 
-1.  **创建文件**：
+### 第一步：创建文件与实现 `prod` 版本
 
-    - 在 `materials/` 目录下创建新文件夹 `Tag/`。
-    - 在 `Tag/` 中创建 `dev.tsx` 和 `prod.tsx`。
+1.  在 `src/editor/materials/` 下创建新目录，如 `Alert/`。
+2.  在其中创建 `prod.tsx` 和 `dev.tsx`。
+3.  首先完成 `prod.tsx` 的编码，它应为一个接收 `props` 并渲染UI的纯函数组件。
 
-2.  **实现组件逻辑**：
+### 第二步：实现 `dev` 版本 (分类讨论)
 
-    - 在 `prod.tsx` 中，实现纯净的 `Tag` 业务组件。
-    - 在 `dev.tsx` 中，引入 `prod.tsx` 或重新实现一个带有拖拽等交互逻辑的 `Tag` 组件。务必添加 `data-component-id` 属性。
+所有 `dev` 组件都必须在根元素上附加 `data-component-id={id}` 属性。根据组件特性，其实现分为以下两种情况：
 
-3.  **注册组件配置**：
+#### 情况一：简单可拖拽组件 (如: Button, Alert)
 
-    - 打开 `src/editor/stores/component-config.tsx` 文件。
-    - 引入 `Tag` 组件的 `dev` 和 `prod` 版本。
-    - 在 `componentConfig` 对象中，新增一个 `Tag` 的配置项，定义其 `name`, `desc`, `defaultProps`, `setter` 等，并正确指向引入的 `dev` 和 `prod` 组件。
+这类组件只作为“拖拽源”（Drag Source），实现相对简单。
 
-4.  **更新容器的可接受类型**：
+**关键实现**: 使用 `useDrag` Hook 使其可被拖拽移动。
 
-    - 如果 `Tag` 组件需要被放置在某个容器（如 `Page` 或 `Container`）中，需要找到该容器的 `dev.tsx` 文件。
-    - 在 `useMaterailDrop` Hook 的 `accept` 数组参数中，加入 `'Tag'`。
+**示例 (`Alert/dev.tsx`)**:
+```tsx
+import { useDrag } from 'react-dnd';
+// ...
+const AlertDev = ({ id, name, ...props }: CommonComponentProps) => {
+  const [_, dragRef] = useDrag({
+    type: name,
+    item: { id, type: name, dragType: 'move' },
+  });
 
-遵循以上步骤，即可完成一个新物料的接入。
+  return (
+    <div ref={dragRef} data-component-id={id} style={props.styles}>
+      {/* 组件的预览形态 */}
+    </div>
+  );
+};
+```
+
+#### 情况二：容器类组件 (如: Page, Container, Form)
+
+这类组件既是“拖拽源”，又是“放置目标”（Drop Target），实现上需要处理更复杂的视觉交互。
+
+**关键实现**:
+1.  同时使用 `useDrag` 和我们封装的 `useMaterailDrop` Hook。
+2.  采用一套精巧的 `className` 模式来处理边框和高亮，避免视觉冲突和布局抖动。
+
+**精妙的 `className` 样式处理：**
+
+为了实现干净、无冲突的视觉反馈，容器类组件的 `className` 应遵循以下特定模式：
+
+```tsx
+// 以 Container/dev.tsx 为例
+className={`min-h-[100px] p-[20px] -ml-px -mt-px ${
+  isSelected
+    ? '' // 选中时，隐藏自身所有边框，交由 SelectedMask 处理
+    : `border border-solid border-black ${isOver ? 'outline outline-2 outline-blue-500' : ''}`
+}`}
+```
+
+这行代码包含了我们多次优化沉淀下的三个最佳实践：
+- **`-ml-px -mt-px`**: **解决边框倍增问题**。通过负外边距技巧，让紧邻的两个容器的 `1px` 边框完美重叠为一条线。
+- **`isSelected ? '' : ...`**: **解决选中时边框重叠问题**。当组件被选中时 (`isSelected` 为 `true`)，主动放弃自身的边框和轮廓样式，将视觉表现完全交给 `SelectedMask`，确保了选中状态的视觉唯一性。
+- **`isOver ? 'outline...' : ''`**: **解决悬浮时布局抖动问题**。使用不影响盒模型尺寸的 `outline` 属性来显示悬浮高亮，避免了因动态改变 `border-width` 而引起的页面“抖动”。
+
+
+### 第三步：注册组件配置 (核心)
+
+组件文件创建完毕后，必须到“物料注册中心”——`src/editor/stores/component-config.tsx`——进行登记。这一步是将你的组件正式集成到编辑器生态中的关键。
+
+**1. 导入组件:** 在文件顶部，导入新物料的 `dev` 和 `prod` 版本。
+
+```ts
+import AlertDev from "../materials/Alert/dev";
+import AlertProd from "../materials/Alert/prod";
+```
+
+**2. 添加配置对象:** 在 `componentConfig` 字典中，添加一个以你的组件名（`Alert`）为键的新条目。
+
+**示例 (`Alert` 组件的完整配置):**
+```ts
+// ...
+Alert: {
+  // --- 基础信息 ---
+  name: "Alert",             // 核心标识: 组件的唯一英文类型名。
+  desc: "警告提示",           // UI展示: 在左侧物料面板显示的名称。
+
+  // --- 组件实现 ---
+  dev: AlertDev,              // 编辑器渲染器: 指向 dev.tsx 的组件。
+  prod: AlertProd,            // 生产/预览渲染器: 指向 prod.tsx 的组件。
+
+  // --- 拖拽规则 ---
+  parentTypes: ["Page", "Container"], // 放置规则: 定义此组件可被拖入的父容器类型。
+
+  // --- 默认数据 ---
+  defaultProps: {             // 初始属性: 组件从物料区初次拖入时的默认props。
+    message: "这是一个提示",
+    type: "info",
+  },
+
+  // --- 属性配置器 (右侧面板) ---
+  setter: [                   // 定义在“属性”面板中可配置的表单项。
+    { name: "message", label: "标题", type: "input" },
+    {
+      name: "type",
+      label: "类型",
+      type: "select",
+      options: [ /* ... */ ],
+    },
+  ],
+},
+// ...
+```
+
+#### **核心属性详解:**
+
+-   **`name: string`**: **唯一标识符**。它必须与你的组件类型名严格一致，`useDrag` 和 `useDrop` 都依赖它来识别组件。
+-   **`desc: string`**: **UI显示名**。显示在左侧物料面板上，给用户看。
+-   **`dev/prod: React.ComponentType`**: **组件渲染器**。分别链接到 `dev` 和 `prod` 版本的组件实现。
+-   **`parentTypes: string[]`**: **放置规则**。这是一个“白名单”，定义了哪些容器组件可以“接受”这个新物料。我们的 `useMaterailDrop` Hook 会智能地读取所有物料的 `parentTypes` 来动态生成自己的 `accept` 列表，这使得整个系统高度解耦和可扩展。
+-   **`defaultProps: object`**: **出厂设置**。当用户从物料面板拖出一个新组件时，这些属性会被应用到新创建的组件实例上。
+-   **`setter: object[]`**: **动态表单生成器**。这个数组决定了当用户选中此组件时，右侧“属性”面板显示的内容。数组中的每个对象都定义了一个表单控件（如`input`, `select`），用于修改组件的某个`prop`。
+
+---
+
+### 第四步：验证
+
+完成以上步骤后，重启项目并进行验证，确保新增物料的拖拽、放置、配置和预览功能全部正常。
+

@@ -44,6 +44,9 @@ function SelectedMask({
 
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
+  // 一个专门用于强制更新的触发器。
+  // 当我们需要在DOM布局变化后重新计算遮罩层位置时（如窗口缩放），
+  // 就通过更新这个 state 来触发 useLayoutEffect 的重新执行。
   const [updateTrigger, setUpdateTrigger] = useState(0);
 
   useEffect(() => {
@@ -64,8 +67,8 @@ function SelectedMask({
     }, 20);
   }, [components]);
 
-  // 监听窗口大小变化，以重新计算位置
-  // ResizeObserver 现在只负责“触发更新”，不再直接调用 updatePosition
+  // 使用 ResizeObserver 来精确、可靠地监听容器尺寸变化。
+  // 它比 window.resize 事件更健壮，能避免因事件时机问题导致的定位不准。
   useEffect(() => {
     const container = document.querySelector(`.${containerClassName}`);
     if (!container) return;
@@ -82,7 +85,9 @@ function SelectedMask({
     };
   }, [containerClassName]);
 
-  // 将所有更新逻辑统一到 useLayoutEffect 中
+  // 将所有定位逻辑统一到 useLayoutEffect 中。
+  // 它保证了DOM测量（getBoundingClientRect）发生在DOM更新之后、浏览器绘制之前，
+  // 从而读取到最准确的布局信息，彻底解决了因“赛跑问题”导致的定位偏移。
   useLayoutEffect(() => {
     // 把 updatePosition 的逻辑放在 effect 内部，确保它能访问到最新的所有依赖
     const updatePosition = () => {

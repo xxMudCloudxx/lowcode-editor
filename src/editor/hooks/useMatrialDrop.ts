@@ -44,23 +44,25 @@ export function useMaterailDrop(containerId: number, containerName: string) {
     // 使用动态计算出的 accept 列表
     accept,
     canDrop: (item: ItemType) => {
-      // 1. 防止放置到自身
-      if (item.dragType === "move" && item.id === containerId) {
-        return false;
+      // 如果是移动操作，需要进行额外的校验
+      if (item.dragType === "move") {
+        // 关键校验：防止组件被拖拽到它自身内部。
+        if (item.id === containerId) {
+          return false;
+        }
+
+        // 关键校验：防止父级组件被拖拽到其任何一个后代组件中，避免形成数据结构的死循环。
+        if (isDescendantOf(containerId, item.id, components)) {
+          return false;
+        }
       }
 
-      // 2. 防止父组件放置到后代组件中
-      if (
-        item.dragType === "move" &&
-        isDescendantOf(containerId, item.id, components)
-      ) {
-        return false;
-      }
-
-      return true; // 其他情况允许放置
+      // 对于所有其他情况（如从物料区新增组件），只要类型匹配即可放置。
+      return true;
     },
     drop: (item: ItemType, monitor) => {
-      // 防止在嵌套的放置目标中重复触发 drop
+      // 关键优化：检查放置动作是否已经被更深层的子容器处理过。
+      // 这可以防止在一个嵌套结构中，事件冒泡导致父容器重复执行放置逻辑。
       const didDrop = monitor.didDrop();
       if (didDrop) {
         return;
