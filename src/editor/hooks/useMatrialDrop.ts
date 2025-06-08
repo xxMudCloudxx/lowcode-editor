@@ -40,7 +40,7 @@ export function useMaterailDrop(containerId: number, containerName: string) {
     .filter((config) => config.parentTypes?.includes(containerName))
     .map((config) => config.name);
 
-  const [{ canDrop }, drop] = useDrop(() => ({
+  const [{ canDrop, isOver }, drop] = useDrop(() => ({
     // 使用动态计算出的 accept 列表
     accept,
     canDrop: (item: ItemType) => {
@@ -89,9 +89,10 @@ export function useMaterailDrop(containerId: number, containerName: string) {
     },
     collect: (monitor) => ({
       canDrop: monitor.canDrop(),
-      isOver: monitor.isOver(),
+      // 判断“鼠标是不是严格地、直接地悬浮在我的上方，而不是在我的后代上方”
+      isOver: monitor.isOver({ shallow: true }),
     }),
   }));
 
-  return { canDrop, drop };
+  return { canDrop, drop, isOver };
 }

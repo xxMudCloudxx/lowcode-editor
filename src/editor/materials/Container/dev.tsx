@@ -7,8 +7,14 @@ import { useDrag } from "react-dnd";
  * @description Container 组件的“开发”版本，用于编辑器画布内。
  * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
  */
-const ContainerDev = ({ id, children, styles, name }: CommonComponentProps) => {
-  const { canDrop, drop } = useMaterailDrop(id, name);
+const ContainerDev = ({
+  id,
+  children,
+  styles,
+  name,
+  isSelected,
+}: CommonComponentProps) => {
+  const { isOver, drop } = useMaterailDrop(id, name);
 
   const divRef = useRef<HTMLDivElement>(null);
 
@@ -29,8 +35,12 @@ const ContainerDev = ({ id, children, styles, name }: CommonComponentProps) => {
   return (
     <div
       ref={divRef}
-      className={`min-h-[100px] p-[20px] ${
-        canDrop ? "border-[2px] border-[blue]" : "border-[1px] border-[#000]"
+      className={`min-h-[100px] p-[20px] -ml-px -mt-px ${
+        isSelected
+          ? "" // 如果被选中，就不要任何边框和轮廓，完全交给 SelectedMask
+          : `border-[1px] border-[#000] ${
+              isOver ? "outline outline-blue-600" : ""
+            }` // 否则，显示常规边框和悬浮轮廓
       }`}
       data-component-id={id}
       style={styles}

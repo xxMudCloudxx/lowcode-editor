@@ -88,6 +88,7 @@ export function EditArea() {
           id: component.id,
           name: component.name,
           styles: component.styles,
+          isSelected: component.id === curComponentId,
           ...config.defaultProps,
           ...component.props,
         },
