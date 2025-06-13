@@ -1,0 +1,65 @@
+# 工作流名称
+name: Deploy to GitHub Pages
+
+# 触发条件：当代码被 push到 main 分支时触发
+on:
+  push:
+    branches:
+      - main # 注意：如果你的主分支不叫 main，请修改此处
+
+# 权限配置：授予 Actions 读写 GitHub Pages 的权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 任务（Jobs）
+jobs:
+  # 构建任务
+  build:
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu 虚拟机环境
+    steps:
+      # 步骤1：检出代码
+      # 使用官方的 actions/checkout@v4 拉取你的仓库代码
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 步骤2：设置 Node.js 环境
+      # 使用 actions/setup-node@v4 来安装指定版本的 Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x # 建议使用一个较新的长期支持（LTS）版本
+          cache: "npm" # 缓存 npm 依赖，加快后续构建速度
+
+      # 步骤3：安装依赖
+      # 使用 npm ci 而不是 npm install，它更快且能保证使用 lock 文件中的精确版本
+      - name: Install dependencies
+        run: npm ci
+
+      # 步骤4：构建项目
+      # 运行 package.json 中定义的 build 脚本
+      - name: Build
+        run: npm run build
+
+      # 步骤5：上传构建产物
+      # 将打包好的 dist 文件夹上传为一个名为 github-pages 的构件（artifact）
+      # 后续的 deploy 任务会下载这个构件
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist # 指定要上传的文件夹路径
+
+  # 部署任务
+  deploy:
+    needs: build # 依赖于 build 任务，必须在 build 成功后才运行
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages # 指定部署环境为 github-pages
+      url: ${{ steps.deployment.outputs.page_url }} # 将部署后的 URL 输出为变量
+    steps:
+      # 步骤1：部署到 GitHub Pages
+      # 使用官方的 actions/deploy-pages@v4 来执行部署
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
