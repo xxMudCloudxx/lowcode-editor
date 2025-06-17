@@ -17,6 +17,7 @@ import {
 } from "../../../stores/components";
 import { Dropdown, Popconfirm, Space } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
+import { useStore } from "zustand";
 
 interface SelectedMaskProps {
   portalWrapperClassName: string;
@@ -48,6 +49,9 @@ function SelectedMask({
   // 当我们需要在DOM布局变化后重新计算遮罩层位置时（如窗口缩放），
   // 就通过更新这个 state 来触发 useLayoutEffect 的重新执行。
   const [updateTrigger, setUpdateTrigger] = useState(0);
+
+  // 如果撤销或重做，可以及时更新SelectedMask
+  const { pastStates, futureStates } = useStore(useComponetsStore.temporal);
 
   useEffect(() => {
     const el = document.querySelector(`.${portalWrapperClassName}`);
@@ -126,7 +130,14 @@ function SelectedMask({
 
     // 依赖项现在包含了组件ID、组件树、以及我们的resize触发器
     // 任何一个发生变化，都会在最正确的时机重新计算位置
-  }, [componentId, components, updateTrigger, containerClassName]);
+  }, [
+    componentId,
+    components,
+    updateTrigger,
+    containerClassName,
+    pastStates,
+    futureStates,
+  ]);
 
   function updatePosition() {
     if (!componentId) return;
@@ -162,7 +173,8 @@ function SelectedMask({
     return getComponentById(componentId, components);
   }, [componentId]);
 
-  function handleDelete() {
+  function handleDelete(e?: React.MouseEvent<HTMLElement>) {
+    e?.stopPropagation();
     deleteComponent(curComponentId!);
     setCurComponentId(null);
   }
@@ -211,7 +223,6 @@ function SelectedMask({
         }}
       >
         <Space>
-          <div>{componentId}</div>
           {/* 父组件层级面包屑 */}
           <Dropdown
             menu={{

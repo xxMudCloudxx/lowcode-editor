@@ -31,7 +31,7 @@ export interface ItemType {
  * @see /src/editor/stores/component-config.tsx - 本 Hook 的逻辑依赖于组件配置中的 `parentTypes` 属性。
  */
 export function useMaterailDrop(containerId: number, containerName: string) {
-  const { addComponent, components, deleteComponent } = useComponetsStore();
+  const { addComponent, deleteComponent } = useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
 
   // 核心解耦逻辑：动态计算可接受的子组件类型列表。
@@ -44,6 +44,8 @@ export function useMaterailDrop(containerId: number, containerName: string) {
     // 使用动态计算出的 accept 列表
     accept,
     canDrop: (item: ItemType) => {
+      // 需要获取最新的components，不然会使用上个快照的旧components
+      const { components } = useComponetsStore.getState();
       // 如果是移动操作，需要进行额外的校验
       if (item.dragType === "move") {
         // 关键校验：防止组件被拖拽到它自身内部。
@@ -70,17 +72,15 @@ export function useMaterailDrop(containerId: number, containerName: string) {
 
       // 根据拖拽来源是“移动”还是“新增”来执行不同逻辑
       if (item.dragType === "move") {
+        // 需要获取最新的components，不然会使用上个快照的旧components
+        const { components } = useComponetsStore.getState();
         const component = getComponentById(item.id, components)!;
-        console.log(component);
-        console.log("删除前", components);
         if (!component) return;
 
         // const cloned = structuredClone(component); // ✅ 深拷贝，防止 immer 冻结
         // 关键操作：先删除旧位置的组件，再添加到新位置
         deleteComponent(item.id);
         addComponent(component, containerId);
-
-        console.log("删除后", components);
       } else {
         const config = componentConfig[item.type];
 

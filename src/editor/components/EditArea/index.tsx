@@ -54,11 +54,12 @@ export function EditArea() {
     const path = e.nativeEvent.composedPath();
     for (let i = 0; i < path.length; i++) {
       const ele = path[i] as HTMLElement;
-
-      const componentId = ele.dataset.componentId;
-      if (componentId) {
-        setCurComponentId(+componentId);
-        return;
+      if (ele && ele.dataset) {
+        const componentId = ele.dataset.componentId;
+        if (componentId) {
+          setCurComponentId(+componentId);
+          return;
+        }
       }
     }
   };

@@ -18,6 +18,7 @@ import { useStore } from "zustand";
 export function Header() {
   const { mode, setMode, setCurComponentId, resetComponents } =
     useComponetsStore();
+
   // 从 temporal store 中多获取一个 clear 方法
   const { undo, redo, clear, pastStates, futureStates } = useStore(
     useComponetsStore.temporal
@@ -43,13 +44,25 @@ export function Header() {
           {/* 当处于“编辑”模式时，显示“预览”和“重置”按钮 */}
           {mode === "edit" && (
             <>
-              {/* 2. 新增撤销和重做按钮 */}
+              {/* 2. 新增撤销、重做和重置历史记录按钮 */}
               <Button onClick={() => undo()} disabled={!pastStates.length}>
                 撤销
               </Button>
               <Button onClick={() => redo()} disabled={!futureStates.length}>
                 重做
               </Button>
+
+              <Popconfirm
+                title="确认重置历史记录？"
+                description="此操作将清空所有历史记录，且无法撤销。"
+                onConfirm={() => clear}
+                okText="确认重置"
+                cancelText="取消"
+                placement="bottomRight"
+                className="mr-[20px]"
+              >
+                <Button danger>重置历史记录</Button>
+              </Popconfirm>
 
               <Popconfirm
                 title="确认重置画布？"
