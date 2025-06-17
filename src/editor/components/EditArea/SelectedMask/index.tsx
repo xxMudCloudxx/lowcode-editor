@@ -211,6 +211,7 @@ function SelectedMask({
         }}
       >
         <Space>
+          <div>{componentId}</div>
           {/* 父组件层级面包屑 */}
           <Dropdown
             menu={{

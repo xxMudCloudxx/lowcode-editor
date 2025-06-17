@@ -71,10 +71,16 @@ export function useMaterailDrop(containerId: number, containerName: string) {
       // 根据拖拽来源是“移动”还是“新增”来执行不同逻辑
       if (item.dragType === "move") {
         const component = getComponentById(item.id, components)!;
+        console.log(component);
+        console.log("删除前", components);
+        if (!component) return;
 
+        // const cloned = structuredClone(component); // ✅ 深拷贝，防止 immer 冻结
         // 关键操作：先删除旧位置的组件，再添加到新位置
         deleteComponent(item.id);
         addComponent(component, containerId);
+
+        console.log("删除后", components);
       } else {
         const config = componentConfig[item.type];
 

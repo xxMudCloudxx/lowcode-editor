@@ -14,6 +14,8 @@
 import type { CSSProperties } from "react";
 import { create, type StateCreator } from "zustand";
 import { persist } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
+import { temporal } from "zundo";
 
 /**
  * @interface Component
@@ -59,14 +61,20 @@ interface Action {
   resetComponents: () => void;
 }
 
+// 定义组合后的类型
+type EditorStore = State & Action;
+
+// 显式定义 creator 类型
 /**
  * @description Zustand store 的创建函数。
  * 它接收 `set` 和 `get` 方法来定义 state 和 actions。
  * @param {Function} set - 用于更新 state 的函数。
  * @param {Function} get - 用于在 actions 中获取当前 state 的函数。
  */
-
-const creator: StateCreator<State & Action> = (set, get) => ({
+const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
+  set,
+  get
+) => ({
   components: [
     {
       id: 1,
@@ -83,7 +91,7 @@ const creator: StateCreator<State & Action> = (set, get) => ({
 
   setMode: (mode) => set({ mode }),
 
-  updateComponentStyles: (ComponentId, styles, replace) =>
+  updateComponentStyles: (ComponentId, styles, replace = false) => {
     set((state) => {
       const component = getComponentById(ComponentId, state.components);
       if (component) {
@@ -91,89 +99,85 @@ const creator: StateCreator<State & Action> = (set, get) => ({
         component.styles = replace
           ? { ...styles }
           : { ...component.styles, ...styles };
-        // 重点：返回一个新的数组引用来触发 React 的重渲染
-        return { components: [...state.components] };
+        return;
       }
-
-      return { components: [...state.components] };
-    }),
-
-  setCurComponentId: (comId) =>
-    set((state) => ({
-      curComponent: getComponentById(comId, state.components),
-      curComponentId: comId,
-    })),
-
-  addComponent: (component, parentId) =>
-    set((state) => {
-      // 如果提供了 parentId，则将组件添加到父组件的 children 中
-      if (parentId) {
-        const parentComponent = getComponentById(parentId, state.components);
-
-        if (parentComponent) {
-          if (parentComponent.children) {
-            parentComponent.children.push(component);
-          } else {
-            // 如果父组件之前没有 children，则创建它
-            parentComponent.children = [component];
-          }
-        }
-
-        component.parentId = parentId;
-        return { components: [...state.components] };
-      }
-      // 如果没有 parentId，则添加到根级（虽然此项目逻辑中很少见）
-      return { components: [...state.components, component] };
-    }),
-
-  deleteComponent: (componentId) => {
-    if (!componentId) return;
-
-    const component = getComponentById(componentId, get().components);
-    if (component?.parentId) {
-      // 关键：要删除一个组件，需要先找到它的父组件
-      const parentComponent = getComponentById(
-        component.parentId,
-        get().components
-      );
-
-      if (parentComponent) {
-        // 从父组件的 children 数组中过滤掉要删除的组件
-        parentComponent.children = parentComponent?.children?.filter(
-          (item) => item.id !== +componentId
-        );
-
-        set({ components: [...get().components] });
-      }
-    }
+      return;
+    });
   },
 
-  updateComponentProps: (componentId, props) =>
+  setCurComponentId: (comId) => {
+    set((state) => {
+      state.curComponentId = comId;
+      state.curComponent = getComponentById(comId, state.components);
+    });
+  },
+
+  addComponent: (component, parentId) => {
+    set((state) => {
+      const newComponent = structuredClone(component);
+      if (parentId) {
+        const parent = getComponentById(parentId, state.components);
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          newComponent.parentId = parentId;
+          parent.children.push(newComponent);
+        }
+      } else {
+        state.components.push(newComponent);
+      }
+    });
+  },
+
+  deleteComponent: (componentId) => {
+    set((state) => {
+      const component = getComponentById(componentId, state.components);
+
+      if (!component) return;
+
+      if (component.parentId) {
+        // ✅ 从父节点 children 删除
+        const parent = getComponentById(component.parentId, state.components);
+        if (parent?.children) {
+          parent.children = parent.children.filter((c) => c.id !== componentId);
+        }
+      } else {
+        // ✅ 没有 parentId，说明是根组件，直接从顶层删除
+        state.components = state.components.filter((c) => c.id !== componentId);
+      }
+
+      // ✅ 删除当前选中组件
+      if (state.curComponentId === componentId) {
+        state.curComponentId = null;
+        state.curComponent = null;
+      }
+    });
+  },
+
+  updateComponentProps: (componentId, props) => {
     set((state) => {
       const component = getComponentById(componentId, state.components);
       if (component) {
-        // 合并旧的 props 和新的 props
         component.props = { ...component.props, ...props };
-
-        return { components: [...state.components] };
+        return;
       }
+      return;
+    });
+  },
 
-      return { components: [...state.components] };
-    }),
-
-  resetComponents: () =>
-    set({
-      components: [
+  resetComponents: () => {
+    set((state) => {
+      state.components = [
         {
           id: 1,
           name: "Page",
           props: {},
           desc: "页面",
         },
-      ],
-      curComponent: null,
-      curComponentId: null,
-    }),
+      ];
+      state.curComponent = null;
+      state.curComponentId = null;
+    });
+  },
 });
 
 /**
@@ -187,17 +191,11 @@ export function getComponentById(
   components: Component[]
 ): Component | null {
   if (id === null) return null;
-
   for (const component of components) {
-    // 1. 检查当前层的组件
     if (component.id === id) return component;
-
-    // 2. 如果当前层没找到，递归搜索其子组件
     const result = getComponentById(id, component.children ?? []);
     if (result) return result;
   }
-
-  // 遍历完所有节点都未找到，返回 null
   return null;
 }
 
@@ -227,10 +225,33 @@ export function isDescendantOf(
   return false; // 遍历到根节点都未找到
 }
 
-// 使用 `create` 函数创建 store
-export const useComponetsStore = create<State & Action>()(
-  // 使用 persist 中间件来包裹 creator
-  persist(creator, {
-    name: "store", // 在 localStorage 中存储的 key
-  })
+/**
+ * @description 使用 `create` + 多中间件创建 store
+ */
+export const useComponetsStore = create<EditorStore>()(
+  temporal(
+    // 1. temporal 在外层
+    persist(
+      // 2. persist 在内层
+      immer(creator), // 3. immer 在最核心
+      {
+        name: "store", // persist 的配置
+        // persist 只持久化核心业务状态
+        partialize: (state) => ({
+          components: state.components,
+          // 如果需要，也可以持久化 mode, curComponentId 等
+        }),
+      }
+    ),
+    {
+      // temporal 的配置
+      limit: 100,
+      equality: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+      // temporal 也应该只关注核心状态的变化
+      partialize: (state) =>
+        ({
+          components: state.components,
+        } as unknown as EditorStore),
+    }
+  )
 );

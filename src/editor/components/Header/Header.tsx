@@ -8,6 +8,7 @@
 
 import { Button, Space, Popconfirm } from "antd";
 import { useComponetsStore } from "../../stores/components";
+import { useStore } from "zustand";
 
 /**
  * @description
@@ -17,9 +18,18 @@ import { useComponetsStore } from "../../stores/components";
 export function Header() {
   const { mode, setMode, setCurComponentId, resetComponents } =
     useComponetsStore();
+  // 从 temporal store 中多获取一个 clear 方法
+  const { undo, redo, clear, pastStates, futureStates } = useStore(
+    useComponetsStore.temporal
+  );
 
+  /**
+   * @description 处理画布重置逻辑,包括状态和历史记录
+   */
   const handleReset = () => {
     resetComponents();
+    // 调用 clear 清空所有历史状态
+    clear();
   };
 
   return (
@@ -33,6 +43,14 @@ export function Header() {
           {/* 当处于“编辑”模式时，显示“预览”和“重置”按钮 */}
           {mode === "edit" && (
             <>
+              {/* 2. 新增撤销和重做按钮 */}
+              <Button onClick={() => undo()} disabled={!pastStates.length}>
+                撤销
+              </Button>
+              <Button onClick={() => redo()} disabled={!futureStates.length}>
+                重做
+              </Button>
+
               <Popconfirm
                 title="确认重置画布？"
                 description="此操作将清空所有组件，且无法撤销。"
