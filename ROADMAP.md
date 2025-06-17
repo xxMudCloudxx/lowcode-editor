@@ -4,14 +4,14 @@
 
 * **当前状态**: **第一阶段：核心体验与高频功能完善**
 * **核心里程碑**: `基础编辑器可用` -> `✅动态应用构建` -> `专业体验` -> `生态闭环`
-* **最后更新**: `2025-06-09`
+* **最后更新**: `2025-06-18`
 
 ---
 
 ### 功能完成度清单 (Checklist)
 
 #### 第一阶段：核心体验与高频功能完善
--   [ ] 1.1 实现撤销/重做 (Undo/Redo)
+-   [x] 1.1 实现撤销/重做 (Undo/Redo)
 -   [ ] 1.2 实现组件的复制 / 粘贴 / 删除
 -   [ ] 1.3 大纲树支持拖拽调整层级和顺序
 
@@ -60,40 +60,15 @@
 **1.1 实现撤销/重做 (Undo/Redo)**
 
 - **优先级**: P0
-
 - **痛点**: 任何误操作都不可逆，用户没有安全感。
-
 - **技术方案**: 采用 `zustand/middleware/temporal` 中间件，它能非侵入式地为状态增加“时间旅行”能力。
+- **核心实现**:    
+  - 引入 `temporal` 中间件包裹核心 store。
+  -  在 `Header` 组件中添加“撤销”、“重做”按钮，并绑定 `undo()` 和 `redo()` 方法。
+  - 关键优化**: **
+    - **使用 `partialize` 配置项，仅让 `temporal` 追踪对 `components` 树的修改，避免了选中组件等纯 UI 操作污染历史栈。**
+    - **健壮性修复**: 通过 `pause()` 和 `resume()` API 精确控制历史记录，解决了 `partialize` 在某些场景下的失效问题，保证了功能的稳定性。
 
-- 实施步骤:
-
-  1. **安装依赖**: `npm install zustand/middleware`
-
-  2. 改造 Store: 在 
-
-     ```
-     src/editor/stores/components.tsx
-     ```
-
-      中，引入并包裹现有 store。
-
-     TypeScript
-
-     ```
-     import { create } from "zustand";
-     import { persist, temporal } from "zustand/middleware";
-     // ... (State, Action, creator 定义保持不变)
-     // 使用 temporal 中间件包裹 persist
-     export const useComponetsStore = create<State & Action>()(
-       temporal(
-         persist(creator, {
-           name: "store",
-         })
-       )
-     );
-     ```
-
-  3. **UI 实现**: 在 `src/editor/components/Header/Header.tsx` 中，添加“撤销”和“重做”按钮，并绑定 `useComponetsStore.temporal` 上的 `undo()` 和 `redo()` 方法。同时根据 `pastStates` 和 `futureStates` 数组长度判断按钮是否可点击。
 
 **1.2 实现组件的复制 / 粘贴 / 删除**
 
