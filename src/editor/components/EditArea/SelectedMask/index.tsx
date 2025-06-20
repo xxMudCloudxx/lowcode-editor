@@ -16,7 +16,11 @@ import {
   useComponetsStore,
 } from "../../../stores/components";
 import { Dropdown, Popconfirm, Space } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import {
+  BgColorsOutlined,
+  CopyOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { useStore } from "zustand";
 
 interface SelectedMaskProps {
@@ -40,8 +44,14 @@ function SelectedMask({
     labelLeft: 0,
   });
 
-  const { components, curComponentId, deleteComponent, setCurComponentId } =
-    useComponetsStore();
+  const {
+    components,
+    curComponentId,
+    deleteComponent,
+    setCurComponentId,
+    copy,
+    paste,
+  } = useComponetsStore();
 
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
@@ -263,6 +273,26 @@ function SelectedMask({
               </Popconfirm>
             </div>
           )}
+          {
+            <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
+              <CopyOutlined
+                style={{ color: "#fff" }}
+                onClick={() => copy(curComponentId!)}
+              />
+            </div>
+          }
+          {
+            <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
+              <Popconfirm
+                title="确认粘贴？"
+                okText={"确认"}
+                cancelText={"取消"}
+                onConfirm={() => paste(curComponentId!)}
+              >
+                <BgColorsOutlined style={{ color: "#fff" }} />
+              </Popconfirm>
+            </div>
+          }
         </Space>
       </div>
     </>,

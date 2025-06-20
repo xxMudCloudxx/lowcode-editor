@@ -41,6 +41,7 @@ interface State {
   mode: "edit" | "preview"; // 编辑器当前模式
   curComponentId?: number | null; // 当前选中组件的 ID
   curComponent: Component | null; // 当前选中组件的完整对象，为了方便访问
+  clipboard: Component | null; // 剪切板状态，存储复制的组件
 }
 
 /**
@@ -59,6 +60,8 @@ interface Action {
   setCurComponentId: (componetId: number | null) => void;
   setMode: (mode: State["mode"]) => void;
   resetComponents: () => void;
+  copy: (componentId: number | null) => void;
+  paste: (componentId: number | null) => void;
 }
 
 // 定义组合后的类型
@@ -83,6 +86,7 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
   curComponent: null,
   curComponentId: null,
   mode: "edit",
+  clipboard: null,
 
   // --- Actions ---
 
@@ -186,9 +190,59 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
       ];
       state.curComponent = null;
       state.curComponentId = null;
+      state.clipboard = null;
     });
   },
+
+  copy: (componentId) => {
+    // set((state) => {
+    //   const component = getComponentById(componentId, state.components);
+    //   if (!component) return;
+    //   state.clipboard = component;
+    //   console.log(state.clipboard);
+    // });
+  },
+
+  paste: (parentId) => {
+    // set((state) => {
+    //   if (!parentId || !state.clipboard) return;
+    //   // 从剪贴板获取模板，并用 regenerateIds 创建一个全新的组件树
+    //   const componentToPaste = regenerateIds(state.clipboard);
+    //   const parent = getComponentById(parentId, state.components);
+    //   if (parent) {
+    //     if (!parent.children) {
+    //       parent.children = [];
+    //     }
+    //     componentToPaste.parentId = parentId;
+    //     parent.children.push(componentToPaste);
+    //   }
+    // });
+  },
 });
+
+/**
+ * @description 递归地深克隆一个组件及其所有子组件，并为每个组件生成新的唯一 ID。
+ * 这是实现安全复制粘贴的核心。
+ * @param component - 要处理的组件模板。
+ * @returns - 一个拥有全新 ID 体系的组件树副本。
+ */
+// function regenerateIds(component: Component): Component {
+//   const newComponent = structuredClone(component); // 先深克隆一份
+
+//   // 为当前组件生成新 ID
+//   newComponent.id = new Date().getTime();
+
+//   // 如果有子组件，递归处理它们
+//   if (newComponent.children && newComponent.children.length > 0) {
+//     newComponent.children = newComponent.children.map((child) => {
+//       const newChild = regenerateIds(child); // 递归调用
+//       newChild.parentId = newComponent.id; // 关键：更新子组件的 parentId 指向新的父ID
+//       return newChild;
+//     });
+//   }
+
+//   return newComponent;
+// }
 
 /**
  * @description 递归地从组件树中根据 ID 查找并返回组件对象。
