@@ -195,28 +195,28 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
   },
 
   copy: (componentId) => {
-    // set((state) => {
-    //   const component = getComponentById(componentId, state.components);
-    //   if (!component) return;
-    //   state.clipboard = component;
-    //   console.log(state.clipboard);
-    // });
+    set((state) => {
+      const component = getComponentById(componentId, state.components);
+      if (!component) return;
+      state.clipboard = component;
+      console.log(state.clipboard);
+    });
   },
 
   paste: (parentId) => {
-    // set((state) => {
-    //   if (!parentId || !state.clipboard) return;
-    //   // 从剪贴板获取模板，并用 regenerateIds 创建一个全新的组件树
-    //   const componentToPaste = regenerateIds(state.clipboard);
-    //   const parent = getComponentById(parentId, state.components);
-    //   if (parent) {
-    //     if (!parent.children) {
-    //       parent.children = [];
-    //     }
-    //     componentToPaste.parentId = parentId;
-    //     parent.children.push(componentToPaste);
-    //   }
-    // });
+    set((state) => {
+      if (!parentId || !state.clipboard) return;
+      // 从剪贴板获取模板，并用 regenerateIds 创建一个全新的组件树
+      const componentToPaste = regenerateIds(state.clipboard);
+      const parent = getComponentById(parentId, state.components);
+      if (parent) {
+        if (!parent.children) {
+          parent.children = [];
+        }
+        componentToPaste.parentId = parentId;
+        parent.children.push(componentToPaste);
+      }
+    });
   },
 });
 
@@ -226,23 +226,28 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
  * @param component - 要处理的组件模板。
  * @returns - 一个拥有全新 ID 体系的组件树副本。
  */
-// function regenerateIds(component: Component): Component {
-//   const newComponent = structuredClone(component); // 先深克隆一份
+function regenerateIds(component: Component): Component {
+  const newid = Math.round(new Date().getTime() + Math.random());
 
-//   // 为当前组件生成新 ID
-//   newComponent.id = new Date().getTime();
+  const newComponent: Component = {
+    ...component,
+    id: newid,
+    props: {
+      ...component.props,
+    },
+  };
 
-//   // 如果有子组件，递归处理它们
-//   if (newComponent.children && newComponent.children.length > 0) {
-//     newComponent.children = newComponent.children.map((child) => {
-//       const newChild = regenerateIds(child); // 递归调用
-//       newChild.parentId = newComponent.id; // 关键：更新子组件的 parentId 指向新的父ID
-//       return newChild;
-//     });
-//   }
+  // 如果有子组件，递归处理它们
+  if (newComponent.children && newComponent.children.length > 0) {
+    newComponent.children = newComponent.children.map((child) => {
+      const newChild = regenerateIds(child); // 递归调用
+      newChild.parentId = newComponent.id; // 关键：更新子组件的 parentId 指向新的父ID
+      return newChild;
+    });
+  }
 
-//   return newComponent;
-// }
+  return newComponent;
+}
 
 /**
  * @description 递归地从组件树中根据 ID 查找并返回组件对象。

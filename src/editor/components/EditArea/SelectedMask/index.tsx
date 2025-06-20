@@ -15,11 +15,13 @@ import {
   getComponentById,
   useComponetsStore,
 } from "../../../stores/components";
-import { Dropdown, Popconfirm, Space } from "antd";
+import { Dropdown, message, Popconfirm, Space, Tooltip } from "antd";
 import {
   BgColorsOutlined,
   CopyOutlined,
   DeleteOutlined,
+  EditOutlined,
+  FileAddOutlined,
 } from "@ant-design/icons";
 import { useStore } from "zustand";
 
@@ -183,12 +185,26 @@ function SelectedMask({
     return getComponentById(componentId, components);
   }, [componentId]);
 
+  function handleCopy(e?: React.MouseEvent<HTMLElement>) {
+    e?.stopPropagation();
+    if (curComponentId) {
+      copy(curComponentId);
+      message.success("已复制");
+    }
+  }
+
+  function handlePaste(e?: React.MouseEvent<HTMLElement>) {
+    e?.stopPropagation();
+    if (curComponentId) {
+      paste(curComponentId);
+    }
+  }
+
   function handleDelete(e?: React.MouseEvent<HTMLElement>) {
     e?.stopPropagation();
     deleteComponent(curComponentId!);
     setCurComponentId(null);
   }
-
   const parentComponents = useMemo(() => {
     const parentComponents = [];
     let component = curComponent;
@@ -262,36 +278,41 @@ function SelectedMask({
           </Dropdown>
           {/* 删除按钮 (根 Page 组件不允许删除) */}
           {curComponentId !== 1 && (
-            <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
-              <Popconfirm
-                title="确认删除？"
-                okText={"确认"}
-                cancelText={"取消"}
-                onConfirm={handleDelete}
-              >
-                <DeleteOutlined style={{ color: "#fff" }} />
-              </Popconfirm>
-            </div>
+            <Tooltip title="删除">
+              <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
+                <Popconfirm
+                  title="确认删除？"
+                  okText={"确认"}
+                  cancelText={"取消"}
+                  onConfirm={handleDelete}
+                >
+                  <DeleteOutlined style={{ color: "#fff" }} />
+                </Popconfirm>
+              </div>
+            </Tooltip>
           )}
+          {/* 复制按钮 */}
           {
-            <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
-              <CopyOutlined
-                style={{ color: "#fff" }}
-                onClick={() => copy(curComponentId!)}
-              />
-            </div>
+            <Tooltip title="复制">
+              <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
+                <CopyOutlined style={{ color: "#fff" }} onClick={handleCopy} />
+              </div>
+            </Tooltip>
           }
+          {/* 粘贴按钮  */}
           {
-            <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
-              <Popconfirm
-                title="确认粘贴？"
-                okText={"确认"}
-                cancelText={"取消"}
-                onConfirm={() => paste(curComponentId!)}
-              >
-                <BgColorsOutlined style={{ color: "#fff" }} />
-              </Popconfirm>
-            </div>
+            <Tooltip title="粘贴">
+              <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
+                <Popconfirm
+                  title="确认粘贴？"
+                  okText={"确认"}
+                  cancelText={"取消"}
+                  onConfirm={handlePaste}
+                >
+                  <FileAddOutlined style={{ color: "#fff" }} />
+                </Popconfirm>
+              </div>
+            </Tooltip>
           }
         </Space>
       </div>
