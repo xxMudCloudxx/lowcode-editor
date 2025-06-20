@@ -6,10 +6,38 @@
  * @module Components/Header
  */
 
-import { Button, Space, Popconfirm } from "antd";
+import { Button, Space, Popconfirm, Typography, Popover } from "antd";
+
+const { Text } = Typography;
 import { useComponetsStore } from "../../stores/components";
 import { useStore } from "zustand";
+import Title from "antd/es/typography/Title";
+import { QuestionCircleOutlined } from "@ant-design/icons";
 
+const shortcutsContent = (
+  <div style={{ width: "260px" }}>
+    <Space direction="vertical">
+      <Text>
+        <strong>通用快捷键</strong>
+      </Text>
+      <div>
+        <Text code>Cmd/Ctrl + Z</Text>: 撤销更改
+      </div>
+      <div>
+        <Text code>Cmd/Ctrl + X</Text>: 恢复更改
+      </div>
+      <div>
+        <Text code>Cmd/Ctrl + C</Text>: 复制选中组件
+      </div>
+      <div>
+        <Text code>Cmd/Ctrl + V</Text>: 粘贴到选中容器或同级
+      </div>
+      <div>
+        <Text code>Delete / Backspace</Text>: 删除选中组件
+      </div>
+    </Space>
+  </div>
+);
 /**
  * @description
  * 页头组件，包含标题和模式切换按钮。
@@ -41,6 +69,14 @@ export function Header() {
 
         {/* 交互按钮区域 */}
         <Space>
+          {/*帮助按钮，显示快捷键*/}
+          <Popover
+            content={shortcutsContent}
+            title={<Title level={5}>快捷键指南</Title>}
+            trigger="click" // 设置为点击触发
+          >
+            <Button icon={<QuestionCircleOutlined />} shape="circle" />
+          </Popover>
           {/* 当处于“编辑”模式时，显示“预览”和“重置”按钮 */}
           {mode === "edit" && (
             <>
