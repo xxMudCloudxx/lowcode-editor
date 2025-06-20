@@ -6,8 +6,129 @@ import { Setting } from "./components/Setting";
 import { MaterialWrapper } from "./components/MaterialWrapper";
 import { useComponetsStore } from "./stores/components";
 import { Preview } from "./components/Preview";
+import { useEffect } from "react";
+import { message } from "antd";
+import { useStore } from "zustand";
+
 export default function ReactPlayground() {
-  const { mode } = useComponetsStore();
+  const {
+    mode,
+    curComponentId,
+    curComponent,
+    components,
+    copyComponents,
+    pasteComponents,
+    deleteComponent,
+  } = useComponetsStore();
+
+  const ContainerList: Set<string> = new Set([
+    "Container",
+    "Page",
+    "Modal",
+    "Table",
+  ]);
+  // 从 temporal store 中多获取一个 clear 方法
+  const { undo, redo, pastStates, futureStates } = useStore(
+    useComponetsStore.temporal
+  );
+  // 添加 useEffect 来处理快捷键
+  useEffect(() => {
+    /**
+     * @description 全局键盘事件处理器
+     */
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // --- 关键：防止在输入框中触发快捷键 ---
+      const activeElement = document.activeElement;
+      if (
+        activeElement?.tagName === "INPUT" ||
+        activeElement?.tagName === "TEXTAREA" ||
+        (activeElement as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+
+      // --- 判断并执行快捷键 ---
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+
+      switch (e.key.toLowerCase()) {
+        // 复制：Cmd/Ctrl + C
+        case "c":
+          if (isCmdOrCtrl && curComponentId) {
+            e.preventDefault();
+            copyComponents(curComponentId);
+            message.success("复制成功");
+          }
+          break;
+
+        // 粘贴：Cmd/Ctrl + V
+        case "v":
+          if (isCmdOrCtrl && curComponentId) {
+            e.preventDefault();
+            if (!curComponent) return;
+
+            // 智能判断粘贴目标：
+            // 如果当前选中是容器，就粘贴到容器内部
+            // 否则，粘贴到当前组件的父级中（成为其兄弟节点）
+            const parentId = ContainerList.has(curComponent.name)
+              ? curComponentId
+              : curComponent.parentId;
+
+            if (parentId) {
+              if (parentId === curComponentId) console.log("");
+              pasteComponents(parentId);
+            }
+
+            message.success("粘贴成功");
+          }
+          break;
+
+        // 撤销：Cmd/Ctrl + Z
+        case "Z":
+          if (isCmdOrCtrl && pastStates.length > 0) {
+            undo();
+            message.success("撤销成功");
+          }
+          break;
+
+        // 重做：Cmd/Ctrl + X
+        case "X":
+          if (isCmdOrCtrl && futureStates.length > 0) {
+            redo();
+            message.success("重做成功");
+          }
+          break;
+
+        // 删除：Delete 或 Backspace
+        case "delete":
+        case "backspace":
+          if (curComponentId && curComponentId !== 1) {
+            // 根 Page 组件不允许删除
+            e.preventDefault();
+            deleteComponent(curComponentId);
+          }
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    // 挂载事件监听器
+    window.addEventListener("keydown", handleKeyDown);
+
+    // 关键：组件卸载时，必须移除监听器
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+
+    // 依赖项数组：确保 handleKeyDown 总能获取到最新的 state 和 actions
+  }, [
+    curComponentId,
+    components,
+    copyComponents,
+    pasteComponents,
+    deleteComponent,
+  ]);
 
   return (
     <div className="h-[100vh] flex flex-col">

@@ -60,8 +60,8 @@ interface Action {
   setCurComponentId: (componetId: number | null) => void;
   setMode: (mode: State["mode"]) => void;
   resetComponents: () => void;
-  copy: (componentId: number | null) => void;
-  paste: (componentId: number | null) => void;
+  copyComponents: (componentId: number | null) => void;
+  pasteComponents: (componentId: number | null) => void;
 }
 
 // 定义组合后的类型
@@ -194,7 +194,7 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
     });
   },
 
-  copy: (componentId) => {
+  copyComponents: (componentId) => {
     set((state) => {
       const component = getComponentById(componentId, state.components);
       if (!component) return;
@@ -203,7 +203,7 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
     });
   },
 
-  paste: (parentId) => {
+  pasteComponents: (parentId) => {
     set((state) => {
       if (!parentId || !state.clipboard) return;
       // 从剪贴板获取模板，并用 regenerateIds 创建一个全新的组件树
@@ -227,7 +227,7 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
  * @returns - 一个拥有全新 ID 体系的组件树副本。
  */
 function regenerateIds(component: Component): Component {
-  const newid = Math.round(new Date().getTime() + Math.random());
+  const newid = generateUniqueId();
 
   const newComponent: Component = {
     ...component,
@@ -302,6 +302,42 @@ export function isDescendantOf(
 
   return false; // 遍历到根节点都未找到
 }
+
+/**
+ * 创建一个用于生成“单调递增”唯一ID的函数（工厂模式）。
+ * * 此函数利用了闭包的特性来维护一个内部的 `lastId` 状态。
+ * 这样可以保证即使在同一毫秒内连续调用返回的生成器，ID也能持续递增，确保其在会话中的唯一性。
+ *
+ * @returns {() => number} 返回一个ID生成器函数。该函数无参数，每次调用都会返回一个新的、唯一的数字ID。
+ */
+const createIdGenerator = () => {
+  // 初始化时使用当前时间戳作为基础
+  let lastId = Date.now();
+
+  return () => {
+    const newId = Date.now();
+
+    // 如果当前时间戳小于或等于上一次生成的ID（高频调用或时钟回拨可能导致）
+    if (newId <= lastId) {
+      // 则在上一个ID的基础上加1，保证单调递增
+      lastId++;
+      return lastId;
+    }
+
+    // 否则，使用当前时间戳作为新的ID
+    lastId = newId;
+    return newId;
+  };
+};
+
+/**
+ * 生成一个在当前会话中唯一的、单调递增的数字ID。
+ * @example
+ * const id1 = generateUniqueId(); // -> 1750441208441
+ * const id2 = generateUniqueId(); // -> 1750441208442 (即使在同一毫秒内调用)
+ * @type {() => number}
+ */
+const generateUniqueId = createIdGenerator();
 
 /**
  * @description 创建最终的 store 实例，并组合使用多个中间件。

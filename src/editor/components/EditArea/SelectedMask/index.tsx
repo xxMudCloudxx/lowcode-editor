@@ -49,8 +49,8 @@ function SelectedMask({
     curComponentId,
     deleteComponent,
     setCurComponentId,
-    copy,
-    paste,
+    copyComponents,
+    pasteComponents,
   } = useComponetsStore();
 
   const [portalEl, setPortalEl] = useState<Element | null>(null);
@@ -186,16 +186,33 @@ function SelectedMask({
   function handleCopy(e?: React.MouseEvent<HTMLElement>) {
     e?.stopPropagation();
     if (curComponentId) {
-      copy(curComponentId);
+      copyComponents(curComponentId);
       message.success("已复制");
     }
   }
 
+  const ContainerList: Set<string> = new Set([
+    "Container",
+    "Page",
+    "Modal",
+    "Table",
+  ]);
+
   function handlePaste(e?: React.MouseEvent<HTMLElement>) {
     e?.stopPropagation();
-    if (curComponentId) {
-      paste(curComponentId);
+    // 智能判断粘贴目标：
+    // 如果当前选中是容器，就粘贴到容器内部
+    // 否则，粘贴到当前组件的父级中（成为其兄弟节点）
+    if (!curComponent) return;
+    const parentId = ContainerList.has(curComponent.name)
+      ? curComponent.id
+      : curComponent.parentId;
+
+    if (parentId) {
+      pasteComponents(parentId);
     }
+
+    message.success("粘贴成功");
   }
 
   function handleDelete(e?: React.MouseEvent<HTMLElement>) {
@@ -301,14 +318,17 @@ function SelectedMask({
           {
             <Tooltip title="粘贴">
               <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
-                <Popconfirm
+                {/* <Popconfirm
                   title="确认粘贴？"
                   okText={"确认"}
                   cancelText={"取消"}
                   onConfirm={handlePaste}
                 >
-                  <FileAddOutlined style={{ color: "#fff" }} />
-                </Popconfirm>
+                </Popconfirm> */}
+                <FileAddOutlined
+                  style={{ color: "#fff" }}
+                  onClick={handlePaste}
+                />
               </div>
             </Tooltip>
           }
