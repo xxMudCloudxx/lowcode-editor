@@ -17,10 +17,8 @@ import {
 } from "../../../stores/components";
 import { Dropdown, message, Popconfirm, Space, Tooltip } from "antd";
 import {
-  BgColorsOutlined,
   CopyOutlined,
   DeleteOutlined,
-  EditOutlined,
   FileAddOutlined,
 } from "@ant-design/icons";
 import { useStore } from "zustand";
