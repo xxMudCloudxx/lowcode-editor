@@ -10,7 +10,7 @@ function PageDev({ children, id, name, isSelected }: CommonComponentProps) {
   return (
     <div
       ref={drop}
-      className={`p-[20px] h-[100%] box-border ${
+      className={`p-[20px] h-max box-border ${
         isSelected
           ? "" // 如果被选中，就不要任何边框和轮廓，完全交给 SelectedMask
           : `border border-solid border-[#000] ${

@@ -68,34 +68,43 @@ function SelectedMask({
     setPortalEl(el);
   }, [portalWrapperClassName]);
 
-  useEffect(() => {
-    updatePosition();
-  }, [componentId]);
-
-  useEffect(() => {
-    // FIXME: 使用 setTimeout(20) 来等待 DOM 更新可能不稳定，
-    // 在某些情况下可能导致定位不准。
-    // 考虑使用 useLayoutEffect 或 ResizeObserver 来更可靠地在 DOM 变更后更新位置。
-    setTimeout(() => {
-      updatePosition();
-    }, 20);
-  }, [components]);
-
-  // 使用 ResizeObserver 来精确、可靠地监听容器尺寸变化。
-  // 它比 window.resize 事件更健壮，能避免因事件时机问题导致的定位不准。
+  /**
+   * @description 将所有外部事件监听统一管理。
+   * 无论是容器滚动还是尺寸变化，我们都只做一件事：触发更新。
+   * 这样做不仅逻辑清晰，而且性能更可控。
+   */
   useEffect(() => {
     const container = document.querySelector(`.${containerClassName}`);
     if (!container) return;
 
-    const resizeObserver = new ResizeObserver(() => {
-      // 当容器尺寸变化，我们只更新触发器 state
-      setUpdateTrigger((v) => v + 1);
-    });
+    // 创建一个可复用的强制更新函数
+    const forceUpdate = () => setUpdateTrigger((v) => v + 1);
 
+    // 对滚动事件进行节流（throttle），防止过于频繁地触发更新，提升性能
+    // requestAnimationFrame 是浏览器原生支持的，非常适合做此类UI更新的节流
+    let scrollTimeOut: number;
+
+    // 定义滚动事件的处理函数
+    const handleScroll = () => {
+      // 取消上一个动画帧请求
+      // 如果在前一个 16ms 内已经有了一个更新请求，但它还没来得及执行，
+      // 那么就取消它。我们只关心最新的状态。
+      cancelAnimationFrame(scrollTimeOut);
+      //注册一个新的动画帧请求;
+      // 告诉浏览器：“请在下一次屏幕可以重绘的时候，帮我调用 forceUpdate”。
+      // 这就保证了在 16.7ms 的时间窗口内，forceUpdate 最多只会被调用一次。
+      scrollTimeOut = requestAnimationFrame(forceUpdate);
+    };
+
+    const resizeObserver = new ResizeObserver(forceUpdate);
+    // 使用 passive: true 优化滚动性能，确保滚动动画的流畅性。
+    container.addEventListener("scroll", handleScroll, { passive: true });
     resizeObserver.observe(container);
 
     return () => {
       resizeObserver.disconnect();
+      container.removeEventListener("scroll", handleScroll);
+      cancelAnimationFrame(scrollTimeOut);
     };
   }, [containerClassName]);
 
@@ -104,39 +113,37 @@ function SelectedMask({
   // 从而读取到最准确的布局信息，彻底解决了因“赛跑问题”导致的定位偏移。
   useLayoutEffect(() => {
     // 把 updatePosition 的逻辑放在 effect 内部，确保它能访问到最新的所有依赖
-    const updatePosition = () => {
-      if (!componentId) return;
+    if (!componentId) return;
 
-      const container = document.querySelector(`.${containerClassName}`);
-      if (!container) return;
+    const container = document.querySelector(`.${containerClassName}`);
+    if (!container) return;
 
-      const node = document.querySelector(
-        `[data-component-id="${componentId}"]`
-      );
-      if (!node) return;
+    const node = document.querySelector(`[data-component-id="${componentId}"]`);
+    // 当组件被删除时，node 可能不存在，此时应隐藏遮罩
+    if (!node) {
+      setPosition((pos) => ({ ...pos, width: 0, height: 0 }));
+      return;
+    }
 
-      const { top, left, width, height } = node.getBoundingClientRect();
-      const { top: containerTop, left: containerLeft } =
-        container.getBoundingClientRect();
+    const { top, left, width, height } = node.getBoundingClientRect();
+    const { top: containerTop, left: containerLeft } =
+      container.getBoundingClientRect();
 
-      let labelTop = top - containerTop + container.scrollTop;
-      let labelLeft = left - containerLeft + width;
+    let labelTop = top - containerTop + container.scrollTop;
+    let labelLeft = left - containerLeft + width;
 
-      if (labelTop <= 0) {
-        labelTop -= -20;
-      }
+    if (labelTop <= 0) {
+      labelTop += 20;
+    }
 
-      setPosition({
-        top: top - containerTop + container.scrollTop,
-        left: left - containerLeft + container.scrollLeft, // 确保 scrollLeft 的修正是保留的
-        width,
-        height,
-        labelTop,
-        labelLeft,
-      });
-    };
-
-    updatePosition();
+    setPosition({
+      top: top - containerTop + container.scrollTop,
+      left: left - containerLeft + container.scrollLeft, // 确保 scrollLeft 的修正是保留的
+      width,
+      height,
+      labelTop,
+      labelLeft,
+    });
 
     // 依赖项现在包含了组件ID、组件树、以及我们的resize触发器
     // 任何一个发生变化，都会在最正确的时机重新计算位置
@@ -148,36 +155,6 @@ function SelectedMask({
     pastStates,
     futureStates,
   ]);
-
-  function updatePosition() {
-    if (!componentId) return;
-
-    const container = document.querySelector(`.${containerClassName}`);
-    if (!container) return;
-
-    const node = document.querySelector(`[data-component-id="${componentId}"]`);
-    if (!node) return;
-
-    const { top, left, width, height } = node.getBoundingClientRect();
-    const { top: containerTop, left: containerLeft } =
-      container.getBoundingClientRect();
-
-    let labelTop = top - containerTop + container.scrollTop;
-    let labelLeft = left - containerLeft + width;
-
-    if (labelTop <= 0) {
-      labelTop -= -20;
-    }
-
-    setPosition({
-      top: top - containerTop + container.scrollTop,
-      left: left - containerLeft + container.scrollLeft,
-      width,
-      height,
-      labelTop,
-      labelLeft,
-    });
-  }
 
   const curComponent = useMemo(() => {
     return getComponentById(componentId, components);
