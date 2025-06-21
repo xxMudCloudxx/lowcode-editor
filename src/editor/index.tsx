@@ -6,9 +6,10 @@ import { Setting } from "./components/Setting";
 import { MaterialWrapper } from "./components/MaterialWrapper";
 import { useComponetsStore } from "./stores/components";
 import { Preview } from "./components/Preview";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { message } from "antd";
 import { useStore } from "zustand";
+import { debounce } from "lodash-es";
 
 export default function ReactPlayground() {
   const {
@@ -30,6 +31,15 @@ export default function ReactPlayground() {
   // 从 temporal store 中多获取一个 clear 方法
   const { undo, redo, pastStates, futureStates } = useStore(
     useComponetsStore.temporal
+  );
+
+  // 防抖版本的message函数
+  const debouncedMessage = useMemo(
+    () =>
+      debounce((text: string) => {
+        message.success(text);
+      }, 300),
+    []
   );
   // 添加 useEffect 来处理快捷键
   useEffect(() => {
@@ -56,7 +66,7 @@ export default function ReactPlayground() {
           if (isCmdOrCtrl && curComponentId) {
             e.preventDefault();
             copyComponents(curComponentId);
-            message.success("复制成功");
+            debouncedMessage("复制成功");
           }
           break;
 
@@ -78,7 +88,7 @@ export default function ReactPlayground() {
               pasteComponents(parentId);
             }
 
-            message.success("粘贴成功");
+            debouncedMessage("粘贴成功");
           }
           break;
 
@@ -86,7 +96,7 @@ export default function ReactPlayground() {
         case "Z":
           if (isCmdOrCtrl && pastStates.length > 0) {
             undo();
-            message.success("撤销成功");
+            debouncedMessage("撤销成功");
           }
           break;
 
@@ -94,7 +104,7 @@ export default function ReactPlayground() {
         case "X":
           if (isCmdOrCtrl && futureStates.length > 0) {
             redo();
-            message.success("重做成功");
+            debouncedMessage("重做成功");
           }
           break;
 
