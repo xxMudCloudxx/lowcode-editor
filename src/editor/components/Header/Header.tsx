@@ -24,7 +24,7 @@ const shortcutsContent = (
         <Text code>Cmd/Ctrl + Z</Text>: 撤销更改
       </div>
       <div>
-        <Text code>Cmd/Ctrl + X</Text>: 恢复更改
+        <Text code>Cmd/Ctrl + Shift + Z</Text>: 恢复更改
       </div>
       <div>
         <Text code>Cmd/Ctrl + C</Text>: 复制选中组件

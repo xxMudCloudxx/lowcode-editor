@@ -59,6 +59,7 @@ export default function ReactPlayground() {
 
       // --- 判断并执行快捷键 ---
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      const isShift = e.shiftKey;
 
       switch (e.key.toLowerCase()) {
         // 复制：Cmd/Ctrl + C
@@ -93,16 +94,12 @@ export default function ReactPlayground() {
           break;
 
         // 撤销：Cmd/Ctrl + Z
+        // 重做：Cmd/Ctrl + Shift + Z
         case "Z":
           if (isCmdOrCtrl && pastStates.length > 0) {
             undo();
             debouncedMessage("撤销成功");
-          }
-          break;
-
-        // 重做：Cmd/Ctrl + X
-        case "X":
-          if (isCmdOrCtrl && futureStates.length > 0) {
+          } else if (isCmdOrCtrl && isShift && futureStates.length > 0) {
             redo();
             debouncedMessage("重做成功");
           }
