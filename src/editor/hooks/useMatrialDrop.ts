@@ -9,11 +9,7 @@
  */
 import { useDrop } from "react-dnd";
 import { useComponentConfigStore } from "../stores/component-config";
-import {
-  getComponentById,
-  isDescendantOf,
-  useComponetsStore,
-} from "../stores/components";
+import { isDescendantOf, useComponetsStore } from "../stores/components";
 
 export interface ItemType {
   type: string;
@@ -31,7 +27,7 @@ export interface ItemType {
  * @see /src/editor/stores/component-config.tsx - 本 Hook 的逻辑依赖于组件配置中的 `parentTypes` 属性。
  */
 export function useMaterailDrop(containerId: number, containerName: string) {
-  const { addComponent, deleteComponent, moveComponents } = useComponetsStore();
+  const { addComponent, moveComponents } = useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
 
   // 核心解耦逻辑：动态计算可接受的子组件类型列表。
