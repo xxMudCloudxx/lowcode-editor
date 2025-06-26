@@ -12,6 +12,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  deployments: write
 
 # 任务（Jobs）
 jobs:
@@ -50,9 +51,25 @@ jobs:
         with:
           path: ./dist # 指定要上传的文件夹路径
 
+  # 新增的清理任务
+  cleanup:
+    name: Cleanup old deployments
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete all previous deployments from the "github-pages" environment
+        uses: strumwolf/delete-deployment-environment@v2
+        with:
+          # 使用 GitHub 自动提供的 token
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # 指定要清理的环境名称，必须和 deploy 任务中的 environment.name 一致
+          environment: github-pages
+          keep_last_n_deployments: 5
+          # 仅删除部署记录，不删除环境本身
+          onlyRemoveDeployments: true
+
   # 部署任务
   deploy:
-    needs: build # 依赖于 build 任务，必须在 build 成功后才运行
+    needs: [build, cleanup] # 依赖于 build 和 cleanup 任务，必须在它们都成功后才运行
     runs-on: ubuntu-latest
     environment:
       name: github-pages # 指定部署环境为 github-pages
