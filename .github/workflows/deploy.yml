@@ -50,19 +50,19 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist # 指定要上传的文件夹路径
-
-  # 新增的清理任务
+  # 清理任务
   cleanup:
-    name: Cleanup old deployments
+    name: 🧹 Cleanup old deployments
     runs-on: ubuntu-latest
     steps:
-      - name: Delete all previous deployments from the "github-pages" environment
+      - name: Delete old deployments but keep the last 5
         uses: strumwolf/delete-deployment-environment@v2
         with:
           # 使用 GitHub 自动提供的 token
           token: ${{ secrets.GITHUB_TOKEN }}
           # 指定要清理的环境名称，必须和 deploy 任务中的 environment.name 一致
           environment: github-pages
+          # 只保留最近的 5 个部署
           keep_last_n_deployments: 5
           # 仅删除部署记录，不删除环境本身
           onlyRemoveDeployments: true
