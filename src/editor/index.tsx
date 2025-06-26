@@ -95,8 +95,8 @@ export default function ReactPlayground() {
 
         // 撤销：Cmd/Ctrl + Z
         // 重做：Cmd/Ctrl + Shift + Z
-        case "Z":
-          if (isCmdOrCtrl && pastStates.length > 0) {
+        case "z":
+          if (isCmdOrCtrl && pastStates.length > 0 && !isShift) {
             undo();
             debouncedMessage("撤销成功");
           } else if (isCmdOrCtrl && isShift && futureStates.length > 0) {

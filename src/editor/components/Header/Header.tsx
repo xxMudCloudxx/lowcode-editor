@@ -57,8 +57,6 @@ export function Header() {
    */
   const handleReset = () => {
     resetComponents();
-    // 调用 clear 清空所有历史状态
-    clear();
   };
 
   return (
