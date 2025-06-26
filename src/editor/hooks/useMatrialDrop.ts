@@ -31,7 +31,7 @@ export interface ItemType {
  * @see /src/editor/stores/component-config.tsx - 本 Hook 的逻辑依赖于组件配置中的 `parentTypes` 属性。
  */
 export function useMaterailDrop(containerId: number, containerName: string) {
-  const { addComponent, deleteComponent } = useComponetsStore();
+  const { addComponent, deleteComponent, moveComponents } = useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
 
   // 核心解耦逻辑：动态计算可接受的子组件类型列表。
@@ -72,15 +72,7 @@ export function useMaterailDrop(containerId: number, containerName: string) {
 
       // 根据拖拽来源是“移动”还是“新增”来执行不同逻辑
       if (item.dragType === "move") {
-        // 需要获取最新的components，不然会使用上个快照的旧components
-        const { components } = useComponetsStore.getState();
-        const component = getComponentById(item.id, components)!;
-        if (!component) return;
-
-        // const cloned = structuredClone(component); // ✅ 深拷贝，防止 immer 冻结
-        // 关键操作：先删除旧位置的组件，再添加到新位置
-        deleteComponent(item.id);
-        addComponent(component, containerId);
+        moveComponents(item.id, containerId);
       } else {
         const config = componentConfig[item.type];
 

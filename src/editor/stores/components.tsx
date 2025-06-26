@@ -62,6 +62,7 @@ interface Action {
   resetComponents: () => void;
   copyComponents: (componentId: number | null) => void;
   pasteComponents: (componentId: number | null) => void;
+  moveComponents: (sourId: number | null, disId: number | null) => void;
 }
 
 // 定义组合后的类型
@@ -89,6 +90,38 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
   clipboard: null,
 
   // --- Actions ---
+  moveComponents(sourId, disId) {
+    set((state) => {
+      if (!sourId || !disId) return;
+      const sourComponents = getComponentById(sourId, state.components);
+      const disComponents = getComponentById(disId, state.components);
+      if (!sourComponents || !disComponents) return;
+
+      // 从其父组件的 children 数组中移除
+      if (sourComponents.parentId) {
+        const parent = getComponentById(
+          sourComponents.parentId,
+          state.components
+        );
+        if (parent?.children) {
+          parent.children = parent.children.filter((c) => c.id !== sourId);
+        }
+      } else {
+        // 如果没有 parentId，说明是根组件，直接从顶层删除
+        state.components = state.components.filter((c) => c.id !== sourId);
+      }
+
+      // 关键: 如果删除的是当前选中的组件，需要同步清空选中状态
+      if (state.curComponentId === sourId) {
+        state.curComponentId = null;
+        state.curComponent = null;
+      }
+
+      if (!disComponents.children) disComponents.children = [];
+      sourComponents.parentId = disId;
+      disComponents.children.push(sourComponents);
+    });
+  },
 
   setMode: (mode) => set({ mode }),
 

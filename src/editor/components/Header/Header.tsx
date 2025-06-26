@@ -89,7 +89,7 @@ export function Header() {
               <Popconfirm
                 title="确认重置历史记录？"
                 description="此操作将清空所有历史记录，且无法撤销。"
-                onConfirm={() => clear}
+                onConfirm={clear}
                 okText="确认重置"
                 cancelText="取消"
                 placement="bottomRight"
