@@ -23,7 +23,9 @@ const ContainerList: Set<string> = new Set([
   "Modal",
   "Table",
 ]);
-
+/**
+ * TODO: 拖拽显示还是不太友好，以后考虑重构该组件
+ */
 export function Outline() {
   const { components, setCurComponentId, setComponents } = useComponetsStore();
   /**
