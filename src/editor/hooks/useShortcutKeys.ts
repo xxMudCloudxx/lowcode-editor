@@ -104,6 +104,7 @@ export function useShortcutKeys() {
             e.preventDefault();
             deleteComponent(curComponentId);
           }
+          debouncedMessage("删除成功");
           break;
 
         default:

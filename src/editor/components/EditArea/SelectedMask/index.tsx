@@ -136,6 +136,10 @@ function SelectedMask({
       labelTop += 20;
     }
 
+    if (labelLeft <= 100) {
+      labelLeft += labelLeft;
+    }
+
     setPosition({
       top: top - containerTop + container.scrollTop,
       left: left - containerLeft + container.scrollLeft, // 确保 scrollLeft 的修正是保留的
