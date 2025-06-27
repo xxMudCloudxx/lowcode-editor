@@ -1,9 +1,5 @@
 import { Tree } from "antd";
-import {
-  getComponentById,
-  useComponetsStore,
-  type Component,
-} from "../../../stores/components";
+import { useComponetsStore, type Component } from "../../../stores/components";
 import type { TreeProps } from "antd/es/tree";
 import { type Key } from "react";
 /**
@@ -30,14 +26,12 @@ const ContainerList: Set<string> = new Set([
 
 export function Outline() {
   const { components, setCurComponentId, setComponents } = useComponetsStore();
-
   /**
    * @description 拖拽结束时的核心处理器。
    * 此函数负责计算拖拽后的新树结构，并调用 store action 更新全局状态。
    */
   const onDrop: TreeProps["onDrop"] = (info) => {
     const { dragNode, node, dropToGap } = info;
-    if (node.key === 1) return;
     const dropKey = node.key;
     const dragKey = dragNode.key;
     // node.pos 是一个类似 '0-1-0' 的字符串，表示节点在树中的路径
@@ -70,8 +64,6 @@ export function Outline() {
     };
 
     loop(data, dragKey, (item, index, arr) => {
-      if (!ContainerList.has(getComponentById(Number(dropKey), data)!.name))
-        return;
       arr.splice(index, 1);
       dragObj = item;
     });
@@ -113,6 +105,23 @@ export function Outline() {
     setComponents(data);
   };
 
+  const allowDrop: TreeProps["allowDrop"] = ({ dropNode, dropPosition }) => {
+    if (!dropNode) return false;
+    const dropNode2 = dropNode as any;
+    // 如果 dropPosition 是 0，意味着想要拖入节点内部
+    if (Number(dropNode2.id) === 1) return false;
+    if (dropPosition === 0) {
+      // 检查这个目标节点是不是我们定义的容器类型
+      if (ContainerList.has(dropNode2.name)) {
+        return true; // 是容器，允许放入
+      } else {
+        return false; // 不是容器，禁止放入
+      }
+    }
+
+    // 对于非内部的拖拽（即放在同级前面或后面），我们总是允许
+    return true;
+  };
   return (
     <Tree
       fieldNames={{ title: "desc", key: "id" }}
@@ -122,6 +131,7 @@ export function Outline() {
       }}
       defaultExpandAll
       defaultExpandParent
+      allowDrop={allowDrop}
       draggable={{ icon: false }} // 开启拖拽，并隐藏默认的拖拽图标
       onDrop={onDrop}
       onSelect={([selectedKey]) => {
