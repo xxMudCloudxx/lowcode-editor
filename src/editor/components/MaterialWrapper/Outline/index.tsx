@@ -1,8 +1,11 @@
 import { Tree } from "antd";
-import { useComponetsStore, type Component } from "../../../stores/components";
+import {
+  getComponentById,
+  useComponetsStore,
+  type Component,
+} from "../../../stores/components";
 import type { TreeProps } from "antd/es/tree";
-import type { Key } from "react";
-
+import { type Key } from "react";
 /**
  * @description 一个递归辅助函数，用于在拖拽操作后，
  * 重新计算并修正所有节点的 parentId。
@@ -17,6 +20,13 @@ const updateParentIds = (nodes: Component[], parentId?: number) => {
     }
   });
 };
+// 容器组件列表，用于判断是否drop组件为容器组件
+const ContainerList: Set<string> = new Set([
+  "Container",
+  "Page",
+  "Modal",
+  "Table",
+]);
 
 export function Outline() {
   const { components, setCurComponentId, setComponents } = useComponetsStore();
@@ -27,12 +37,13 @@ export function Outline() {
    */
   const onDrop: TreeProps["onDrop"] = (info) => {
     const { dragNode, node, dropToGap } = info;
-
+    if (node.key === 1) return;
     const dropKey = node.key;
     const dragKey = dragNode.key;
     // node.pos 是一个类似 '0-1-0' 的字符串，表示节点在树中的路径
     const dropPos = node.pos.split("-");
     // dropPosition 是 antd 计算出的原始放置位置，需要进行转换
+    // 运行结果为1表示需要向后插入，为-1表示需要向前插入
     const dropPosition =
       info.dropPosition - Number(dropPos[dropPos.length - 1]);
 
@@ -59,6 +70,8 @@ export function Outline() {
     };
 
     loop(data, dragKey, (item, index, arr) => {
+      if (!ContainerList.has(getComponentById(Number(dropKey), data)!.name))
+        return;
       arr.splice(index, 1);
       dragObj = item;
     });
@@ -104,8 +117,11 @@ export function Outline() {
     <Tree
       fieldNames={{ title: "desc", key: "id" }}
       treeData={components as any} // 直接使用 store 中的数据
-      showLine
+      showLine={{
+        showLeafIcon: false,
+      }}
       defaultExpandAll
+      defaultExpandParent
       draggable={{ icon: false }} // 开启拖拽，并隐藏默认的拖拽图标
       onDrop={onDrop}
       onSelect={([selectedKey]) => {

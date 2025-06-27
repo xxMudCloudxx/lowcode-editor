@@ -25,7 +25,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "style-to-object": "^1.0.8",
-    "tailwindcss": "^4.1.8",
+    "tailwindcss": "^4.1.11",
     "zundo": "^2.3.0",
     "zustand": "^5.0.5"
   },
