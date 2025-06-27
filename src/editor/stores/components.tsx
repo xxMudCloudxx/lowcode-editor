@@ -63,6 +63,7 @@ interface Action {
   copyComponents: (componentId: number | null) => void;
   pasteComponents: (componentId: number | null) => void;
   moveComponents: (sourId: number | null, disId: number | null) => void;
+  setComponents: (components: Component[]) => void;
 }
 
 // 定义组合后的类型
@@ -90,6 +91,16 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
   clipboard: null,
 
   // --- Actions ---
+  setComponents: (components) => {
+    set((state) => {
+      state.components = components;
+
+      // 关键：在组件树变化后，需要同步更新 curComponent 的引用，
+      // 确保右侧面板等依赖 curComponent 的地方能拿到最新的数据。
+      if (state.curComponentId)
+        state.curComponent = getComponentById(state.curComponentId, components);
+    });
+  },
   moveComponents(sourId, disId) {
     set((state) => {
       if (!sourId || !disId) return;
