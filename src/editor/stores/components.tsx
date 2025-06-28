@@ -6,8 +6,8 @@
  * - 存储画布上所有组件的树状结构 (components)
  * - 管理当前选中的组件 (curComponentId, curComponent)
  * - 控制编辑/预览模式 (mode)
- * - 提供对组件进行 CRUD (增删改查) 操作的 actions
- * - 通过多中间件组合 (temporal, persist, immer) 实现状态的时间旅行（撤销/重做）、持久化和不可变更新。
+ * - 提供对组件进行 CRUD (增删改查) 和移动、复制/粘贴操作的 actions
+ * - 通过组合 `temporal` (时间旅行)、`persist` (持久化) 和 `immer` (不可变更新) 三个中间件，实现了撤销/重做、状态本地存储和安全的 state 更新。
  * @module Stores/Components
  */
 
@@ -23,12 +23,12 @@ import { temporal } from "zundo";
  * 这是构成组件树的基本节点。
  */
 export interface Component {
-  id: number; // 组件的唯一标识符，通常是时间戳
+  id: number; // 组件的唯一标识符，通常是基于时间戳的自增ID
   name: string; // 组件的类型名称, 对应 component-config.tsx 中的 key
-  props: any; // 传递给组件的 props
-  desc: string; // 组件的描述，用于 UI 展示
+  props: any; // 传递给组件的 props，由右侧“属性”面板配置
+  desc: string; // 组件的描述，用于 UI 展示（如物料名称、大纲树节点名）
   children?: Component[]; // 子组件列表，构成了组件树
-  parentId?: number; // 父组件的 ID
+  parentId?: number; // 父组件的 ID，用于实现向上追溯等逻辑
   styles?: CSSProperties; // 应用于组件的内联样式
 }
 
@@ -40,8 +40,8 @@ interface State {
   components: Component[]; // 画布上所有组件的根节点列表，通常只有一个 Page 组件
   mode: "edit" | "preview"; // 编辑器当前模式
   curComponentId?: number | null; // 当前选中组件的 ID
-  curComponent: Component | null; // 当前选中组件的完整对象，为了方便访问
-  clipboard: Component | null; // 剪切板状态，存储复制的组件
+  curComponent: Component | null; // 当前选中组件的完整对象，为方便访问而冗余存储，是 components 中对应组件的一份快照
+  clipboard: Component | null; // 剪切板状态，用于存储被复制的组件信息
 }
 
 /**
@@ -63,6 +63,7 @@ interface Action {
   copyComponents: (componentId: number | null) => void;
   pasteComponents: (componentId: number | null) => void;
   moveComponents: (sourId: number | null, disId: number | null) => void;
+  // 全量设置组件树（用于大纲树拖拽等场景）
   setComponents: (components: Component[]) => void;
 }
 
@@ -72,7 +73,7 @@ type EditorStore = State & Action;
 /**
  * @description Zustand store 的核心创建逻辑。
  * 它接收 `set` 方法来定义 state 和 actions，并被 immer 中间件包裹。
- * @param {Function} set - immer 中间件提供的 set 函数，允许直接修改 draft state。
+ * @param {Function} set - immer 中间件提供的 set 函数，允许直接以可变的方式修改 draft state，底层会自动处理不可变更新。
  */
 const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
   set
@@ -91,27 +92,38 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
   clipboard: null,
 
   // --- Actions ---
+
+  /**
+   * @description 全量更新组件树。
+   * @param {Component[]} components - 新的组件树数组。
+   */
   setComponents: (components) => {
     set((state) => {
       state.components = components;
 
-      // 关键：在组件树变化后，需要同步更新 curComponent 的引用，
+      // 关键：在组件树变化后（如大纲树拖拽排序），需要同步更新 curComponent 的引用，
       // 确保右侧面板等依赖 curComponent 的地方能拿到最新的数据。
       if (state.curComponentId)
         state.curComponent = getComponentById(state.curComponentId, components);
     });
   },
+
+  /**
+   * @description 移动一个组件到另一个容器组件中。
+   * @param {number | null} sourId - 要移动的源组件 ID。
+   * @param {number | null} disId - 目标容器组件的 ID。
+   */
   moveComponents(sourId, disId) {
     set((state) => {
       if (!sourId || !disId) return;
-      const sourComponents = getComponentById(sourId, state.components);
-      const disComponents = getComponentById(disId, state.components);
-      if (!sourComponents || !disComponents) return;
+      const sourComponent = getComponentById(sourId, state.components);
+      const disComponent = getComponentById(disId, state.components);
+      if (!sourComponent || !disComponent) return;
 
       // 从其父组件的 children 数组中移除
-      if (sourComponents.parentId) {
+      if (sourComponent.parentId) {
         const parent = getComponentById(
-          sourComponents.parentId,
+          sourComponent.parentId,
           state.components
         );
         if (parent?.children) {
@@ -122,20 +134,30 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
         state.components = state.components.filter((c) => c.id !== sourId);
       }
 
-      // 关键: 如果删除的是当前选中的组件，需要同步清空选中状态
-      if (state.curComponentId === sourId) {
-        state.curComponentId = null;
-        state.curComponent = null;
-      }
+      // 将源组件添加到目标容器的 children 中
+      if (!disComponent.children) disComponent.children = [];
+      sourComponent.parentId = disId;
+      disComponent.children.push(sourComponent);
 
-      if (!disComponents.children) disComponents.children = [];
-      sourComponents.parentId = disId;
-      disComponents.children.push(sourComponents);
+      // 关键: 如果移动的是当前选中的组件，需要同步更新 curComponent 的引用
+      if (state.curComponentId === sourId) {
+        state.curComponent = sourComponent;
+      }
     });
   },
 
+  /**
+   * @description 设置编辑器的模式。
+   * @param {'edit' | 'preview'} mode - 要设置的模式。
+   */
   setMode: (mode) => set({ mode }),
 
+  /**
+   * @description 更新指定组件的样式。
+   * @param {number} ComponentId - 目标组件的 ID。
+   * @param {CSSProperties} styles - 要更新的样式对象。
+   * @param {boolean} [replace=false] - 是否完全替换现有样式。`false` (默认) 为合并，`true` 为替换。
+   */
   updateComponentStyles: (ComponentId, styles, replace = false) => {
     set((state) => {
       const component = getComponentById(ComponentId, state.components);
@@ -146,26 +168,35 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
         ? { ...styles }
         : { ...component.styles, ...styles };
 
-      // 关键: 保持 curComponent (数据副本) 与 components的同步
+      // 关键: 保持 curComponent (数据副本) 与 components 的同步
       if (state.curComponent?.id === ComponentId) {
         state.curComponent = component;
       }
     });
   },
 
+  /**
+   * @description 设置当前选中的组件ID。
+   * @param {number | null} comId - 要选中的组件ID，或 `null` 取消选中。
+   */
   setCurComponentId: (comId) => {
-    // 在状态更新前，明确地【暂停】历史记录
+    // 核心优化：在更新选中状态这种纯UI、无需撤销/重做的操作前后，
+    // 明确地【暂停】和【恢复】历史记录。
+    // 这可以防止这类操作污染 `temporal` 的历史栈。
     useComponetsStore.temporal.getState().pause();
     set((state) => {
       state.curComponentId = comId;
-      // 关键: 更新 ID 的同时，更新 curComponent 这个数据副本
+      // 关键: 更新 ID 的同时，更新 curComponent 这个数据副本，以供UI消费
       state.curComponent = getComponentById(comId, state.components);
     });
-
-    // 状态更新后，立即【恢复】历史记录，以便后续的“写”操作可以被正常追踪
     useComponetsStore.temporal.getState().resume();
   },
 
+  /**
+   * @description 向指定的父组件中添加一个新组件。
+   * @param {Component} component - 要添加的组件对象。
+   * @param {number} [parentId] - 目标父组件的ID。如果未提供，则添加到根级。
+   */
   addComponent: (component, parentId) => {
     set((state) => {
       // 使用 structuredClone 创建一个深拷贝，确保新添加的对象是纯净的
@@ -183,6 +214,10 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
     });
   },
 
+  /**
+   * @description 根据ID删除一个组件及其所有后代。
+   * @param {number} componentId - 要删除的组件ID。
+   */
   deleteComponent: (componentId) => {
     set((state) => {
       const component = getComponentById(componentId, state.components);
@@ -207,6 +242,11 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
     });
   },
 
+  /**
+   * @description 更新指定组件的 props。
+   * @param {number} componentId - 目标组件ID。
+   * @param {any} props - 要合并的新 props 对象。
+   */
   updateComponentProps: (componentId, props) => {
     set((state) => {
       const component = getComponentById(componentId, state.components);
@@ -214,13 +254,16 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
 
       component.props = { ...component.props, ...props };
 
-      // 关键: 保持 curComponent (数据副本) 与 components的同步
+      // 关键: 保持 curComponent (数据副本) 与 components 的同步
       if (state.curComponent?.id === componentId) {
         state.curComponent = component;
       }
     });
   },
 
+  /**
+   * @description 重置画布到初始状态。
+   */
   resetComponents: () => {
     set((state) => {
       // 重置时，需要将所有相关状态都恢复到初始值
@@ -238,6 +281,10 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
     });
   },
 
+  /**
+   * @description 将指定组件复制到剪贴板。
+   * @param {number | null} componentId - 要复制的组件ID。
+   */
   copyComponents: (componentId) => {
     set((state) => {
       const component = getComponentById(componentId, state.components);
@@ -247,10 +294,14 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
     });
   },
 
+  /**
+   * @description 将剪贴板中的组件粘贴到指定父组件下。
+   * @param {number | null} parentId - 目标父组件的ID。
+   */
   pasteComponents: (parentId) => {
     set((state) => {
       if (!parentId || !state.clipboard) return;
-      // 从剪贴板获取模板，并用 regenerateIds 创建一个全新的组件树
+      // 从剪贴板获取模板，并用 regenerateIds 创建一个拥有全新ID的组件树副本
       const componentToPaste = regenerateIds(state.clipboard);
       const parent = getComponentById(parentId, state.components);
       if (parent) {
@@ -266,16 +317,16 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
 
 /**
  * @description 递归地深克隆一个组件及其所有子组件，并为每个组件生成新的唯一 ID。
- * 这是实现安全复制粘贴的核心。
- * @param component - 要处理的组件模板。
- * @returns - 一个拥有全新 ID 体系的组件树副本。
+ * 这是实现安全复制粘贴的核心，确保粘贴出来的组件（及其后代）拥有与原组件完全不同的身份标识。
+ * @param {Component} component - 要处理的组件模板。
+ * @returns {Component} - 一个拥有全新 ID 体系的组件树副本。
  */
 function regenerateIds(component: Component): Component {
-  const newid = generateUniqueId();
+  const newId = generateUniqueId();
 
   const newComponent: Component = {
     ...component,
-    id: newid,
+    id: newId,
     props: {
       ...component.props,
     },
@@ -323,7 +374,8 @@ export function getComponentById(
 
 /**
  * @description 检查一个组件是否是另一个组件的后代。
- *  * 通过从 "childId" 开始，沿着 parentId 向上追溯，看是否能找到 "ancestorId"。
+ * 这是实现“防循环拖拽”的关键校验逻辑。
+ * 通过从 "childId" 开始，沿着 parentId 向上追溯，看是否能找到 "ancestorId"。
  * @param {number} childId - “后代”组件的 ID。
  * @param {number} ancestorId - “祖先”组件的 ID。
  * @param {Component[]} components - 完整的组件树。
@@ -348,10 +400,9 @@ export function isDescendantOf(
 }
 
 /**
- * 创建一个用于生成“单调递增”唯一ID的函数（工厂模式）。
- * * 此函数利用了闭包的特性来维护一个内部的 `lastId` 状态。
+ * @description 创建一个用于生成“单调递增”唯一ID的函数（工厂模式）。
+ * 此函数利用了闭包的特性来维护一个内部的 `lastId` 状态。
  * 这样可以保证即使在同一毫秒内连续调用返回的生成器，ID也能持续递增，确保其在会话中的唯一性。
- *
  * @returns {() => number} 返回一个ID生成器函数。该函数无参数，每次调用都会返回一个新的、唯一的数字ID。
  */
 const createIdGenerator = () => {
@@ -375,7 +426,7 @@ const createIdGenerator = () => {
 };
 
 /**
- * 生成一个在当前会话中唯一的、单调递增的数字ID。
+ * @description 生成一个在当前会话中唯一的、单调递增的数字ID。
  * @example
  * const id1 = generateUniqueId(); // -> 1750441208441
  * const id2 = generateUniqueId(); // -> 1750441208442 (即使在同一毫秒内调用)
@@ -385,7 +436,7 @@ const generateUniqueId = createIdGenerator();
 
 /**
  * @description 创建最终的 store 实例，并组合使用多个中间件。
- * 中间件的包裹顺序非常重要，通常遵循“从内到外”的执行逻辑：
+ * 中间件的包裹顺序非常重要，遵循“从内到外”的执行逻辑：
  * 1. `immer`: 在最内层，让我们可以用“可变”的方式写出“不可变”的更新逻辑。
  * 2. `persist`: 包裹 `immer`，将状态持久化到 localStorage。
  * 3. `temporal`: 在最外层，为整个状态（包括持久化的部分）增加撤销/重做能力。
@@ -403,7 +454,8 @@ export const useComponetsStore = create<EditorStore>()(
     {
       // temporal (zundo) 的配置
       limit: 100, // 最多记录100步历史
-      // 同样只让 temporal 关注核心的 components 变化
+      // 同样只让 temporal 关注核心的 components 变化，
+      // 像 curComponentId 这类纯粹的UI状态变化不应被记录到历史中。
       partialize: (state) => {
         return {
           components: state.components,
