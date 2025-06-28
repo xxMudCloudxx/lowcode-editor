@@ -1,11 +1,6 @@
 import { lazy, type ComponentType } from "react";
 import type { ComponentConfig } from "../stores/component-config";
 
-const metas = import.meta.glob("./**/meta.tsx", {
-  eager: true,
-  import: "default",
-});
-
 /**
  * @description 使用 Vite 的 import.meta.glob 功能动态导入所有物料组件。
  *
@@ -15,6 +10,10 @@ const metas = import.meta.glob("./**/meta.tsx", {
  * 2. `React.lazy` 需要一个函数，其返回类型为 `Promise<{ default: React.ComponentType<any> }>`。
  * 3. 解决方案: 我们给 `import.meta.glob` 传入一个泛型，明确告诉 TypeScript 每个动态导入的模块都符合 `React.lazy` 的要求。
  */
+const metas = import.meta.glob("./**/meta.tsx", {
+  eager: true,
+  import: "default",
+});
 
 // 定义我们期望的模块类型
 type LazyComponentModule = { default: ComponentType<any> };
