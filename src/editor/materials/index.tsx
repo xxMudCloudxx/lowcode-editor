@@ -1,53 +1,36 @@
-import { lazy } from "react";
+import { lazy, type ComponentType } from "react";
 import type { ComponentConfig } from "../stores/component-config";
-import buttonMeta from "./Button/meta";
-import containerMeta from "./Container/meta";
-import formMeta from "./Form/meta";
-import formItemMeta from "./FormItem/meta";
-import modalMeta from "./Modal/meta";
-import pageMeta from "./Page/meta";
-import tableMeta from "./Table/meta";
-import tableColumnMeta from "./TableColumn/meta";
 
-export const materials: ComponentConfig[] = [
-  {
-    ...buttonMeta,
-    dev: lazy(() => import("./Button/dev")),
-    prod: lazy(() => import("./Button/prod")),
-  },
-  {
-    ...containerMeta,
-    dev: lazy(() => import("./Container/dev")),
-    prod: lazy(() => import("./Container/prod")),
-  },
-  {
-    ...formMeta,
-    dev: lazy(() => import("./Form/dev")),
-    prod: lazy(() => import("./Form/prod")),
-  },
-  {
-    ...formItemMeta,
-    dev: lazy(() => import("./FormItem/dev")),
-    prod: lazy(() => import("./FormItem/prod")),
-  },
-  {
-    ...modalMeta,
-    dev: lazy(() => import("./Modal/dev")),
-    prod: lazy(() => import("./Modal/prod")),
-  },
-  {
-    ...pageMeta,
-    dev: lazy(() => import("./Page/dev")),
-    prod: lazy(() => import("./Page/prod")),
-  },
-  {
-    ...tableMeta,
-    dev: lazy(() => import("./Table/dev")),
-    prod: lazy(() => import("./Table/prod")),
-  },
-  {
-    ...tableColumnMeta,
-    dev: lazy(() => import("./TableColumn/dev")),
-    prod: lazy(() => import("./TableColumn/prod")),
-  },
-];
+const metas = import.meta.glob("./**/meta.tsx", {
+  eager: true,
+  import: "default",
+});
+
+/**
+ * @description 使用 Vite 的 import.meta.glob 功能动态导入所有物料组件。
+ *
+ * `import.meta.glob` 的问题和解决方案:
+ * 1. 默认情况下，不带 eager:true 的 glob 返回的是一个类型为 `Record<string, () => Promise<unknown>>` 的对象。
+ * 这里的 `unknown` 类型太宽泛，无法满足 `React.lazy` 的要求。
+ * 2. `React.lazy` 需要一个函数，其返回类型为 `Promise<{ default: React.ComponentType<any> }>`。
+ * 3. 解决方案: 我们给 `import.meta.glob` 传入一个泛型，明确告诉 TypeScript 每个动态导入的模块都符合 `React.lazy` 的要求。
+ */
+
+// 定义我们期望的模块类型
+type LazyComponentModule = { default: ComponentType<any> };
+
+// 通过泛型 <LazyComponentModule> 约束 glob 的返回结果
+const devComponents = import.meta.glob<LazyComponentModule>("./**/dev.tsx");
+const prodComponents = import.meta.glob<LazyComponentModule>("./**/prod.tsx");
+
+export const materials: ComponentConfig[] = Object.keys(metas).map((key) => {
+  const meta = metas[key] as Omit<ComponentConfig, "dev" | "prod">;
+
+  const path = key.replace("/meta.tsx", "");
+
+  return {
+    ...meta,
+    dev: lazy(devComponents[`${path}/dev.tsx`]),
+    prod: lazy(prodComponents[`${path}/prod.tsx`]),
+  };
+});

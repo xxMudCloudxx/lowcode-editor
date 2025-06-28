@@ -10,6 +10,7 @@
 import { useDrop } from "react-dnd";
 import { useComponentConfigStore } from "../stores/component-config";
 import { isDescendantOf, useComponetsStore } from "../stores/components";
+import { useTransition } from "react";
 
 export interface ItemType {
   type: string;
@@ -29,6 +30,9 @@ export interface ItemType {
 export function useMaterailDrop(containerId: number, containerName: string) {
   const { addComponent, moveComponents } = useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
+
+  // 用于初始添加组件时懒加载的过渡更新
+  const [isPending, startTransition] = useTransition();
 
   // 核心解耦逻辑：动态计算可接受的子组件类型列表。
   // 遍历所有组件的“蓝图”，筛选出那些在其 `parentTypes` 数组中包含了当前容器名称的组件。
@@ -71,16 +75,17 @@ export function useMaterailDrop(containerId: number, containerName: string) {
         moveComponents(item.id, containerId);
       } else {
         const config = componentConfig[item.type];
-
-        addComponent(
-          {
-            desc: config.desc,
-            id: new Date().getTime(),
-            name: item.type,
-            props: config.defaultProps,
-          },
-          containerId
-        );
+        startTransition(() => {
+          addComponent(
+            {
+              desc: config.desc,
+              id: new Date().getTime(),
+              name: item.type,
+              props: config.defaultProps,
+            },
+            containerId
+          );
+        });
       }
     },
     collect: (monitor) => ({
@@ -90,5 +95,5 @@ export function useMaterailDrop(containerId: number, containerName: string) {
     }),
   }));
 
-  return { canDrop, drop, isOver };
+  return { canDrop, drop, isOver, isPending };
 }

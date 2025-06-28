@@ -108,9 +108,7 @@ export function EditArea() {
       }}
       onClick={handleClick}
     >
-      <Suspense fallback={<div>正在加载组件...</div>}>
-        {renderComponents(components)}
-      </Suspense>
+      <Suspense>{renderComponents(components)}</Suspense>
 
       {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
       {hoverComponentId &&
