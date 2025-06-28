@@ -28,7 +28,9 @@ const TableProd = ({ url, children }: CommonComponentProps) => {
   }, []);
 
   const columns = useMemo(() => {
-    return React.Children.map(children, (item: any) => {
+    return React.Children.map(children, (suspenseElement: any) => {
+      if (!suspenseElement) return null;
+      const item = suspenseElement.props.children;
       if (item?.props?.type === "date") {
         return {
           title: item.props?.title,

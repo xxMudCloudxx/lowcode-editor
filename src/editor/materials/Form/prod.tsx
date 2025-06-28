@@ -34,15 +34,17 @@ const Form: ForwardRefRenderFunction<
   );
 
   const formItems = useMemo(() => {
-    return React.Children.map(children, (item: any) => {
+    return React.Children.map(children, (suspenseElement: any) => {
+      if (!suspenseElement) return null;
+
+      const item = suspenseElement.props.children;
       return {
         label: item.props?.label,
         name: item.props?.name,
         type: item.props?.type,
         id: item.props?.id,
-        rules: item.props?.rules,
       };
-    });
+    })?.filter(Boolean);
   }, [children]);
 
   async function save(values: any) {
