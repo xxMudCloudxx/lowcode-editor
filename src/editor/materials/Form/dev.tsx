@@ -36,14 +36,17 @@ function FormDev({
   }, []);
 
   const formItems = useMemo(() => {
-    return React.Children.map(children, (item: any) => {
+    return React.Children.map(children, (suspenseElement: any) => {
+      if (!suspenseElement) return null;
+
+      const item = suspenseElement.props.children;
       return {
         label: item.props?.label,
         name: item.props?.name,
         type: item.props?.type,
         id: item.props?.id,
       };
-    });
+    })?.filter(Boolean);
   }, [children]);
 
   return (
@@ -69,7 +72,7 @@ function FormDev({
         {formItems.map((item: any) => {
           return (
             <AntdForm.Item
-              key={item.name}
+              key={item.id}
               data-component-id={item.id}
               name={item.name}
               label={item.label}

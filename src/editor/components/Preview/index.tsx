@@ -8,11 +8,12 @@
  * @module Components/Preview
  */
 
-import React, { useRef } from "react";
+import React, { Suspense, useRef } from "react";
 import { useComponentConfigStore } from "../../stores/component-config";
 import { useComponetsStore, type Component } from "../../stores/components";
 import { message } from "antd";
 import type { ActionConfig } from "../Setting/ComponentEvent/ActionModal";
+import LoadingPlaceholder from "../common/LoadingPlaceholder";
 
 export function Preview() {
   const { components } = useComponetsStore();
@@ -103,24 +104,31 @@ export function Preview() {
       }
 
       // 使用 React.createElement 动态创建生产版本的组件实例
-      return React.createElement(
-        config.prod,
-        {
-          key: component.id,
-          id: component.id,
-          name: component.name,
-          styles: component.styles,
-          // 关键：将组件 ref 存入 componentRefs.current 字典中
-          ref: (ref: Record<string, any>) => {
-            componentRefs.current[component.id] = ref;
-          },
-          // 合并默认 props、用户配置的 props 和动态生成的事件处理器
-          ...config.defaultProps,
-          ...component.props,
-          ...handleEvent(component),
-        },
-        // 递归渲染子组件
-        renderComponents(component.children || [])
+      return (
+        <Suspense
+          key={component.id}
+          fallback={<LoadingPlaceholder componentDesc={config.desc} />}
+        >
+          {React.createElement(
+            config.prod,
+            {
+              key: component.id,
+              id: component.id,
+              name: component.name,
+              styles: component.styles,
+              // 关键：将组件 ref 存入 componentRefs.current 字典中
+              ref: (ref: Record<string, any>) => {
+                componentRefs.current[component.id] = ref;
+              },
+              // 合并默认 props、用户配置的 props 和动态生成的事件处理器
+              ...config.defaultProps,
+              ...component.props,
+              ...handleEvent(component),
+            },
+            // 递归渲染子组件
+            renderComponents(component.children || [])
+          )}
+        </Suspense>
       );
     });
   }

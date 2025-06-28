@@ -67,17 +67,17 @@ export function Header() {
 
         {/* 交互按钮区域 */}
         <Space>
-          {/*帮助按钮，显示快捷键*/}
-          <Popover
-            content={shortcutsContent}
-            title={<Title level={5}>快捷键指南</Title>}
-            trigger="click" // 设置为点击触发
-          >
-            <Button icon={<QuestionCircleOutlined />} shape="circle" />
-          </Popover>
           {/* 当处于“编辑”模式时，显示“预览”和“重置”按钮 */}
           {mode === "edit" && (
             <>
+              {/*帮助按钮，显示快捷键*/}
+              <Popover
+                content={shortcutsContent}
+                title={<Title level={5}>快捷键指南</Title>}
+                trigger="click" // 设置为点击触发
+              >
+                <Button icon={<QuestionCircleOutlined />} shape="circle" />
+              </Popover>
               {/* 2. 新增撤销、重做和重置历史记录按钮 */}
               <Button onClick={() => undo()} disabled={!pastStates.length}>
                 撤销

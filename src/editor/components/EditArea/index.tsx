@@ -14,6 +14,7 @@ import { useComponetsStore, type Component } from "../../stores/components";
 import { useComponentConfigStore } from "../../stores/component-config";
 import HoverMask from "./HoverMask";
 import SelectedMask from "./SelectedMask";
+import LoadingPlaceholder from "../common/LoadingPlaceholder";
 
 export function EditArea() {
   const { components, curComponentId, setCurComponentId } = useComponetsStore();
@@ -82,19 +83,26 @@ export function EditArea() {
 
       // 使用 React.createElement 动态创建组件实例
       // 将 store 中的 props 和 config 中的 defaultProps 传递下去
-      return React.createElement(
-        config.dev,
-        {
-          key: component.id,
-          id: component.id,
-          name: component.name,
-          styles: component.styles,
-          isSelected: component.id === curComponentId,
-          ...config.defaultProps,
-          ...component.props,
-        },
-        // 递归渲染子组件
-        renderComponents(component.children || [])
+      return (
+        <Suspense
+          key={component.id}
+          fallback={<LoadingPlaceholder componentDesc={config.desc} />}
+        >
+          {React.createElement(
+            config.dev,
+            {
+              key: component.id,
+              id: component.id,
+              name: component.name,
+              styles: component.styles,
+              isSelected: component.id === curComponentId,
+              ...config.defaultProps,
+              ...component.props,
+            },
+            // 递归渲染子组件
+            renderComponents(component.children || [])
+          )}
+        </Suspense>
       );
     });
   }
@@ -108,7 +116,7 @@ export function EditArea() {
       }}
       onClick={handleClick}
     >
-      <Suspense>{renderComponents(components)}</Suspense>
+      {renderComponents(components)}
 
       {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
       {hoverComponentId &&

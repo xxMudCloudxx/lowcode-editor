@@ -34,7 +34,9 @@ function TableDev({
   }, []);
 
   const columns = useMemo(() => {
-    return React.Children.map(children, (item: any) => {
+    return React.Children.map(children, (suspenseElement: any) => {
+      if (!suspenseElement) return null;
+      const item = suspenseElement.props.children;
       return {
         title: (
           <div
@@ -45,9 +47,9 @@ function TableDev({
           </div>
         ),
         dataIndex: item.props?.dataIndex,
-        key: item,
+        key: item.props?.id,
       };
-    });
+    })?.filter(Boolean);
   }, [children]);
 
   return (
