@@ -11,21 +11,7 @@
  * @module Stores/ComponentConfig
  */
 import { create } from "zustand";
-import ContainerDev from "../materials/Container/dev";
-import ContainerProd from "../materials/Container/prod";
-import ButtonDev from "../materials/Button/dev";
-import ButtonProd from "../materials/Button/prod";
-import PageDev from "../materials/Page/dev";
-import PageProd from "../materials/Page/prod";
-import ModalDev from "../materials/Modal/dev";
-import ModalProd from "../materials/Modal/prod";
-import TableDev from "../materials/Table/dev";
-import TableProd from "../materials/Table/prod";
-import TableColumnDev from "../materials/TableColumn/dev";
-import TableColumnProd from "../materials/TableColumn/prod";
-import FormDev from "../materials/Form/dev";
-import FormItemDev from "../materials/FormItem/dev";
-import FormItemProd from "../materials/FormItem/prod";
+import { materials } from "../materials";
 
 /**
  * @interface ComponentSetter
@@ -74,8 +60,8 @@ export interface ComponentConfig {
   methods?: ComponentMethod[]; // 方法配置
 
   // 关键设计点：区分开发和生产环境的组件渲染
-  dev: any; // 组件在编辑器画布中的渲染形态，通常包含拖拽、选中等交互逻辑
-  prod: any; // 组件在预览/最终发布时的真实渲染形态，是纯净的业务组件
+  dev: React.LazyExoticComponent<React.ComponentType<any>>; // 组件在编辑器画布中的渲染形态，通常包含拖拽、选中等交互逻辑
+  prod: React.LazyExoticComponent<React.ComponentType<any>>; // 组件在预览/最终发布时的真实渲染形态，是纯净的业务组件
 }
 
 interface State {
@@ -86,248 +72,36 @@ interface Action {
   // 预留的 action，用于未来动态注册新组件
   registerComponent: (name: string, componentConfig: ComponentConfig) => void;
 }
+
+/**
+ * @description 将物料数组 `materials` 转换为以组件名称为键(key)的映射表(Map)。
+ * 这种数据结构变换是为了后续能够通过组件名（如 "Button"）进行 O(1) 时间复杂度的快速查找，
+ * 而不是每次都去遍历整个数组。
+ *
+ * @example
+ * // 转换前 (materials 数组):
+ * // [
+ * //   { name: 'Button', desc: '按钮', ... },
+ * //   { name: 'Container', desc: '容器', ... }
+ * // ]
+ *
+ * // 转换后 (componentConfigMap 对象):
+ * // {
+ * //   'Button': { name: 'Button', desc: '按钮', ... },
+ * //   'Container': { name: 'Container', desc: '容器', ... }
+ * // }
+ */
+const componentConfigMap = materials.reduce((acc, curr) => {
+  // 核心操作：将当前组件的配置对象 `curr`，存入累加器 `acc` 中。
+  // 使用当前组件的 `name` 属性 (如 "Button") 作为 `key`。
+  acc[curr.name] = curr;
+
+  // 必须返回累加器 `acc`，这样下一次迭代才能在上一次的基础上继续添加。
+  return acc;
+}, {} as { [key: string]: ComponentConfig });
+
 export const useComponentConfigStore = create<State & Action>((set) => ({
-  componentConfig: {
-    Container: {
-      name: "Container",
-      desc: "容器",
-      defaultProps: {},
-      dev: ContainerDev,
-      prod: ContainerProd,
-      // 容器自身也可以被放置在“页面”或另一个“容器”或“弹窗”中
-      parentTypes: ["Page", "Container", "Modal"],
-    },
-    Button: {
-      name: "Button",
-      desc: "按钮",
-      defaultProps: {
-        type: "primary",
-        text: "按钮",
-      },
-      setter: [
-        {
-          name: "type",
-          label: "按钮类型",
-          type: "select",
-          options: [
-            { label: "主按钮", value: "primary" },
-            { label: "次按钮", value: "default" },
-          ],
-        },
-        {
-          name: "text",
-          label: "文本",
-          type: "input",
-        },
-      ],
-      styleSetter: [
-        {
-          name: "width",
-          label: "宽度",
-          type: "inputNumber",
-        },
-        {
-          name: "height",
-          label: "高度",
-          type: "inputNumber",
-        },
-      ],
-      events: [
-        {
-          name: "onClick",
-          label: "点击事件",
-        },
-        {
-          name: "onDoubleClick",
-          label: "双击事件",
-        },
-      ],
-      dev: ButtonDev,
-      prod: ButtonProd,
-      // 按钮可以被放置在“页面”、“容器”或“弹窗”中
-      parentTypes: ["Page", "Container", "Modal"],
-    },
-    Page: {
-      name: "Page",
-      desc: "页面",
-      defaultProps: {},
-      dev: PageDev,
-      prod: PageProd,
-      // Page 是根组件，它没有父组件，所以不需要 parentTypes
-    },
-    Table: {
-      name: "Table",
-      defaultProps: {},
-      desc: "表格",
-      setter: [
-        {
-          name: "url",
-          label: "url",
-          type: "input",
-        },
-      ],
-      dev: TableDev,
-      prod: TableProd,
-      // 表格可以被放置在“页面”、“容器”或“弹窗”中
-      parentTypes: ["Page", "Container", "Modal"],
-    },
-    Modal: {
-      name: "Modal",
-      defaultProps: {
-        title: "弹窗",
-      },
-      setter: [
-        {
-          name: "title",
-          label: "标题",
-          type: "input",
-        },
-      ],
-      stylesSetter: [],
-      events: [
-        {
-          name: "onOk",
-          label: "确认事件",
-        },
-        {
-          name: "onCancel",
-          label: "取消事件",
-        },
-      ],
-      methods: [
-        {
-          name: "open",
-          label: "打开弹窗",
-        },
-        {
-          name: "close",
-          label: "关闭弹窗",
-        },
-      ],
-      desc: "弹窗",
-      dev: ModalDev,
-      prod: ModalProd,
-      // 弹窗本身作为一个可拖拽的配置项，可以被放置在“页面”上
-      parentTypes: ["Page"],
-    },
-    TableColumn: {
-      name: "TableColumn",
-      desc: "表格列",
-      defaultProps: {
-        dataIndex: `col_${new Date().getTime()}`,
-        title: "列名",
-      },
-      setter: [
-        {
-          name: "type",
-          label: "类型",
-          type: "select",
-          options: [
-            {
-              label: "文本",
-              value: "text",
-            },
-            {
-              label: "日期",
-              value: "date",
-            },
-          ],
-        },
-        {
-          name: "title",
-          label: "标题",
-          type: "input",
-        },
-        {
-          name: "dataIndex",
-          label: "字段",
-          type: "input",
-        },
-      ],
-      dev: TableColumnDev,
-      prod: TableColumnProd,
-      // 表格列只能被放置在“表格”组件中
-      parentTypes: ["Table"],
-    },
-    Form: {
-      name: "Form",
-      defaultProps: {},
-      desc: "表单",
-      setter: [
-        {
-          name: "title",
-          label: "标题",
-          type: "input",
-        },
-      ],
-      events: [
-        {
-          name: "onFinish",
-          label: "提交事件",
-        },
-      ],
-      methods: [
-        {
-          name: "submit",
-          label: "提交",
-        },
-      ],
-      dev: FormDev,
-      prod: FormDev,
-      // 表单可以被放置在“页面”、“容器”或“弹窗”中
-      parentTypes: ["Page", "Container", "Modal"],
-    },
-    FormItem: {
-      name: "FormItem",
-      desc: "表单项",
-      defaultProps: {
-        name: new Date().getTime(),
-        label: "姓名",
-      },
-      dev: FormItemDev,
-      prod: FormItemProd,
-      setter: [
-        {
-          name: "type",
-          label: "类型",
-          type: "select",
-          options: [
-            {
-              label: "文本",
-              value: "input",
-            },
-            {
-              label: "日期",
-              value: "date",
-            },
-          ],
-        },
-        {
-          name: "label",
-          label: "标题",
-          type: "input",
-        },
-        {
-          name: "name",
-          label: "字段",
-          type: "input",
-        },
-        {
-          name: "rules",
-          label: "校验",
-          type: "select",
-          options: [
-            {
-              label: "必填",
-              value: "required",
-            },
-          ],
-        },
-      ],
-      // 表单项只能被放置在“表单”组件中
-      parentTypes: ["Form"],
-    },
-  },
+  componentConfig: componentConfigMap,
   registerComponent: (name, componentConfig) =>
     set((state) => {
       return {

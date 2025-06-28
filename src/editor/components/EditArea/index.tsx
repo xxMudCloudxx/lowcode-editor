@@ -9,7 +9,7 @@
  * @module Components/EditArea
  */
 
-import React, { useState, type MouseEventHandler } from "react";
+import React, { Suspense, useState, type MouseEventHandler } from "react";
 import { useComponetsStore, type Component } from "../../stores/components";
 import { useComponentConfigStore } from "../../stores/component-config";
 import HoverMask from "./HoverMask";
@@ -108,7 +108,9 @@ export function EditArea() {
       }}
       onClick={handleClick}
     >
-      {renderComponents(components)}
+      <Suspense fallback={<div>正在加载组件...</div>}>
+        {renderComponents(components)}
+      </Suspense>
 
       {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
       {hoverComponentId &&
