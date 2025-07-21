@@ -8,7 +8,7 @@
  * @module Components/Setting/ComponentStyle
  */
 
-import { Form, Input, InputNumber, Select, type CollapseProps } from "antd";
+import { Divider, Form, Input, InputNumber, Select } from "antd";
 import { useComponetsStore } from "../../../stores/components";
 import {
   useComponentConfigStore,
@@ -119,20 +119,34 @@ export function ComponentStyle() {
   }, 500);
 
   return (
-    <Form
-      form={form}
-      onValuesChange={valueChange}
-      labelCol={{ span: 8 }}
-      wrapperCol={{ span: 14 }}
-    >
-      {componentConfig[curComponent.name]?.styleSetter?.map((setter) => (
-        <Form.Item key={setter.name} name={setter.name} label={setter.label}>
-          {renderFormElememt(setter)}
-        </Form.Item>
-      ))}
+    <>
       <div className="h-[200px] border-[1px] border-[#ccc]">
         <CssEditor value={css} onChange={handleEditorChange} />
       </div>
-    </Form>
+      <Divider orientation="left">布局</Divider>
+      <div className="m-2">
+        <BoxModelEditor value={curComponent.styles} onChange={valueChange} />
+        <Form
+          form={form}
+          onValuesChange={valueChange}
+          labelCol={{ span: 8 }}
+          wrapperCol={{ span: 14 }}
+        >
+          {componentConfig[curComponent.name]?.styleSetter?.map((setter) => (
+            <Form.Item
+              key={setter.name}
+              name={setter.name}
+              label={setter.label}
+            >
+              {renderFormElememt(setter)}
+            </Form.Item>
+          ))}
+        </Form>
+      </div>
+      <Divider orientation="left">文字</Divider>
+      <Divider orientation="left">背景</Divider>
+      <Divider orientation="left">位置</Divider>
+      <Divider orientation="left">边框</Divider>
+    </>
   );
 }

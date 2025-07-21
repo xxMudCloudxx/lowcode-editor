@@ -47,11 +47,11 @@ const cap = (s: Direction) => s[0].toUpperCase() + s.slice(1);
  * @param {string} color - 条带的背景颜色。
  * @returns {CSSProperties} 计算出的样式对象。
  */
-function getStripStyle(dir: Direction, color: string): CSSProperties {
+function getStripStyle(dir: Direction): CSSProperties {
   const b = BAR_SIZE,
     w = WEDGE_SIZE,
     r = RETRACT;
-  const base: CSSProperties = { background: color };
+  const base: CSSProperties = {};
   // 使用 clip-path 属性将矩形裁剪成梯形，以实现边角斜切的视觉效果
   switch (dir) {
     case "top":
@@ -113,8 +113,8 @@ const BoxInput: React.FC<BoxInputProps> = ({
 }) => {
   const handle = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
-    // 只允许输入最多4位数字
-    if (/^\d{0,4}$/.test(v)) {
+    // 只允许输入最多3位数字
+    if (/^\d{0,3}$/.test(v)) {
       onChange(v);
     }
   };
@@ -152,12 +152,11 @@ interface StripProps {
 const Strip: React.FC<StripProps> = ({ type, dir, value, onFieldChange }) => {
   const tabBase = type === "margin" ? 1 : 5;
   const tabIdx = tabBase + DIRS.indexOf(dir);
-  const color = type === "margin" ? "hsl(220 100% 90%)" : "hsl(220 100% 93%)";
 
   return (
     <div
-      className="absolute grid place-items-center select-none"
-      style={getStripStyle(dir, color)}
+      className="absolute grid place-items-center select-none bg-[hsl(220_100%_90%)] hover:bg-[hsl(220_100%_86%)]"
+      style={getStripStyle(dir)}
     >
       <BoxInput
         type={type}
@@ -239,7 +238,7 @@ export default function BoxModelEditor({ value, onChange }: Props) {
   const debouncedEmit = useCallback(
     debounce((css: BoxModelValue) => {
       onChange?.(css);
-    }, 300),
+    }, 30),
     [onChange] // 依赖项是 onChange，确保能拿到最新的回调函数引用
   );
 
@@ -324,7 +323,7 @@ export default function BoxModelEditor({ value, onChange }: Props) {
               PADDING
             </span>
             <div className="absolute inset-8  flex items-center justify-center">
-              <span className="">CONTENT</span>
+              <span className="">content</span>
             </div>
           </div>
         </div>
