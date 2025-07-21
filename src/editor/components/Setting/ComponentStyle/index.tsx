@@ -8,7 +8,7 @@
  * @module Components/Setting/ComponentStyle
  */
 
-import { Form, Input, InputNumber, Select } from "antd";
+import { Form, Input, InputNumber, Select, type CollapseProps } from "antd";
 import { useComponetsStore } from "../../../stores/components";
 import {
   useComponentConfigStore,
@@ -18,6 +18,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import CssEditor from "../CssEditor";
 import { debounce } from "lodash-es";
 import StyleToObject from "style-to-object"; // 用于将 CSS 字符串解析为 JS 对象
+import BoxModelEditor from "./BoxModelEditor";
 
 export function ComponentStyle() {
   const [form] = Form.useForm();
