@@ -14,6 +14,7 @@ import React, {
   type CSSProperties,
   useCallback,
 } from "react";
+import { addUnit, stripUnit } from "../../../../../utils/styles";
 
 /* ---------- 常量 (Constants) ---------- */
 const BAR_SIZE = 20; // 条带的厚度
@@ -26,15 +27,6 @@ type Direction = (typeof DIRS)[number];
 
 /* ---------- 工具函数 (Utilities) ---------- */
 /**
- * @description 移除字符串值末尾的 'px' 单位。
- */
-const stripUnit = (v?: string | number) =>
-  v == null ? "" : String(v).replace(/px$/, "");
-
-/**
- * @description 为非空字符串添加 'px' 单位。
- */
-const addUnit = (v: string) => (v === "" ? undefined : `${v}px`);
 
 /**
  * @description 将方向字符串的首字母大写 (e.g., 'top' -> 'Top')。
@@ -113,8 +105,8 @@ const BoxInput: React.FC<BoxInputProps> = ({
 }) => {
   const handle = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
-    // 只允许输入最多3位数字
-    if (/^\d{0,3}$/.test(v)) {
+    // 只允许输入最多4位数字
+    if (/^\d{0,4}$/.test(v)) {
       onChange(v);
     }
   };
@@ -323,7 +315,7 @@ export default function BoxModelEditor({ value, onChange }: Props) {
               PADDING
             </span>
             <div className="absolute inset-8  flex items-center justify-center">
-              <span className="">content</span>
+              <span className="text-gray-500">content</span>
             </div>
           </div>
         </div>

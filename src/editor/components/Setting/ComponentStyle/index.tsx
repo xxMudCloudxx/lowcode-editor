@@ -8,17 +8,19 @@
  * @module Components/Setting/ComponentStyle
  */
 
-import { Divider, Form, Input, InputNumber, Select } from "antd";
+import { Divider, Form } from "antd";
 import { useComponetsStore } from "../../../stores/components";
-import {
-  useComponentConfigStore,
-  type ComponentSetter,
-} from "../../../stores/component-config";
+import { useComponentConfigStore } from "../../../stores/component-config";
 import { useEffect, useState, type CSSProperties } from "react";
 import CssEditor from "../CssEditor";
 import { debounce } from "lodash-es";
 import StyleToObject from "style-to-object"; // 用于将 CSS 字符串解析为 JS 对象
-import BoxModelEditor from "./BoxModelEditor";
+import LayoutSetter from "./LayoutSetter";
+import FrontSetter from "./FrontSetter";
+import BackGroundSetter from "./BackGroundSetter";
+import LocationSetter from "./LocationSetter";
+import BoardSetter from "./BoardSetter/indx";
+import OtherSetter from "./OtherSetter";
 
 export function ComponentStyle() {
   const [form] = Form.useForm();
@@ -43,18 +45,6 @@ export function ComponentStyle() {
   }, [curComponent]);
 
   if (!curComponentId || !curComponent) return null;
-
-  function renderFormElememt(setting: ComponentSetter) {
-    const { type, options } = setting;
-
-    if (type === "select") {
-      return <Select options={options} />;
-    } else if (type === "input") {
-      return <Input />;
-    } else if (type === "inputNumber") {
-      return <InputNumber />;
-    }
-  }
 
   function valueChange(changeValues: CSSProperties) {
     if (curComponentId) {
@@ -119,34 +109,27 @@ export function ComponentStyle() {
   }, 500);
 
   return (
-    <>
+    <div className="overflow-y-auto h-[100%] w-[100%] absolute pb-20">
       <div className="h-[200px] border-[1px] border-[#ccc]">
         <CssEditor value={css} onChange={handleEditorChange} />
       </div>
       <Divider orientation="left">布局</Divider>
-      <div className="m-2">
-        <BoxModelEditor value={curComponent.styles} onChange={valueChange} />
-        <Form
-          form={form}
-          onValuesChange={valueChange}
-          labelCol={{ span: 8 }}
-          wrapperCol={{ span: 14 }}
-        >
-          {componentConfig[curComponent.name]?.styleSetter?.map((setter) => (
-            <Form.Item
-              key={setter.name}
-              name={setter.name}
-              label={setter.label}
-            >
-              {renderFormElememt(setter)}
-            </Form.Item>
-          ))}
-        </Form>
-      </div>
+      <LayoutSetter curComponent={curComponent} onChange={valueChange} />
       <Divider orientation="left">文字</Divider>
+      <FrontSetter />
       <Divider orientation="left">背景</Divider>
+      <BackGroundSetter />
       <Divider orientation="left">位置</Divider>
+      <LocationSetter />
       <Divider orientation="left">边框</Divider>
-    </>
+      <BoardSetter />
+      <Divider orientation="left">其他</Divider>
+      <OtherSetter
+        form={form}
+        onChange={valueChange}
+        curComponent={curComponent}
+        componentConfig={componentConfig}
+      />
+    </div>
   );
 }
