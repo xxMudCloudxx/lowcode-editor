@@ -45,7 +45,7 @@ const SizeEditor = (props: SizeEditorProps) => {
     };
   };
   return (
-    <div className="flex flex-row items-center ml-9 mr-9">
+    <div className="flex flex-row items-center  mr-9">
       <InputNumber
         prefix="宽度"
         addonAfter="px"
