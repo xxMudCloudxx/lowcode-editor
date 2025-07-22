@@ -55,6 +55,7 @@ export default function CssEditor(props: Props) {
           verticalScrollbarSize: 6,
           horizontalScrollbarSize: 6,
         },
+        fixedOverflowWidgets: true,
         // 合并传入的 options，允许外部自定义
         ...options,
       }}
