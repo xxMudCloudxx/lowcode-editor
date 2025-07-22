@@ -24,16 +24,16 @@ export default {
     },
   ],
   styleSetter: [
-    {
-      name: "width",
-      label: "宽度",
-      type: "inputNumber",
-    },
-    {
-      name: "height",
-      label: "高度",
-      type: "inputNumber",
-    },
+    // {
+    //   name: "width",
+    //   label: "宽度",
+    //   type: "inputNumber",
+    // },
+    // {
+    //   name: "height",
+    //   label: "高度",
+    //   type: "inputNumber",
+    // },
   ],
   events: [
     {

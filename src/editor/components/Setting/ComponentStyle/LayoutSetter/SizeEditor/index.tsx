@@ -45,25 +45,22 @@ const SizeEditor = (props: SizeEditorProps) => {
     };
   };
   return (
-    <div className="flex flex-row justify-center items-center ml-9 mr-9">
-      <div className="pr-6">
-        <span className="pr-2">宽度:</span>
-        <InputNumber
-          addonAfter="px"
-          onChange={valChange("width")}
-          value={size.width}
-          placeholder={`${Math.round(width)}`}
-        />
-      </div>
-      <div>
-        <span className="pr-2">高度:</span>
-        <InputNumber
-          addonAfter="px"
-          onChange={valChange("height")}
-          value={size.height}
-          placeholder={`${Math.round(height)}`}
-        />
-      </div>
+    <div className="flex flex-row items-center ml-9 mr-9">
+      <InputNumber
+        prefix="宽度"
+        addonAfter="px"
+        onChange={valChange("width")}
+        value={size.width}
+        placeholder={`${Math.round(width)}`}
+        className="pr-6"
+      />
+      <InputNumber
+        prefix="高度"
+        addonAfter="px"
+        onChange={valChange("height")}
+        value={size.height}
+        placeholder={`${Math.round(height)}`}
+      />
     </div>
   );
 };

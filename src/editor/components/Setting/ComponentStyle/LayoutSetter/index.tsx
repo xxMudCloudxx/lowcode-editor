@@ -13,8 +13,8 @@ const LayoutSetter = (props: LayoutProps) => {
   const { curComponent, onChange } = props;
 
   return (
-    <div>
-      <LayoutModal />
+    <div className="ml-6">
+      <LayoutModal value={curComponent.styles} onChange={onChange} />
       <BoxModelEditor value={curComponent.styles} onChange={onChange} />
       <SizeEditor
         value={curComponent.styles}

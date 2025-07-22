@@ -26,7 +26,7 @@ export default function ReactPlayground() {
           <Allotment.Pane>
             <EditArea />
           </Allotment.Pane>
-          <Allotment.Pane preferredSize={300} maxSize={500} minSize={300}>
+          <Allotment.Pane preferredSize={350} maxSize={500} minSize={300}>
             <Setting />
           </Allotment.Pane>
         </Allotment>
