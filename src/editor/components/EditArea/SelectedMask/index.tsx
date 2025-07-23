@@ -9,7 +9,14 @@
  * @module Components/EditArea/SelectedMask
  */
 
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   getComponentById,
@@ -28,7 +35,6 @@ interface SelectedMaskProps {
   containerClassName: string;
   componentId: number;
 }
-
 function SelectedMask({
   containerClassName,
   portalWrapperClassName,
@@ -45,8 +51,8 @@ function SelectedMask({
   });
 
   const {
-    components,
     curComponentId,
+    components,
     deleteComponent,
     setCurComponentId,
     copyComponents,
@@ -59,7 +65,25 @@ function SelectedMask({
   // 当我们需要在DOM布局变化后重新计算遮罩层位置时（如窗口缩放），
   // 就通过更新这个 state 来触发 useLayoutEffect 的重新执行。
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  // 1️⃣ -- 让所有外部事件都走同一个调度器 ------------------------
+  function useScheduleUpdate() {
+    const rafId = useRef<number>();
 
+    // 下一帧再 setState，保证拿到最新布局
+    const schedule = useCallback(() => {
+      cancelAnimationFrame(rafId.current!);
+      rafId.current = requestAnimationFrame(() =>
+        setUpdateTrigger((v) => v + 1)
+      );
+    }, []);
+
+    // 组件卸载时取消
+    useEffect(() => () => cancelAnimationFrame(rafId.current!), []);
+
+    return schedule;
+  }
+  /* ---------- 统一调度器 ---------- */
+  const scheduleUpdate = useScheduleUpdate();
   // 如果撤销或重做，可以及时更新SelectedMask
   const { pastStates, futureStates } = useStore(useComponetsStore.temporal);
 
@@ -75,7 +99,10 @@ function SelectedMask({
    */
   useEffect(() => {
     const container = document.querySelector(`.${containerClassName}`);
-    if (!container) return;
+    const node = document.querySelector<HTMLElement>(
+      `[data-component-id="${componentId}"]`
+    );
+    if (!container || !node) return;
 
     // 创建一个可复用的强制更新函数
     const forceUpdate = () => setUpdateTrigger((v) => v + 1);
@@ -100,17 +127,22 @@ function SelectedMask({
     // 使用 passive: true 优化滚动性能，确保滚动动画的流畅性。
     container.addEventListener("scroll", handleScroll, { passive: true });
     resizeObserver.observe(container);
+    resizeObserver.observe(node);
+
+    // 观察 node 的 style / class 变动（margin 常通过 style/class）
+    const mutationObserver = new MutationObserver(forceUpdate);
+    mutationObserver.observe(node, {
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
 
     return () => {
       resizeObserver.disconnect();
       container.removeEventListener("scroll", handleScroll);
       cancelAnimationFrame(scrollTimeOut);
+      mutationObserver.disconnect();
     };
-  }, [containerClassName]);
-
-  const curComponent = useMemo(() => {
-    return getComponentById(componentId, components);
-  }, [componentId]);
+  }, [containerClassName, componentId]);
 
   // 将所有定位逻辑统一到 useLayoutEffect 中。
   // 它保证了DOM测量（getBoundingClientRect）发生在DOM更新之后、浏览器绘制之前，
@@ -158,12 +190,15 @@ function SelectedMask({
   }, [
     componentId,
     components,
-    curComponent?.styles,
     updateTrigger,
     containerClassName,
     pastStates,
     futureStates,
   ]);
+
+  const curComponent = useMemo(() => {
+    return getComponentById(componentId, components);
+  }, [componentId]);
 
   function handleCopy(e?: React.MouseEvent<HTMLElement>) {
     e?.stopPropagation();
