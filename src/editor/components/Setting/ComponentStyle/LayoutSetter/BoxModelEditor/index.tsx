@@ -206,8 +206,8 @@ export default function BoxModelEditor({ value, onChange }: Props) {
       DIRS.forEach((d) => {
         const mKey = `margin${cap(d)}` as keyof CSSProperties;
         const pKey = `padding${cap(d)}` as keyof CSSProperties;
-        const m = stripUnit(value[mKey]);
-        const p = stripUnit(value[pKey]);
+        const m = stripUnit("px", value[mKey]);
+        const p = stripUnit("px", value[pKey]);
 
         if (prev.margin[d] !== m) {
           next.margin[d] = m;
@@ -242,7 +242,7 @@ export default function BoxModelEditor({ value, onChange }: Props) {
         [type]: { ...prev[type], [dir]: v },
       }));
       // 触发防抖回调，延迟上报给父组件
-      debouncedEmit({ [`${type}${cap(dir)}`]: addUnit(v) });
+      debouncedEmit({ [`${type}${cap(dir)}`]: addUnit("px", v) });
     },
     [debouncedEmit]
   );

@@ -116,7 +116,7 @@ export function ComponentStyle() {
       <Divider orientation="left">布局</Divider>
       <LayoutSetter curComponent={curComponent} onChange={valueChange} />
       <Divider orientation="left">文字</Divider>
-      <FrontSetter />
+      <FrontSetter curComponent={curComponent} onChange={valueChange} />
       <Divider orientation="left">背景</Divider>
       <BackGroundSetter />
       <Divider orientation="left">位置</Divider>

@@ -58,16 +58,17 @@ const PairedInputEditor = ({
       <Space>
         <InputNumber
           prefix={prop1.label}
-          addonAfter={unit}
+          suffix={unit}
           value={internalValue1}
           placeholder={prop1.placeholder}
           onChange={(val) => handleChange(prop1.propertyName, val)}
           style={{ width: 120 }}
           controls={false}
+          className="mr-3"
         />
         <InputNumber
           prefix={prop2.label}
-          addonAfter={unit}
+          suffix={unit}
           value={internalValue2}
           placeholder={prop2.placeholder}
           onChange={(val) => handleChange(prop2.propertyName, val)}
