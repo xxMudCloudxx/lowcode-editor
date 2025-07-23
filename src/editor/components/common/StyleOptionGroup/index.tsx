@@ -30,9 +30,10 @@ const StyleOptionGroup = ({
       onChange(clickedValue);
     }
   };
+  const marginBottom = label ? 12 : 0;
 
   return (
-    <Form.Item label={label} style={{ marginBottom: 12 }}>
+    <Form.Item label={label} style={{ marginBottom }}>
       <Button.Group style={{ width: "100%", display: "flex" }}>
         {options.map((opt) => (
           <Tooltip title={opt.tooltip} key={opt.value}>
