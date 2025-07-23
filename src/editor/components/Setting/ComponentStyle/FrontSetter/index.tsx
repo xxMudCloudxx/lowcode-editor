@@ -1,9 +1,13 @@
 import { useCallback, type CSSProperties } from "react";
 import type { Component } from "../../../../stores/components";
-import { ColorPicker, Form, InputNumber, Slider, Space } from "antd";
+import { ColorPicker, Divider, Form, InputNumber, Slider } from "antd";
 import FormItem from "antd/es/form/FormItem";
 import PairedInputEditor from "../../../common/PariedInputEditor";
-import { fontWeightOptions, textAlignOptions } from "./config";
+import {
+  fontFamilyOptions,
+  fontWeightOptions,
+  textAlignOptions,
+} from "./config";
 import StyleSelectEditor from "../../../common/StyleSelectEditor";
 import { AggregationColor } from "antd/es/color-picker/color";
 import StyleOptionGroup from "../../../common/StyleOptionGroup";
@@ -17,10 +21,9 @@ const FrontSetter = (props: FrontSetterProps) => {
   const { curComponent, onChange } = props;
   const value = curComponent.styles;
   const align = value?.textAlign;
-  const opacityValue = typeof value?.opacity === "number" ? value.opacity : 0;
+  const opacityValue = typeof value?.opacity === "number" ? value.opacity : 1;
   const createChangeHandler = useCallback(
     (key: any) => {
-      console.log(key);
       return (newValue?: any) => {
         onChange?.({ [key]: newValue });
       };
@@ -29,35 +32,46 @@ const FrontSetter = (props: FrontSetterProps) => {
   );
 
   return (
-    <Form
-      labelCol={{ span: 6 }}
-      wrapperCol={{ span: 18 }}
-      labelAlign="right"
-      style={{ width: "100%" }}
-    >
-      <FormItem wrapperCol={{ span: 24 }}>
-        <PairedInputEditor
-          value={value}
-          onChange={onChange}
-          unit="px"
-          prop1={{
-            label: "字号",
-            propertyName: "fontSize",
-            placeholder: `字号`,
-          }}
-          prop2={{
-            label: "行高",
-            propertyName: "lineHeight",
-            placeholder: `行高`,
-          }}
-        />
-      </FormItem>
-      <div className="mr-9">
+    <>
+      <Divider orientation="left">文字</Divider>
+      <Form
+        labelCol={{ span: 6 }}
+        wrapperCol={{ span: 18 }}
+        labelAlign="right"
+        style={{ width: "100%" }}
+      >
+        <FormItem label="字大">
+          <PairedInputEditor
+            value={value}
+            onChange={onChange}
+            unit="px"
+            prop1={{
+              label: "字号",
+              propertyName: "fontSize",
+              placeholder: `字号`,
+            }}
+            prop2={{
+              label: "行高",
+              propertyName: "lineHeight",
+              placeholder: `行高`,
+            }}
+            unStyle={true}
+          />
+        </FormItem>
         <FormItem label="字重">
           <StyleSelectEditor
             label="字重"
             propertyName="fontWeight"
             options={fontWeightOptions}
+            value={value}
+            onChange={onChange}
+          />
+        </FormItem>{" "}
+        <FormItem label="字体">
+          <StyleSelectEditor
+            label="字体"
+            propertyName="fontFamily"
+            options={fontFamilyOptions}
             value={value}
             onChange={onChange}
           />
@@ -106,8 +120,8 @@ const FrontSetter = (props: FrontSetterProps) => {
             />
           </div>
         </FormItem>
-      </div>
-    </Form>
+      </Form>
+    </>
   );
 };
 

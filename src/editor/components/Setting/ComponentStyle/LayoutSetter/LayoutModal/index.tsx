@@ -18,7 +18,7 @@ const LayoutModal = ({ value, onChange }: LayoutModalProps) => {
   };
 
   return (
-    <div className="mr-6">
+    <div className="ml-9">
       <Form labelCol={{ span: 6 }} wrapperCol={{ span: 18 }} labelAlign="right">
         <StyleOptionGroup
           label="布局模式"

@@ -20,6 +20,7 @@ interface PairedInputEditorProps {
   prop2: PairedProperty;
   // 通用单位
   unit?: string;
+  unStyle?: Boolean;
 }
 
 const PairedInputEditor = ({
@@ -28,6 +29,7 @@ const PairedInputEditor = ({
   prop1,
   prop2,
   unit,
+  unStyle,
 }: PairedInputEditorProps) => {
   if (!unit) unit = "px";
   const [internalValue1, setInternalValue1] = useState("");
@@ -53,8 +55,11 @@ const PairedInputEditor = ({
     }
   };
 
+  const style = unStyle ? "" : "flex flex-row justify-center items-center";
+  const width = unStyle ? { width: "100%" } : { width: 120 };
+
   return (
-    <div className="flex flex-row justify-center items-center px-4">
+    <div className={style}>
       <Space>
         <InputNumber
           prefix={prop1.label}
@@ -62,9 +67,8 @@ const PairedInputEditor = ({
           value={internalValue1}
           placeholder={prop1.placeholder}
           onChange={(val) => handleChange(prop1.propertyName, val)}
-          style={{ width: 120 }}
+          style={width}
           controls={false}
-          className="mr-3"
         />
         <InputNumber
           prefix={prop2.label}
@@ -72,7 +76,7 @@ const PairedInputEditor = ({
           value={internalValue2}
           placeholder={prop2.placeholder}
           onChange={(val) => handleChange(prop2.propertyName, val)}
-          style={{ width: 120 }}
+          style={width}
           controls={false}
         />
       </Space>

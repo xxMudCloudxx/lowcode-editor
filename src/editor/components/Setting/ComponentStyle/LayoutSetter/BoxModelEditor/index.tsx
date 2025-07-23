@@ -230,7 +230,7 @@ export default function BoxModelEditor({ value, onChange }: Props) {
   const debouncedEmit = useCallback(
     debounce((css: BoxModelValue) => {
       onChange?.(css);
-    }, 30),
+    }, 300),
     [onChange] // 依赖项是 onChange，确保能拿到最新的回调函数引用
   );
 

@@ -1,4 +1,11 @@
-import { Form, Input, InputNumber, Select, type FormInstance } from "antd";
+import {
+  Divider,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  type FormInstance,
+} from "antd";
 import type { CSSProperties } from "react";
 import type { Component } from "../../../../stores/components";
 import type {
@@ -41,6 +48,7 @@ const OtherSetter = (props: OtherSetterProps) => {
   const { form, onChange, curComponent, componentConfig } = props;
   return (
     <div className="mt-2">
+      <Divider orientation="left">其他</Divider>
       <Form
         form={form}
         onValuesChange={onChange}

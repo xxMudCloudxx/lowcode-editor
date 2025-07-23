@@ -108,6 +108,10 @@ function SelectedMask({
     };
   }, [containerClassName]);
 
+  const curComponent = useMemo(() => {
+    return getComponentById(componentId, components);
+  }, [componentId]);
+
   // 将所有定位逻辑统一到 useLayoutEffect 中。
   // 它保证了DOM测量（getBoundingClientRect）发生在DOM更新之后、浏览器绘制之前，
   // 从而读取到最准确的布局信息，彻底解决了因“赛跑问题”导致的定位偏移。
@@ -154,15 +158,12 @@ function SelectedMask({
   }, [
     componentId,
     components,
+    curComponent?.styles,
     updateTrigger,
     containerClassName,
     pastStates,
     futureStates,
   ]);
-
-  const curComponent = useMemo(() => {
-    return getComponentById(componentId, components);
-  }, [componentId]);
 
   function handleCopy(e?: React.MouseEvent<HTMLElement>) {
     e?.stopPropagation();

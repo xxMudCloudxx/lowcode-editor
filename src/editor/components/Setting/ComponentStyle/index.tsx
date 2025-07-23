@@ -8,7 +8,7 @@
  * @module Components/Setting/ComponentStyle
  */
 
-import { Divider, Form } from "antd";
+import { Form } from "antd";
 import { useComponetsStore } from "../../../stores/components";
 import { useComponentConfigStore } from "../../../stores/component-config";
 import { useEffect, useState, type CSSProperties } from "react";
@@ -100,8 +100,6 @@ export function ComponentStyle() {
         ] = value;
       });
 
-      console.log(css);
-
       // 调用 store action 更新样式，`true` 表示完全替换旧样式
       updateComponentStyles(
         curComponentId,
@@ -114,27 +112,23 @@ export function ComponentStyle() {
   }, 500);
 
   return (
-    <div className="overflow-y-auto h-[100%] w-[100%] absolute pb-20">
+    <div className="overflow-y-auto h-[100%] w-[100%] absolute pb-20 overscroll-y-contain ">
       <div className="h-[200px] border-[1px] border-[#ccc]">
         <CssEditor value={css} onChange={handleEditorChange} />
       </div>
-      <Divider orientation="left">布局</Divider>
-      <LayoutSetter curComponent={curComponent} onChange={valueChange} />
-      <Divider orientation="left">文字</Divider>
-      <FrontSetter curComponent={curComponent} onChange={valueChange} />
-      <Divider orientation="left">背景</Divider>
-      <BackGroundSetter />
-      <Divider orientation="left">位置</Divider>
-      <LocationSetter />
-      <Divider orientation="left">边框</Divider>
-      <BoardSetter />
-      <Divider orientation="left">其他</Divider>
-      <OtherSetter
-        form={form}
-        onChange={valueChange}
-        curComponent={curComponent}
-        componentConfig={componentConfig}
-      />
+      <div className="pr-9">
+        <LayoutSetter curComponent={curComponent} onChange={valueChange} />
+        <FrontSetter curComponent={curComponent} onChange={valueChange} />
+        <BackGroundSetter />
+        <LocationSetter />
+        <BoardSetter />
+        <OtherSetter
+          form={form}
+          onChange={valueChange}
+          curComponent={curComponent}
+          componentConfig={componentConfig}
+        />
+      </div>
     </div>
   );
 }
