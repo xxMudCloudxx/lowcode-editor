@@ -79,7 +79,7 @@ const FrontSetter = (props: FrontSetterProps) => {
           label="布局模式"
           options={textAlignOptions.align}
           currentValue={align}
-          onChange={createChangeHandler("text-align")}
+          onChange={createChangeHandler("textAlign")}
         />
       </FormItem>
     </Form>

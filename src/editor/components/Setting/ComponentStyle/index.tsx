@@ -62,6 +62,11 @@ export function ComponentStyle() {
       if (!value) {
         continue;
       }
+      // 将驼峰式 key 转换为横杠式
+      const cssKey = key.replace(
+        /[A-Z]/g,
+        (match) => `-${match.toLocaleLowerCase()}`
+      );
       if (
         ["width", "height"].includes(key) &&
         !value.toString().endsWith("px")
@@ -69,7 +74,7 @@ export function ComponentStyle() {
         value += "px";
       }
 
-      str += `\t${key}: ${value};\n`;
+      str += `\t${cssKey}: ${value};\n`;
     }
     str += `}`;
     return str;
