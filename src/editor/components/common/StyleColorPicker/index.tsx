@@ -1,26 +1,50 @@
-import type { CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ColorPicker } from "antd";
 import type { AggregationColor } from "antd/es/color-picker/color";
+import { debounce } from "lodash-es";
 
 interface StyleColorPickerProps {
   value?: CSSProperties;
   onChange?: (css: CSSProperties) => void;
+  propertyName: keyof CSSProperties;
 }
 
-const StyleColorPicker = ({ value = {}, onChange }: StyleColorPickerProps) => {
-  const propertyName = "color";
+const StyleColorPicker = ({
+  value = {},
+  onChange,
+  propertyName,
+}: StyleColorPickerProps) => {
+  const [internalColor, setInternalColor] = useState<string | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    setInternalColor(value[propertyName] as string);
+  }, [value]);
+
+  const debouncedOnChange = useMemo(
+    () =>
+      debounce((hex: string) => {
+        onChange?.({ [propertyName]: hex });
+      }, 200),
+    [onChange]
+  );
+
   const handleChange = (color: AggregationColor) => {
-    onChange?.({ [propertyName]: color.toHexString() });
+    const hex = color.toHexString();
+    setInternalColor(hex);
+    debouncedOnChange(hex);
   };
 
   const handleClear = () => {
-    onChange?.({ [propertyName]: "" });
+    setInternalColor("");
+    debouncedOnChange("");
   };
 
   return (
     <ColorPicker
       style={{ width: "100%" }}
-      value={value[propertyName] as string}
+      value={internalColor}
       onChange={handleChange}
       onClear={handleClear}
       showText

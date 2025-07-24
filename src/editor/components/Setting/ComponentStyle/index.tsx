@@ -119,8 +119,8 @@ export function ComponentStyle() {
       <div className="pr-9">
         <LayoutSetter curComponent={curComponent} onChange={valueChange} />
         <FrontSetter curComponent={curComponent} onChange={valueChange} />
-        <BackGroundSetter />
-        <LocationSetter />
+        <BackGroundSetter curComponent={curComponent} onChange={valueChange} />
+        <LocationSetter curComponent={curComponent} onChange={valueChange} />
         <BoardSetter />
         <OtherSetter
           form={form}

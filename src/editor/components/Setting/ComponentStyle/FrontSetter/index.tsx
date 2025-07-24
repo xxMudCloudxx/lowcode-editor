@@ -78,7 +78,11 @@ const FrontSetter = (props: FrontSetterProps) => {
           />
         </FormItem>
         <FormItem label="颜色">
-          <StyleColorPicker value={value} onChange={onChange} />
+          <StyleColorPicker
+            value={value}
+            onChange={onChange}
+            propertyName="color"
+          />
         </FormItem>
         <FormItem label="布局">
           <StyleOptionGroup

@@ -9,14 +9,7 @@
  * @module Components/EditArea/SelectedMask
  */
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   getComponentById,
@@ -65,25 +58,7 @@ function SelectedMask({
   // 当我们需要在DOM布局变化后重新计算遮罩层位置时（如窗口缩放），
   // 就通过更新这个 state 来触发 useLayoutEffect 的重新执行。
   const [updateTrigger, setUpdateTrigger] = useState(0);
-  // 1️⃣ -- 让所有外部事件都走同一个调度器 ------------------------
-  function useScheduleUpdate() {
-    const rafId = useRef<number>();
 
-    // 下一帧再 setState，保证拿到最新布局
-    const schedule = useCallback(() => {
-      cancelAnimationFrame(rafId.current!);
-      rafId.current = requestAnimationFrame(() =>
-        setUpdateTrigger((v) => v + 1)
-      );
-    }, []);
-
-    // 组件卸载时取消
-    useEffect(() => () => cancelAnimationFrame(rafId.current!), []);
-
-    return schedule;
-  }
-  /* ---------- 统一调度器 ---------- */
-  const scheduleUpdate = useScheduleUpdate();
   // 如果撤销或重做，可以及时更新SelectedMask
   const { pastStates, futureStates } = useStore(useComponetsStore.temporal);
 
