@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { Form } from "antd";
 import { layoutSettings } from "./config";
 import StyleOptionGroup from "../../../../common/StyleOptionGroup";
+import { useStyleChangeHandler } from "../../../../../hooks/useStyleChangeHandler";
 
 interface LayoutModalProps {
   value?: CSSProperties;
@@ -11,11 +12,7 @@ interface LayoutModalProps {
 const LayoutModal = ({ value, onChange }: LayoutModalProps) => {
   const displayValue = value?.display;
 
-  const createChangeHandler = (key: keyof CSSProperties) => {
-    return (newValue?: string) => {
-      onChange?.({ [key]: newValue });
-    };
-  };
+  const createChangeHandler = useStyleChangeHandler(onChange);
 
   return (
     <div className="ml-9">

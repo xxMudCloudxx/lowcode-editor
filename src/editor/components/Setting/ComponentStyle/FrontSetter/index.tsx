@@ -1,4 +1,4 @@
-import { useCallback, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import type { Component } from "../../../../stores/components";
 import { Divider, Form } from "antd";
 import FormItem from "antd/es/form/FormItem";
@@ -12,6 +12,7 @@ import StyleSelectEditor from "../../../common/StyleSelectEditor";
 import StyleOptionGroup from "../../../common/StyleOptionGroup";
 import StyleColorPicker from "../../../common/StyleColorPicker";
 import StyleSliderWithInput from "../../../common/StyleSliderWithInput";
+import { useStyleChangeHandler } from "../../../../hooks/useStyleChangeHandler";
 
 interface FrontSetterProps {
   curComponent: Component;
@@ -23,14 +24,7 @@ const FrontSetter = (props: FrontSetterProps) => {
   const value = curComponent.styles;
   const align = value?.textAlign;
 
-  const createChangeHandler = useCallback(
-    (key: any) => {
-      return (newValue?: any) => {
-        onChange?.({ [key]: newValue });
-      };
-    },
-    [onChange]
-  );
+  const createChangeHandler = useStyleChangeHandler(onChange);
 
   return (
     <>

@@ -4,7 +4,7 @@ import {
   Strip,
   type Direction,
 } from "../../../../common/StyleStripInputEditor";
-import { addUnit, cap, stripUnit } from "../../../../../utils/styles";
+import { addUnit, stripUnit } from "../../../../../utils/styles";
 
 /* ---------- 常量 (Constants) ---------- */
 const BAR_SIZE = 30; // 条带的厚度

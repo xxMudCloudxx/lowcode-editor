@@ -1,8 +1,11 @@
-import { Divider, Form, Select, type SelectProps } from "antd";
+import { Divider, Form, InputNumber, Select, type SelectProps } from "antd";
 import type { Component } from "../../../../stores/components";
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import LocationBoxModalEditor from "./BoxModalEditor";
 import { cap } from "../../../../utils/styles";
+import { useStyleChangeHandler } from "../../../../hooks/useStyleChangeHandler";
+import StyleOptionGroup from "../../../common/StyleOptionGroup";
+import { LocationOptions } from "./config";
 
 interface LocationSetterProps {
   curComponent: Component;
@@ -38,13 +41,12 @@ const LocationSetter = ({ curComponent, onChange }: LocationSetterProps) => {
     }
   }, [value.position]); // 只关心这一字段
 
-  const handlePositionChange = useCallback(
-    (pos: Position | undefined) => {
-      setPosition(pos);
-      onChange?.({ position: pos });
-    },
-    [onChange]
-  );
+  const createChangeHandler = useStyleChangeHandler(onChange);
+
+  const handlePositionChange = (pos: Position | undefined) => {
+    setPosition(pos);
+    createChangeHandler("position")(pos);
+  };
 
   return (
     <div>
@@ -58,11 +60,30 @@ const LocationSetter = ({ curComponent, onChange }: LocationSetterProps) => {
             onChange={handlePositionChange}
             allowClear
           />
+          {position !== "static" && position && (
+            <LocationBoxModalEditor value={value} onChange={onChange} />
+          )}
         </Form.Item>
-
-        {position !== "static" && (
-          <LocationBoxModalEditor value={value} onChange={onChange} />
-        )}
+        <Form.Item label="zIndex">
+          <InputNumber
+            value={value.zIndex}
+            onChange={createChangeHandler("zIndex")}
+            style={{ width: "100%" }}
+            placeholder=""
+          />
+        </Form.Item>
+        <StyleOptionGroup
+          label="float"
+          options={LocationOptions.float}
+          currentValue={value.float}
+          onChange={createChangeHandler("float")}
+        />
+        <StyleOptionGroup
+          label="clear"
+          options={LocationOptions.clear}
+          currentValue={value.clear}
+          onChange={createChangeHandler("clear")}
+        />
       </Form>
     </div>
   );
