@@ -113,15 +113,15 @@ export function ComponentStyle() {
 
   return (
     <div className="overflow-y-auto h-[100%] w-[100%] absolute pb-20 overscroll-y-contain ">
-      <div className="h-[200px] border-[1px] border-[#ccc]">
-        <CssEditor value={css} onChange={handleEditorChange} />
+      <div className=" border-[1px] border-[#ccc] h-[200px]">
+        <CssEditor value={css} onSave={handleEditorChange} />
       </div>
       <div className="pr-9">
         <LayoutSetter curComponent={curComponent} onChange={valueChange} />
         <FrontSetter curComponent={curComponent} onChange={valueChange} />
         <BackGroundSetter curComponent={curComponent} onChange={valueChange} />
         <LocationSetter curComponent={curComponent} onChange={valueChange} />
-        <BoardSetter />
+        <BoardSetter curComponent={curComponent} onChange={valueChange} />
         <OtherSetter
           form={form}
           onChange={valueChange}

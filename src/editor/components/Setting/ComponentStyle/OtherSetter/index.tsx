@@ -46,6 +46,14 @@ interface OtherSetterProps {
 
 const OtherSetter = (props: OtherSetterProps) => {
   const { form, onChange, curComponent, componentConfig } = props;
+  const config = componentConfig[curComponent.name];
+  if (!config.styleSetter) {
+    return;
+  }
+
+  if (config.styleSetter.length === 0) {
+    return;
+  }
   return (
     <div className="mt-2">
       <Divider orientation="left">其他</Divider>

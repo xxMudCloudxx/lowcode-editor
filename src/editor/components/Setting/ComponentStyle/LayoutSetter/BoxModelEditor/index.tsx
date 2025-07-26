@@ -147,10 +147,10 @@ export default function BoxModelEditor({ value, onChange }: Props) {
   // 5. 渲染UI
   //
   return (
-    <div className="flex justify-center items-center py-4 select-none">
+    <div className="flex justify-center items-center  select-none">
       <div
-        ref={wrapRef}
-        className="w-[240px] h-[160px] transition-transform origin-center"
+        // ref={wrapRef}
+        className="w-[340px] h-[160px] transition-transform origin-center"
       >
         <div className="relative w-full h-full">
           {/* 外层: margin */}

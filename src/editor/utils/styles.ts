@@ -96,3 +96,34 @@ export function getStripStyle(
       };
   }
 }
+
+// 定义从外部传入的 props 类型，key 是 kebab-case 形式
+export interface KebabCaseCSSProperties {
+  [key: string]: string | number | undefined;
+}
+
+/**
+ * 将短横线命名（kebab-case）的字符串转换为驼峰命名（camelCase）。
+ * @param str - 例如 "border-top-left-radius"
+ * @returns - 例如 "borderTopLeftRadius"
+ */
+export function kebabToCamel(str: string): string {
+  return str.replace(/-(\w)/g, (_, c) => c.toUpperCase());
+}
+
+/**
+ * 将一个对象的所有 kebab-case 键转换为 camelCase 键。
+ * @param styles - 一个 key 为 kebab-case 的样式对象
+ * @returns - 一个新的，key 为 camelCase 的样式对象
+ */
+export function convertKeysToCamelCase(styles: { [key: string]: any }): {
+  [key: string]: any;
+} {
+  const newStyles: { [key: string]: any } = {};
+  for (const key in styles) {
+    if (Object.prototype.hasOwnProperty.call(styles, key)) {
+      newStyles[kebabToCamel(key)] = styles[key];
+    }
+  }
+  return newStyles;
+}

@@ -73,13 +73,13 @@ const LocationSetter = ({ curComponent, onChange }: LocationSetterProps) => {
           />
         </Form.Item>
         <StyleOptionGroup
-          label="float"
+          label="浮动"
           options={LocationOptions.float}
           currentValue={value.float}
           onChange={createChangeHandler("float")}
         />
         <StyleOptionGroup
-          label="clear"
+          label="清除"
           options={LocationOptions.clear}
           currentValue={value.clear}
           onChange={createChangeHandler("clear")}

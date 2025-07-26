@@ -38,7 +38,7 @@ export const LocationOptions = {
 
     {
       value: "right",
-      tooltip: "右清楚 right",
+      tooltip: "右清除 right",
       icon: <PicRightOutlined />,
     },
     {

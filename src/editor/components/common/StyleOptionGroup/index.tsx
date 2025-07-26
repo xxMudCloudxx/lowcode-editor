@@ -12,6 +12,7 @@ interface StyleOptionGroupProps {
   options: StyleOption[];
   currentValue?: string;
   onChange: (newValue?: string) => void;
+  children?: any;
 }
 
 /**
@@ -22,6 +23,7 @@ const StyleOptionGroup = ({
   options,
   currentValue,
   onChange,
+  children,
 }: StyleOptionGroupProps) => {
   const handleClick = (clickedValue: string) => {
     if (currentValue === clickedValue) {
@@ -48,6 +50,7 @@ const StyleOptionGroup = ({
           </Tooltip>
         ))}
       </Button.Group>
+      {children}
     </Form.Item>
   );
 };
