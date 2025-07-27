@@ -16,6 +16,7 @@ import { InputNumber } from "antd";
 import StyleColorPicker from "../../../../common/StyleColorPicker";
 import StyleSelectEditor from "../../../../common/StyleSelectEditor";
 import { borderTypeOptions } from "./config";
+import { useStyleChangeHandler } from "../../../../../hooks/useStyleChangeHandler";
 
 // 定义组件接收的 props
 interface BorderRadiusEditorProps {
@@ -27,12 +28,8 @@ const BorderEditor = (props: BorderRadiusEditorProps) => {
   const { value = {}, onChange } = props;
   const camelCaseValue = useMemo(() => convertKeysToCamelCase(value), [value]);
 
+  const createChangeHandler = useStyleChangeHandler(onChange);
   const [localType, setLocalType] = useState("");
-
-  const debugg = (v: any) => {
-    debugger;
-    onChange?.(v);
-  };
 
   const handleButtonClick = useCallback(
     (v?: string) => {
@@ -63,16 +60,17 @@ const BorderEditor = (props: BorderRadiusEditorProps) => {
             className="mb-2"
           />
           <StyleColorPicker
-            value={camelCaseValue}
-            propertyName={`${localType}Color` as keyof CSSProperties}
-            onChange={onChange}
+            value={camelCaseValue[`${localType}Color`]}
+            onChange={createChangeHandler(
+              `${localType}Color` as keyof CSSProperties
+            )}
             className="mb-2"
           />
           <StyleSelectEditor
             value={camelCaseValue}
             propertyName={`${localType}Style` as keyof CSSProperties}
             options={borderTypeOptions}
-            onChange={debugg}
+            onChange={onChange}
             label="样式"
           />
         </div>

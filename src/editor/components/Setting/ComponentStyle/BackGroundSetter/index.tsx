@@ -11,6 +11,7 @@ import StyleColorPicker from "../../../common/StyleColorPicker";
 import type { Component } from "../../../../stores/components";
 import type { CSSProperties } from "react";
 import StyleSliderWithInput from "../../../common/StyleSliderWithInput";
+import { useStyleChangeHandler } from "../../../../hooks/useStyleChangeHandler";
 
 interface BackGroundSetterProps {
   curComponent: Component;
@@ -20,6 +21,7 @@ interface BackGroundSetterProps {
 const BackGroundSetter = (props: BackGroundSetterProps) => {
   const { curComponent, onChange } = props;
   const value = curComponent.styles;
+  const createChangeHandler = useStyleChangeHandler(onChange);
   return (
     <div>
       <Divider orientation="left">背景</Divider>
@@ -31,9 +33,8 @@ const BackGroundSetter = (props: BackGroundSetterProps) => {
       >
         <FormItem label="颜色">
           <StyleColorPicker
-            value={value}
-            onChange={onChange}
-            propertyName="backgroundColor"
+            value={value?.backgroundColor}
+            onChange={createChangeHandler("backgroundColor")}
           />
         </FormItem>
         <FormItem label="透明">
