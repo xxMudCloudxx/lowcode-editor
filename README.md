@@ -232,7 +232,7 @@ export function useMaterailDrop(containerId: number, containerName: string) {
   - [ ] 页面 Schema 的导入/导出
   - [ ] 出码与独立发布
 
-更多细节请查看 [ROADMAP.md](https://www.google.com/search?q=./ROADMAP.md) 文件。
+更多细节请查看 [ROADMAP.md](https://github.com/xxMudCloudxx/lowcode-editor/blob/main/ROADMAP.md) 文件。
 
 
 
@@ -268,8 +268,8 @@ export function useMaterailDrop(containerId: number, containerName: string) {
 
 我们非常欢迎各种形式的贡献！无论是代码实现、功能建议还是文档完善。
 
-- **物料开发**: 如果你想为项目贡献一个新的可拖拽组件，请务必阅读我们的 [物料组件开发规范](https://www.google.com/search?q=./src/editor/materials/README.md)，它会指导你如何遵循项目的设计模式来创建新的物料。
-- **提交问题**: 如果你发现了 Bug 或者有任何建议，欢迎通过 [Issues](https://www.google.com/search?q=https://github.com/xxMudCloudxx/lowcode-editor/issues) 提出。
+- **物料开发**: 如果你想为项目贡献一个新的可拖拽组件，请务必阅读我们的 [物料组件开发规范](https://github.com/xxMudCloudxx/lowcode-editor/blob/main/src/editor/materials/README.md)，它会指导你如何遵循项目的设计模式来创建新的物料。
+- **提交问题**: 如果你发现了 Bug 或者有任何建议，欢迎通过 [Issues](https://github.com/xxMudCloudxx/lowcode-editor/issues) 提出。
 
 
 
