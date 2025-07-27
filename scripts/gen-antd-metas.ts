@@ -301,6 +301,7 @@ async function run() {
       );
     }
 
+    // ${target.importStmt} 用不到
     const content = `
 /* eslint-disable */
 /**
@@ -308,7 +309,6 @@ async function run() {
  * 请勿手动修改；如需变更，请调整脚本或 TARGETS。
  */
 ${COMPONENT_CONFIG_IMPORT}
-${target.importStmt}
 
 const meta = {
   name: ${JSON.stringify(target.name)},

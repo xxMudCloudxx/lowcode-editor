@@ -12,8 +12,8 @@ dist
 dist-ssr
 *.local
 
-# # Generated files
-# /src/editor/materials/_generated
+# Generated files
+/src/editor/materials/_generated
 
 # Editor directories and files
 .vscode/*
