@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "gen:antd": "tsx scripts/gen-antd-metas.ts",
-    "predev": "pnpm gen:antd",
+    "predev": "npm run gen:antd",
     "build": "tsc -b && vite build",
-    "prebuild": "pnpm gen:antd",
+    "prebuild": "npm run gen:antd",
     "lint": "eslint .",
     "preview": "vite preview"
   },
