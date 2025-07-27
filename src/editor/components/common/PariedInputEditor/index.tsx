@@ -1,3 +1,10 @@
+/**
+ * @file /src/editor/components/common/PairedInputEditor/index.tsx
+ * @description
+ * 一个用于成对编辑 CSS 属性（如 width/height, fontSize/lineHeight）的受控组件。
+ * 它将两个 `InputNumber` 封装在一起，并统一处理单位和 onChange 回调。
+ * @module Components/Common/PairedInputEditor
+ */
 import { InputNumber, Space } from "antd";
 import { useEffect, useState, type CSSProperties } from "react";
 import {

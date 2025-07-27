@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/common/StyleStripInputEditor/index.tsx
+ * @description
+ * 一个用于可视化编辑 CSS 盒模型（margin/padding）或位置（top/left/right/bottom）的 UI 组件。
+ * 它渲染了一个带有斜切效果的条带，并在其中嵌入一个 input 用于修改值。
+ * 本身是一个受控组件。
+ * @module Components/Common/StyleStripInputEditor
+ */
 import { getStripStyle } from "../../../utils/styles";
 export const DIRS = ["top", "right", "bottom", "left"] as const;
 export type Direction = (typeof DIRS)[number];

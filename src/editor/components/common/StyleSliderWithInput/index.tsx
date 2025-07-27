@@ -1,10 +1,21 @@
+/**
+ * @file /src/editor/components/common/StyleSliderWithInput/index.tsx
+ * @description
+ * 一个组合了滑块（Slider）和数字输入框（InputNumber）的复合受控组件。
+ * 用于精确地编辑数值型的 CSS 属性（如 opacity, borderRadius）。
+ * 组件内部处理了单位的添加与移除，并对 onChange 事件进行了优化。
+ * @module Components/Common/StyleSliderWithInput
+ */
 import { InputNumber, Slider } from "antd";
 import { useEffect, useState, type CSSProperties } from "react";
 import { addUnit, stripUnit } from "../../../utils/styles";
 
 interface StyleSliderWithInputProps {
+  /** 当前组件要绑定的 CSS 属性名，如 'opacity', 'borderRadius' */
   propertyName: keyof CSSProperties;
+  /** 外部传入的完整样式对象 */
   value?: CSSProperties;
+  /** 样式更新时的回调函数 */
   onChange?: (css: CSSProperties) => void;
   min?: number;
   max?: number;

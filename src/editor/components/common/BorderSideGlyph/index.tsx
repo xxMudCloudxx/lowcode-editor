@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/common/BorderSideGlyph/index.tsx
+ * @description
+ * 一个用于渲染边框方向示意图标（SVG Glyph）的纯展示组件。
+ * 它可以根据传入的 `type` 动态高亮上、下、左、右或全部边框，
+ * 通常用在边框设置器中，为用户提供直观的视觉引导。
+ * @module Components/Common/BorderBlockGlyph
+ */
 import React from "react";
 
 type BorderType = "top" | "right" | "bottom" | "left" | "all";

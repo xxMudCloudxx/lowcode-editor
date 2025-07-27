@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/common/CustomIconButton/index.tsx
+ * @description
+ * 一个高度可定制的、纯图标按钮组件。
+ * 它封装了激活状态、尺寸控制、最小点击区域和基础样式，
+ * 旨在提供统一、灵活的图标按钮解决方案。
+ * @module Components/Common/CustomIconButton
+ */
 import React, { forwardRef, type ReactNode } from "react";
 import clsx from "clsx";
 

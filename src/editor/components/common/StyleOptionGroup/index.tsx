@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/common/StyleOptionGroup/index.tsx
+ * @description
+ * 一个通用的样式选项按钮组。它封装了 Ant Design 的 Button.Group 和 Form.Item，
+ * 用于提供一组互斥的样式选项（如 display, float, text-align）。
+ * 支持点击选中和再次点击取消的功能。
+ * @module Components/Common/StyleOptionGroup
+ */
 import { Button, Form, Tooltip } from "antd";
 import type { ReactNode } from "react";
 
