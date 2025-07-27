@@ -1,9 +1,10 @@
 /**
+ * @file /src/editor/components/Setting/ComponentStyle/LayoutSetter/BoxModelEditor/index.tsx
  * @description
  * 一个可视化的 CSS 盒模型 (Box Model) 编辑器组件。
  * 用户可以通过这个界面直观地修改元素的 margin 和 padding。
- * 它被设计为一个受控组件。
- * @module Components/Setting/BoxModelEditor
+ * 它被设计为一个受控组件，内部通过防抖（debounce）来优化 onChange 事件的触发频率。
+ * @module Components/Setting/ComponentStyle/BoxModelEditor
  */
 import { debounce } from "lodash-es";
 import {

@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/OtherSetter/index.tsx
+ * @description
+ * “样式”设置面板中的“其他”设置器。
+ * 这是一个动态渲染的表单，它会根据当前选中组件 `meta.tsx` 中定义的 `styleSetter` 配置，
+ * 自动生成对应的样式编辑控件。这为物料组件提供了高度的样式扩展性。
+ * @module Components/Setting/ComponentStyle/OtherSetter
+ */
 import {
   Divider,
   Form,

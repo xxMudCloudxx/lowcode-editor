@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/LayoutSetter/SizeEditor/index.tsx
+ * @description
+ * 一个专门用于编辑组件尺寸（宽度和高度）的编辑器。
+ * 它复用了 `PairedInputEditor` 组件，并智能地从 DOM 中获取当前组件的实际尺寸，
+ * 将其作为 placeholder 显示，为用户提供参考。
+ * @module Components/Setting/ComponentStyle/SizeEditor
+ */
 import type { CSSProperties } from "react";
 import PairedInputEditor from "../../../../common/PariedInputEditor";
 

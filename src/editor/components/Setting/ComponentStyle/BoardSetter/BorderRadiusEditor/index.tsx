@@ -1,3 +1,12 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/BoardSetter/BorderRadiusEditor/index.tsx
+ * @description
+ * “样式”设置面板中的“圆角” (border-radius) 编辑器。
+ * 该组件允许用户以两种模式设置圆角：
+ * 1. “统一设置”模式，通过一个滑块控制所有四个角的圆角。
+ * 2. “分角设置”模式，为每个角提供独立的输入框。
+ * @module Components/Setting/ComponentStyle/BorderRadiusEditor
+ */
 import { InputNumber } from "antd";
 import {
   useState,
@@ -6,7 +15,6 @@ import {
   useMemo,
   useCallback,
 } from "react";
-import { BoardOptions, borderRadiusConfigs } from "../config";
 import StyleOptionGroup from "../../../../common/StyleOptionGroup";
 import StyleSliderWithInput from "../../../../common/StyleSliderWithInput";
 import {
@@ -15,6 +23,7 @@ import {
   stripUnit,
   type KebabCaseCSSProperties,
 } from "../../../../../utils/styles";
+import { BoardOptions, borderRadiusConfigs } from "./config";
 
 // 定义组件接收的 props
 interface BorderRadiusEditorProps {

@@ -1,3 +1,12 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/LayoutSetter/index.tsx
+ * @description
+ * “样式”设置面板中的“布局”设置器。
+ * 这是一个容器组件，聚合了所有与布局相关的设置器，
+ * 包括 `LayoutModal` (display, flexbox), `BoxModelEditor` (margin, padding),
+ * 和 `SizeEditor` (width, height)。
+ * @module Components/Setting/ComponentStyle/LayoutSetter
+ */
 import type { CSSProperties } from "react";
 import type { Component } from "../../../../stores/components";
 import BoxModelEditor from "./BoxModelEditor";

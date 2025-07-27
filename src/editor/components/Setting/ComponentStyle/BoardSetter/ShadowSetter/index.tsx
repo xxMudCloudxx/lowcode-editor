@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/BoardSetter/ShadowSetter/index.tsx
+ * @description
+ * “样式”设置面板中的“阴影” (box-shadow) 编辑器。
+ * 提供了内外阴影切换，以及对阴影颜色、偏移(X/Y)、模糊和扩展半径的可视化编辑功能。
+ * 内部包含了对 `box-shadow` CSS 字符串的解析和构建逻辑。
+ * @module Components/Setting/ComponentStyle/ShadowSetter
+ */
 import type { CSSProperties } from "react";
 import { useEffect, useState, useMemo } from "react";
 import { ColorPicker, InputNumber, Space } from "antd";

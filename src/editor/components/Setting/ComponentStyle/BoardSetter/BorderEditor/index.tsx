@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/BoardSetter/BorderEditor/index.tsx
+ * @description
+ * “样式”设置面板中的“边框”属性编辑器。
+ * 该组件提供了一个可视化的界面，允许用户选择要编辑的边框（上、下、左、右或全部），
+ * 并为其设置宽度、颜色和样式。
+ * @module Components/Setting/ComponentStyle/BorderEditor
+ */
 import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import {
   convertKeysToCamelCase,

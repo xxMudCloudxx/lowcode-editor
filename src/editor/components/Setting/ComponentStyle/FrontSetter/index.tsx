@@ -1,3 +1,10 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/FrontSetter/index.tsx
+ * @description
+ * “样式”设置面板中的“文字”设置器 (Typography)。
+ * 提供了用于修改组件文本相关样式（如字号、行高、颜色、对齐方式等）的 UI 控件。
+ * @module Components/Setting/ComponentStyle/FrontSetter
+ */
 import { type CSSProperties } from "react";
 import type { Component } from "../../../../stores/components";
 import { Divider, Form } from "antd";

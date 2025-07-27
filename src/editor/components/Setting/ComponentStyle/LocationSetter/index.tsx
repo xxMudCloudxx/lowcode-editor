@@ -1,3 +1,10 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/LocationSetter/index.tsx
+ * @description
+ * “样式”设置面板中的“位置”设置器。
+ * 提供了用于修改组件定位（position）、层级（z-index）、浮动（float）和清除浮动（clear）的 UI 控件。
+ * @module Components/Setting/ComponentStyle/LocationSetter
+ */
 import { Divider, Form, InputNumber, Select, type SelectProps } from "antd";
 import type { Component } from "../../../../stores/components";
 import { useEffect, useState, type CSSProperties } from "react";

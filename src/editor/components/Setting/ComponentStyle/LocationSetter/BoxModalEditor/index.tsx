@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/LocationSetter/BoxModalEditor/index.tsx
+ * @description
+ * 一个可视化的 CSS 绝对/相对定位编辑器。
+ * 用户可以通过这个界面直观地修改元素的 top, right, bottom, left 属性。
+ * 它复用了 `StyleStripInputEditor` 组件来实现四个方向的输入。
+ * @module Components/Setting/ComponentStyle/LocationBoxModalEditor
+ */
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import {
   DIRS,
@@ -19,7 +27,7 @@ interface LocationBoxModalProps {
    */
   value?: CSSProperties;
   /**
-   * @description 当值发生变化时（经过300ms防抖处理），将增量样式回调给父组件。
+   * @description 当值发生变化时，将增量样式回调给父组件。
    */
   onChange?: (css: CSSProperties) => void;
 }
@@ -51,7 +59,7 @@ const LocationBoxModalEditor = (props: LocationBoxModalProps) => {
     });
   }, [value]);
   /**
-   * @description 当输入框的值发生变化时，立即更新本地状态。
+   * @description 当输入框的值发生变化时，立即更新本地状态，并通知父组件。
    * @param dir - 更改的方向 ("top" | "right" | "bottom" | "left")
    * @param v - 输入框的最新值 (字符串)
    */
@@ -66,8 +74,8 @@ const LocationBoxModalEditor = (props: LocationBoxModalProps) => {
         onChange?.({ [dir]: addUnit("px", v) });
       }
     },
-    [onChange]
-  ); // 依赖项为空数组，因为 setLocal 的身份是稳定的
+    [onChange] // 依赖项是 onChange
+  );
 
   return (
     <div className="flex justify-center items-center py-4 select-none">

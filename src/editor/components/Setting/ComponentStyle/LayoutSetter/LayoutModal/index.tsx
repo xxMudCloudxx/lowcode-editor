@@ -1,3 +1,11 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/LayoutSetter/LayoutModal/index.tsx
+ * @description
+ * “样式”设置面板中的“布局模式”编辑器。
+ * 提供了对 `display` 属性的选择，并能在 `display` 为 `flex` 时，
+ * 条件性地渲染出 `flex-direction`, `justify-content`, `align-items` 等 Flexbox 相关属性的设置器。
+ * @module Components/Setting/ComponentStyle/LayoutModal
+ */
 import type { CSSProperties } from "react";
 import { Form } from "antd";
 import { layoutSettings } from "./config";

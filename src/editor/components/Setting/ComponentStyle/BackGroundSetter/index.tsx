@@ -1,9 +1,17 @@
+/**
+ * @file /src/editor/components/Setting/ComponentStyle/BackGroundSetter/index.tsx
+ * @description
+ * “样式”设置面板中的“背景”设置器。
+ * 提供了用于修改组件背景颜色和透明度的 UI 控件。
+ * @module Components/Setting/ComponentStyle/BackGroundSetter
+ */
 import { Divider, Form } from "antd";
 import FormItem from "antd/es/form/FormItem";
 import StyleColorPicker from "../../../common/StyleColorPicker";
 import type { Component } from "../../../../stores/components";
 import type { CSSProperties } from "react";
 import StyleSliderWithInput from "../../../common/StyleSliderWithInput";
+
 interface BackGroundSetterProps {
   curComponent: Component;
   onChange?: (css: CSSProperties) => void;
