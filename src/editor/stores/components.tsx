@@ -51,7 +51,11 @@ interface State {
 interface Action {
   addComponent: (Component: Component, parentId?: number) => void;
   deleteComponent: (ComponentId: number) => void;
-  updateComponentProps: (ComponentId: number, props: any) => void;
+  updateComponentProps: (
+    ComponentId: number,
+    props: any,
+    replace?: boolean
+  ) => void;
   updateComponentStyles: (
     ComponentId: number,
     styles: CSSProperties,
@@ -247,14 +251,19 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
    * @param {number} componentId - 目标组件ID。
    * @param {any} props - 要合并的新 props 对象。
    */
-  updateComponentProps: (componentId, props) => {
+  updateComponentProps: (componentId, props, replace = false) => {
     set((state) => {
       const component = getComponentById(componentId, state.components);
       if (!component) return;
 
-      component.props = { ...component.props, ...props };
+      // 如果 replace 为 true，则直接替换整个 props 对象
+      if (replace) {
+        component.props = props;
+      } else {
+        // 否则，合并 props
+        component.props = { ...component.props, ...props };
+      }
 
-      // 关键: 保持 curComponent (数据副本) 与 components 的同步
       if (state.curComponent?.id === componentId) {
         state.curComponent = component;
       }
