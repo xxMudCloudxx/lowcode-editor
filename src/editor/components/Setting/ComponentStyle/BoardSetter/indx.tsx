@@ -4,6 +4,7 @@ import { type CSSProperties } from "react";
 import BorderRadiusEditor from "./BorderRadiusEditor";
 import type { KebabCaseCSSProperties } from "../../../../utils/styles";
 import BorderEditor from "./BorderEditor";
+import ShadowSetter from "./ShadowSetter";
 
 interface BoardSetterProps {
   curComponent: Component;
@@ -24,7 +25,13 @@ const BoardSetter = (props: BoardSetterProps) => {
           id={curComponent.id}
         />
         <Form.Item label="边框">
-          <BorderEditor />
+          <BorderEditor
+            value={value as KebabCaseCSSProperties}
+            onChange={onChange}
+          />
+        </Form.Item>
+        <Form.Item label="阴影">
+          <ShadowSetter value={value} onChange={onChange} />
         </Form.Item>
       </Form>
     </div>

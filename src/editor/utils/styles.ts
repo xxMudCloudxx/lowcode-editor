@@ -38,7 +38,11 @@ export const addUnit = (unit: string, v: string) =>
 /**
  * @description 将方向字符串的首字母大写 (e.g., 'top' -> 'Top')。
  */
-export const cap = (s: any) => s[0].toUpperCase() + s.slice(1);
+export const cap = (s: any) => {
+  if (s === "") return;
+  const newValue = s[0].toUpperCase() + s.slice(1);
+  return newValue;
+};
 
 /**
  * @description 计算并返回单个方向条带的 CSS 样式。
@@ -127,3 +131,78 @@ export function convertKeysToCamelCase(styles: { [key: string]: any }): {
   }
   return newStyles;
 }
+export interface Shadow {
+  inset: boolean;
+  offsetX: string;
+  offsetY: string;
+  blurRadius: string;
+  spreadRadius: string;
+  color: string;
+}
+
+const SHADOW_DEFAULTS: Shadow = {
+  inset: false,
+  offsetX: "0",
+  offsetY: "0",
+  blurRadius: "0",
+  spreadRadius: "0",
+  color: "#000000",
+};
+
+/**
+ * 解析 box-shadow 字符串
+ */
+export const parseBoxShadow = (shadowStr?: string): Shadow => {
+  if (!shadowStr || shadowStr === "none") {
+    return { ...SHADOW_DEFAULTS };
+  }
+
+  const parts = shadowStr.trim().split(/\s+/);
+  const newShadow: Shadow = { ...SHADOW_DEFAULTS };
+
+  if (parts[0] === "inset") {
+    newShadow.inset = true;
+    parts.shift();
+  }
+
+  // 颜色通常是最后一个部分
+  const colorPartIndex = parts.findIndex(
+    (p) => p.startsWith("#") || p.startsWith("rgb") || p.startsWith("hsl")
+  );
+  if (colorPartIndex !== -1) {
+    newShadow.color = parts.splice(colorPartIndex, 1)[0];
+  }
+
+  // 剩下的应该是数字部分
+  const nums = parts.map((p) => p.replace(/px/g, ""));
+  newShadow.offsetX = nums[0] || "0";
+  newShadow.offsetY = nums[1] || "0";
+  newShadow.blurRadius = nums[2] || "0";
+  newShadow.spreadRadius = nums[3] || "0";
+
+  return newShadow;
+};
+
+/**
+ * 根据 shadow 对象构建 box-shadow 字符串
+ */
+export const buildBoxShadow = (shadow: Shadow): string => {
+  if (
+    !shadow.offsetX &&
+    !shadow.offsetY &&
+    !shadow.blurRadius &&
+    !shadow.spreadRadius
+  ) {
+    return "none";
+  }
+  return [
+    shadow.inset ? "inset" : "",
+    `${shadow.offsetX || 0}px`,
+    `${shadow.offsetY || 0}px`,
+    `${shadow.blurRadius || 0}px`,
+    `${shadow.spreadRadius || 0}px`,
+    shadow.color || "#000000",
+  ]
+    .filter(Boolean)
+    .join(" ");
+};

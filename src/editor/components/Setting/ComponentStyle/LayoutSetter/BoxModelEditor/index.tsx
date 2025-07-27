@@ -1,5 +1,4 @@
 /**
- * @file /src/editor/components/Setting/BoxModelEditor.tsx
  * @description
  * 一个可视化的 CSS 盒模型 (Box Model) 编辑器组件。
  * 用户可以通过这个界面直观地修改元素的 margin 和 padding。

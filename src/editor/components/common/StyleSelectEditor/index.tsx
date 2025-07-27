@@ -1,7 +1,8 @@
 // src/editor/components/common/StyleSelectEditor/index.tsx
 
-import { Form, Select } from "antd";
+import { Select } from "antd";
 import type { CSSProperties } from "react";
+import { useStyleChangeHandler } from "../../../hooks/useStyleChangeHandler";
 
 interface StyleSelectEditorProps {
   label?: string;
@@ -18,11 +19,7 @@ const StyleSelectEditor = ({
   value = {},
   onChange,
 }: StyleSelectEditorProps) => {
-  const handleChange = (newValue?: string) => {
-    onChange?.({
-      [propertyName]: newValue,
-    });
-  };
+  const handleChange = useStyleChangeHandler(onChange)(propertyName);
 
   return (
     <Select

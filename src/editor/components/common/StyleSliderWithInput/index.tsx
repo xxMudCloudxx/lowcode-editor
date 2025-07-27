@@ -55,7 +55,7 @@ const StyleSliderWithInput = ({
       // 如果外部值和defaultValue都清空了，则清空内部
       setInternalValue("");
     }
-  }, [value, propertyName, unit, defaultValue]);
+  }, [value[propertyName], propertyName, unit, defaultValue]);
 
   // 将内部状态值转换为数字，用于组件渲染
   const numericValue = parseFloat(internalValue.toString());
@@ -70,7 +70,7 @@ const StyleSliderWithInput = ({
     // 检查 finalNumericValue 是否为一个有效的数字
     if (!isNaN(finalNumericValue)) {
       // ---- 情况一：用户输入了有效数字 ----
-      // 和之前的逻辑一样，格式化并向上通知父组件
+      // 格式化并向上通知父组件
       const newStringValue = String(finalNumericValue);
       const finalValue = unit ? addUnit(unit, newStringValue) : newStringValue;
       onChange({ [propertyName]: finalValue });
@@ -90,8 +90,6 @@ const StyleSliderWithInput = ({
         max={max}
         step={step}
         onChange={(val) => setInternalValue(String(val))}
-        // --- API 修正 ---
-        // Ant Design Slider 的 API 是 onAfterChange
         onChangeComplete={handleFinalChange}
         value={isNaN(numericValue) ? 0 : numericValue}
       />
@@ -105,8 +103,6 @@ const StyleSliderWithInput = ({
         onChange={(val) => setInternalValue(String(val ?? ""))}
         onPressEnter={() => handleFinalChange(numericValue)}
         onBlur={() => handleFinalChange(numericValue)}
-        // --- UX 优化 ---
-        // InputNumber 在值为 NaN 时应显示为空 (null)，而不是 0
         value={isNaN(numericValue) ? null : numericValue}
       />
     </div>

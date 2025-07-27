@@ -1,6 +1,10 @@
 import { InputNumber, Space } from "antd";
 import { useEffect, useState, type CSSProperties } from "react";
-import { addUnit, stripUnit } from "../../../utils/styles";
+import {
+  addUnit,
+  stripUnit,
+  type KebabCaseCSSProperties,
+} from "../../../utils/styles";
 
 // 定义传入的属性对的类型
 interface PairedProperty {
@@ -11,7 +15,7 @@ interface PairedProperty {
 
 interface PairedInputEditorProps {
   // 传入的完整样式对象
-  value?: CSSProperties;
+  value?: CSSProperties | KebabCaseCSSProperties;
   // 更新样式的回调函数
   onChange?: (css: CSSProperties) => void;
   // 定义第一个输入框
@@ -39,7 +43,12 @@ const PairedInputEditor = ({
   useEffect(() => {
     setInternalValue1(stripUnit(unit!, value[prop1.propertyName]));
     setInternalValue2(stripUnit(unit!, value[prop2.propertyName]));
-  }, [value, prop1.propertyName, prop2.propertyName]);
+  }, [
+    value[prop1.propertyName],
+    value[prop2.propertyName],
+    prop1.propertyName,
+    prop2.propertyName,
+  ]);
 
   // 创建一个通用的 change 处理器
   const handleChange = (

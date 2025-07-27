@@ -1,4 +1,9 @@
 import type { CSSProperties } from "react";
+export interface BorderConfig {
+  key: string;
+  type: BorderType;
+  // 这里可能还有其他属性，比如用于 accessibility 的 label 等
+}
 
 export type BorderType = "top" | "right" | "bottom" | "left" | "all";
 

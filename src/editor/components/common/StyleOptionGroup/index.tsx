@@ -44,6 +44,7 @@ const StyleOptionGroup = ({
               type={currentValue === opt.value ? "primary" : "default"}
               icon={opt.icon}
               onClick={() => handleClick(opt.value)}
+              block
             >
               {opt.label}
             </Button>
