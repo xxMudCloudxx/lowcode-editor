@@ -14,6 +14,7 @@ function FormDev({
   children,
   onFinish,
   isSelected,
+  ...antProps
 }: CommonComponentProps) {
   const [form] = AntdForm.useForm();
 
@@ -68,6 +69,7 @@ function FormDev({
         onFinish={(values) => {
           onFinish && onFinish(values);
         }}
+        {...antProps}
       >
         {formItems.map((item: any) => {
           return (

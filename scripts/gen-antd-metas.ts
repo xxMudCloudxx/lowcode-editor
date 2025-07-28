@@ -38,6 +38,13 @@ const TARGETS: Target[] = [
     desc: "多选组",
     propsType: { from: "antd/es/checkbox", typeName: "CheckboxGroupProps" },
   },
+  {
+    name: "Form",
+    importStmt: `import { Form } from 'antd';`,
+    componentExpr: "Form",
+    desc: "表单",
+    propsType: { from: "antd/es/Form", typeName: "FormProps" },
+  },
 ];
 
 const ROOT = process.cwd();

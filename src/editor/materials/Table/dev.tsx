@@ -14,6 +14,7 @@ function TableDev({
   children,
   styles,
   isSelected,
+  ...antProps
 }: CommonComponentProps) {
   const { isOver, drop } = useMaterailDrop(id, name);
 
@@ -65,7 +66,12 @@ function TableDev({
       data-component-id={id}
       style={styles}
     >
-      <AntdTable columns={columns} dataSource={[]} pagination={false} />
+      <AntdTable
+        columns={columns}
+        dataSource={[]}
+        pagination={false}
+        {...antProps}
+      />
     </div>
   );
 }
