@@ -5,7 +5,7 @@
  * 提供了用于修改组件定位（position）、层级（z-index）、浮动（float）和清除浮动（clear）的 UI 控件。
  * @module Components/Setting/ComponentStyle/LocationSetter
  */
-import { Divider, Form, InputNumber, Select, type SelectProps } from "antd";
+import { Form, InputNumber, Select, type SelectProps } from "antd";
 import type { Component } from "../../../../stores/components";
 import { useEffect, useState, type CSSProperties } from "react";
 import LocationBoxModalEditor from "./BoxModalEditor";
@@ -46,7 +46,7 @@ const LocationSetter = ({ curComponent, onChange }: LocationSetterProps) => {
     if (value.position !== position) {
       setPosition(value.position as Position | undefined);
     }
-  }, [value.position]); // 只关心这一字段
+  }, [value.position, position]);
 
   const createChangeHandler = useStyleChangeHandler(onChange);
 
@@ -57,8 +57,6 @@ const LocationSetter = ({ curComponent, onChange }: LocationSetterProps) => {
 
   return (
     <div>
-      <Divider orientation="left">位置</Divider>
-
       <Form labelCol={{ span: 6 }} wrapperCol={{ span: 18 }} labelAlign="right">
         <Form.Item label="定位">
           <Select

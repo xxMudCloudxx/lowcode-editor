@@ -6,7 +6,7 @@
  * 包括 `BorderRadiusEditor`, `BorderEditor`, 和 `ShadowSetter`。
  * @module Components/Setting/ComponentStyle/BoardSetter
  */
-import { Divider, Form } from "antd";
+import { Form } from "antd";
 import type { Component } from "../../../../stores/components";
 import { type CSSProperties } from "react";
 import BorderRadiusEditor from "./BorderRadiusEditor";
@@ -25,7 +25,6 @@ const BoardSetter = (props: BoardSetterProps) => {
 
   return (
     <div>
-      <Divider orientation="left">边框</Divider>
       <Form labelCol={{ span: 6 }} wrapperCol={{ span: 18 }} labelAlign="right">
         <BorderRadiusEditor
           value={value as KebabCaseCSSProperties}

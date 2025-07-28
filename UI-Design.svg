@@ -1,0 +1,162 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="1200" height="800" fill="#fafbfc"/>
+  
+  <!-- 标题 -->
+  <text x="600" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="600" fill="#1f2937">低代码编辑器 UI 设计稿</text>
+  
+  <!-- Header 区域 -->
+  <rect x="0" y="60" width="1200" height="60" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  
+  <!-- Logo 和标题 -->
+  <circle cx="30" cy="90" r="12" fill="#6366f1"/>
+  <text x="50" y="88" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#1f2937">低代码编辑器</text>
+  <text x="50" y="102" font-family="Inter, sans-serif" font-size="10" fill="#6b7280">Modern Low-Code Editor</text>
+  
+  <!-- Header 按钮组 -->
+  <g transform="translate(800, 75)">
+    <!-- 帮助按钮 -->
+    <circle cx="0" cy="0" r="15" fill="#f3f4f6" stroke="#d1d5db"/>
+    <text x="0" y="3" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#6b7280">?</text>
+    
+    <!-- 撤销/重做按钮组 -->
+    <rect x="30" y="-12" width="80" height="24" rx="6" fill="#f9fafb" stroke="#e5e7eb"/>
+    <rect x="32" y="-10" width="36" height="20" rx="4" fill="#ffffff" stroke="#d1d5db"/>
+    <text x="50" y="2" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#374151">撤销</text>
+    <rect x="70" y="-10" width="36" height="20" rx="4" fill="#ffffff" stroke="#d1d5db"/>
+    <text x="88" y="2" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#374151">重做</text>
+    
+    <!-- 重置按钮 -->
+    <rect x="120" y="-10" width="60" height="20" rx="4" fill="#ffffff" stroke="#fca5a5"/>
+    <text x="150" y="2" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#dc2626">重置历史</text>
+    
+    <rect x="190" y="-10" width="60" height="20" rx="4" fill="#ffffff" stroke="#fca5a5"/>
+    <text x="220" y="2" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#dc2626">重置画布</text>
+    
+    <!-- 预览按钮 -->
+    <rect x="260" y="-12" width="50" height="24" rx="6" fill="#6366f1" stroke="#6366f1"/>
+    <text x="285" y="2" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#ffffff">预览</text>
+  </g>
+  
+  <!-- 主要内容区域 -->
+  <rect x="0" y="120" width="1200" height="680" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  
+  <!-- 左侧物料面板 -->
+  <rect x="10" y="130" width="280" height="660" fill="#ffffff" stroke="#e5e7eb" stroke-width="1" rx="8"/>
+  
+  <!-- 物料面板标题 -->
+  <text x="20" y="155" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#374151">组件物料</text>
+  
+  <!-- 分段控制器 -->
+  <rect x="20" y="170" width="260" height="32" rx="6" fill="#f3f4f6"/>
+  <rect x="22" y="172" width="84" height="28" rx="4" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="64" y="188" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#374151">物料</text>
+  <text x="150" y="188" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#6b7280">大纲</text>
+  <text x="236" y="188" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#6b7280">源码</text>
+  
+  <!-- 物料组件列表 -->
+  <g transform="translate(20, 220)">
+    <!-- 组件卡片1 -->
+    <rect x="0" y="0" width="260" height="60" rx="8" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+    <rect x="10" y="10" width="40" height="40" rx="8" fill="linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%)"/>
+    <rect x="18" y="18" width="24" height="24" rx="2" fill="#6366f1"/>
+    <text x="60" y="25" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#1f2937">Button 按钮</text>
+    <text x="60" y="38" font-family="Inter, sans-serif" font-size="10" fill="#6b7280">基础按钮组件</text>
+    
+    <!-- 组件卡片2 -->
+    <rect x="0" y="70" width="260" height="60" rx="8" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+    <rect x="10" y="80" width="40" height="40" rx="8" fill="linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%)"/>
+    <rect x="18" y="88" width="24" height="24" rx="2" fill="#6366f1"/>
+    <text x="60" y="95" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#1f2937">Input 输入框</text>
+    <text x="60" y="108" font-family="Inter, sans-serif" font-size="10" fill="#6b7280">文本输入组件</text>
+    
+    <!-- 组件卡片3 -->
+    <rect x="0" y="140" width="260" height="60" rx="8" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+    <rect x="10" y="150" width="40" height="40" rx="8" fill="linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%)"/>
+    <rect x="18" y="158" width="24" height="24" rx="2" fill="#6366f1"/>
+    <text x="60" y="165" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#1f2937">Container 容器</text>
+    <text x="60" y="178" font-family="Inter, sans-serif" font-size="10" fill="#6b7280">布局容器组件</text>
+  </g>
+  
+  <!-- 中间画布区域 -->
+  <rect x="300" y="130" width="600" height="660" fill="#ffffff" stroke="#e5e7eb" stroke-width="1" rx="8"/>
+  
+  <!-- 画布背景纹理 -->
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="1" fill="#e5e7eb" opacity="0.3"/>
+    </pattern>
+  </defs>
+  <rect x="310" y="140" width="580" height="640" fill="url(#grid)" rx="4"/>
+  
+  <!-- 画布标题 -->
+  <text x="600" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#374151">设计画布</text>
+  
+  <!-- 画布中的组件示例 -->
+  <g transform="translate(400, 200)">
+    <!-- 示例按钮组件 -->
+    <rect x="0" y="0" width="100" height="40" rx="6" fill="#6366f1" stroke="#4f46e5" stroke-width="2" stroke-dasharray="4,4"/>
+    <text x="50" y="22" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#ffffff">按钮组件</text>
+    
+    <!-- 示例输入框组件 -->
+    <rect x="0" y="60" width="200" height="40" rx="6" fill="#ffffff" stroke="#4f46e5" stroke-width="2" stroke-dasharray="4,4"/>
+    <text x="10" y="82" font-family="Inter, sans-serif" font-size="12" fill="#9ca3af">请输入内容...</text>
+    
+    <!-- 示例容器组件 -->
+    <rect x="0" y="120" width="300" height="150" rx="8" fill="#f9fafb" stroke="#4f46e5" stroke-width="2" stroke-dasharray="4,4"/>
+    <text x="150" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#6b7280">容器组件</text>
+  </g>
+  
+  <!-- 右侧属性面板 -->
+  <rect x="910" y="130" width="280" height="660" fill="#ffffff" stroke="#e5e7eb" stroke-width="1" rx="8"/>
+  
+  <!-- 属性面板标题 -->
+  <text x="920" y="155" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#374151">组件属性</text>
+  
+  <!-- 属性面板分段控制器 -->
+  <rect x="920" y="170" width="260" height="32" rx="6" fill="#f3f4f6"/>
+  <rect x="922" y="172" width="84" height="28" rx="4" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="964" y="188" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#374151">属性</text>
+  <text x="1050" y="188" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#6b7280">样式</text>
+  <text x="1136" y="188" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#6b7280">事件</text>
+  
+  <!-- 属性表单 -->
+  <g transform="translate(920, 220)">
+    <!-- 组件ID -->
+    <text x="0" y="15" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#374151">组件ID</text>
+    <rect x="0" y="20" width="260" height="32" rx="6" fill="#f9fafb" stroke="#e5e7eb"/>
+    <text x="10" y="38" font-family="Inter, sans-serif" font-size="11" fill="#6b7280">button_001</text>
+    
+    <!-- 组件类型 -->
+    <text x="0" y="70" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#374151">组件类型</text>
+    <rect x="0" y="75" width="260" height="32" rx="6" fill="#f9fafb" stroke="#e5e7eb"/>
+    <text x="10" y="93" font-family="Inter, sans-serif" font-size="11" fill="#6b7280">Button</text>
+    
+    <!-- 按钮文本 -->
+    <text x="0" y="125" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#374151">按钮文本</text>
+    <rect x="0" y="130" width="260" height="32" rx="6" fill="#ffffff" stroke="#d1d5db"/>
+    <text x="10" y="148" font-family="Inter, sans-serif" font-size="11" fill="#1f2937">点击按钮</text>
+    
+    <!-- 按钮类型 -->
+    <text x="0" y="180" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#374151">按钮类型</text>
+    <rect x="0" y="185" width="260" height="32" rx="6" fill="#ffffff" stroke="#d1d5db"/>
+    <text x="10" y="203" font-family="Inter, sans-serif" font-size="11" fill="#1f2937">primary</text>
+    <polygon points="240,195 250,201 240,207" fill="#6b7280"/>
+  </g>
+  
+  <!-- 分割线 -->
+  <line x1="295" y1="130" x2="295" y2="790" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="905" y1="130" x2="905" y2="790" stroke="#e5e7eb" stroke-width="1"/>
+  
+  <!-- 底部状态栏 -->
+  <rect x="0" y="790" width="1200" height="10" fill="#f3f4f6"/>
+  
+  <!-- 设计说明 -->
+  <g transform="translate(50, 750)">
+    <text x="0" y="0" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#374151">设计特点：</text>
+    <text x="0" y="20" font-family="Inter, sans-serif" font-size="10" fill="#6b7280">• 现代化的卡片式设计，使用圆角和阴影提升视觉层次</text>
+    <text x="0" y="35" font-family="Inter, sans-serif" font-size="10" fill="#6b7280">• 统一的 Indigo 色系作为主色调，保持设计一致性</text>
+    <text x="400" y="20" font-family="Inter, sans-serif" font-size="10" fill="#6b7280">• 自定义滚动条和过渡动画，提升用户体验</text>
+    <text x="400" y="35" font-family="Inter, sans-serif" font-size="10" fill="#6b7280">• 响应式布局和清晰的信息层次结构</text>
+  </g>
+</svg>

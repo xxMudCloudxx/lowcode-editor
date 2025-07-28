@@ -3,6 +3,7 @@ import type { ComponentConfig } from "../../stores/component-config";
 export default {
   name: "Button",
   desc: "按钮",
+  category: "基础",
   defaultProps: {
     type: "primary",
     text: "按钮",

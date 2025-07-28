@@ -2,6 +2,7 @@ import type { ComponentConfig } from "../../stores/component-config";
 
 export default {
   name: "Modal",
+  category: "反馈",
   defaultProps: {
     title: "弹窗",
   },

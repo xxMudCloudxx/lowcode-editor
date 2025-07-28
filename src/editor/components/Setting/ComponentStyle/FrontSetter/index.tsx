@@ -7,7 +7,7 @@
  */
 import { type CSSProperties } from "react";
 import type { Component } from "../../../../stores/components";
-import { Divider, Form } from "antd";
+import { Form } from "antd";
 import FormItem from "antd/es/form/FormItem";
 import PairedInputEditor from "../../../common/PariedInputEditor";
 import {
@@ -35,7 +35,6 @@ const FrontSetter = (props: FrontSetterProps) => {
 
   return (
     <>
-      <Divider orientation="left">文字</Divider>
       <Form
         labelCol={{ span: 6 }}
         wrapperCol={{ span: 18 }}

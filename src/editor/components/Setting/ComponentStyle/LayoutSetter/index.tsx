@@ -12,7 +12,7 @@ import type { Component } from "../../../../stores/components";
 import BoxModelEditor from "./BoxModelEditor";
 import LayoutModal from "./LayoutModal";
 import SizeEditor from "./SizeEditor";
-import { Divider, Form } from "antd";
+import { Form } from "antd";
 
 interface LayoutProps {
   curComponent: Component;
@@ -29,7 +29,6 @@ const LayoutSetter = (props: LayoutProps) => {
       labelAlign="right"
       style={{ width: "100%" }}
     >
-      <Divider orientation="left">布局</Divider>
       <LayoutModal value={curComponent.styles} onChange={onChange} />
       <Form.Item label="边距">
         <BoxModelEditor value={curComponent.styles} onChange={onChange} />

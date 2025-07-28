@@ -4,6 +4,7 @@ export default {
   name: "Table",
   defaultProps: {},
   desc: "表格",
+  category: "数据展示",
   setter: [
     {
       name: "url",

@@ -4,6 +4,7 @@ export default {
   name: "Form",
   defaultProps: {},
   desc: "表单",
+  category: "表单",
   setter: [
     {
       name: "title",

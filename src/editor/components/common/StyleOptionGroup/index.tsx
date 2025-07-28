@@ -6,6 +6,7 @@
  * 支持点击选中和再次点击取消的功能。
  * @module Components/Common/StyleOptionGroup
  */
+import React from "react";
 import { Button, Form, Tooltip } from "antd";
 import type { ReactNode } from "react";
 
@@ -44,21 +45,44 @@ const StyleOptionGroup = ({
 
   return (
     <Form.Item label={label} style={{ marginBottom }}>
-      <Button.Group style={{ width: "100%", display: "flex" }}>
-        {options.map((opt) => (
-          <Tooltip title={opt.tooltip} key={opt.value}>
-            <Button
-              style={{ flex: 1 }}
-              type={currentValue === opt.value ? "primary" : "default"}
-              icon={opt.icon}
-              onClick={() => handleClick(opt.value)}
-              block
-            >
-              {opt.label}
-            </Button>
-          </Tooltip>
+      <div 
+        style={{ 
+          width: "100%", 
+          display: "flex",
+          border: "1px solid #d9d9d9",
+          borderRadius: "6px",
+          overflow: "hidden"
+        }}
+      >
+        {options.map((opt, index) => (
+          <React.Fragment key={opt.value}>
+            <Tooltip title={opt.tooltip}>
+              <Button
+                style={{ 
+                  flex: 1, 
+                  border: "none",
+                  borderRadius: 0
+                }}
+                type={currentValue === opt.value ? "primary" : "default"}
+                icon={opt.icon}
+                onClick={() => handleClick(opt.value)}
+                block
+              >
+                {opt.label}
+              </Button>
+            </Tooltip>
+            {index < options.length - 1 && (
+              <div 
+                style={{
+                  width: "1px",
+                  backgroundColor: "#d9d9d9",
+                  alignSelf: "stretch"
+                }}
+              />
+            )}
+           </React.Fragment>
         ))}
-      </Button.Group>
+      </div>
       {children}
     </Form.Item>
   );

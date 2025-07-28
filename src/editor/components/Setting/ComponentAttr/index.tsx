@@ -170,7 +170,7 @@ export function ComponentAttr() {
       onValuesChange={valueChange}
       labelCol={{ span: 8 }}
       wrapperCol={{ span: 14 }}
-      className="overflow-y-auto h-[100%] absolute overscroll-y-contain pt-9"
+      className="overflow-y-auto h-[100%] absolute overscroll-y-contain pt-9 pb-30"
     >
       {/* 固定的只读信息 */}
       <Form.Item label="组件id">

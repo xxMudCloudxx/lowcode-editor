@@ -3,6 +3,7 @@ import type { ComponentConfig } from "../../stores/component-config";
 export default {
   name: "TableColumn",
   desc: "表格列",
+  category: "数据展示",
   defaultProps: {
     dataIndex: `col_${new Date().getTime()}`,
     title: "列名",

@@ -53,6 +53,7 @@ export interface ComponentConfig {
   name: string; // 组件的唯一英文名，用作类型标识
   defaultProps: Record<string, any>; // 组件被拖拽生成时的默认 props
   desc: string; // 组件的中文描述，显示在物料面板
+  category?: string; // 组件分类：通用、导航、反馈、表单、数据展示、其他、布局、基础
   parentTypes?: string[]; // 组件允许接收的父组件类型列表
   setter?: ComponentSetter[]; // 属性设置器配置
   styleSetter?: ComponentSetter[]; // 样式设置器配置

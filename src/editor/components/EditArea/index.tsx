@@ -108,13 +108,21 @@ export function EditArea() {
   }
   return (
     <div
-      className="h-[100%] edit-area overflow-y-auto relative"
+      className="h-full edit-area overflow-y-auto relative p-6"
       onMouseOver={handleMouseOver}
       onMouseLeave={() => {
         // 鼠标移出整个画布区域时，清空 hover 状态
         setHoverComponentId(undefined);
       }}
       onClick={handleClick}
+      style={{
+        background: `
+          radial-gradient(circle at 25px 25px, rgba(156, 163, 175, 0.08) 2px, transparent 0),
+          radial-gradient(circle at 75px 75px, rgba(156, 163, 175, 0.04) 2px, transparent 0),
+          linear-gradient(135deg, #fefefe 0%, #f9fafb 100%)
+        `,
+        backgroundSize: '50px 50px, 100px 100px, 100% 100%'
+      }}
     >
       {renderComponents(components)}
 

@@ -5,7 +5,7 @@
  * 提供了用于修改组件背景颜色和透明度的 UI 控件。
  * @module Components/Setting/ComponentStyle/BackGroundSetter
  */
-import { Divider, Form } from "antd";
+import { Form } from "antd";
 import FormItem from "antd/es/form/FormItem";
 import StyleColorPicker from "../../../common/StyleColorPicker";
 import type { Component } from "../../../../stores/components";
@@ -24,7 +24,6 @@ const BackGroundSetter = (props: BackGroundSetterProps) => {
   const createChangeHandler = useStyleChangeHandler(onChange);
   return (
     <div>
-      <Divider orientation="left">背景</Divider>
       <Form
         labelCol={{ span: 6 }}
         wrapperCol={{ span: 18 }}

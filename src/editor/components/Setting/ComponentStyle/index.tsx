@@ -31,6 +31,25 @@ export function ComponentStyle() {
 
   // State: 存储 CSS 编辑器中的文本内容
   const [css, setCss] = useState<string>(`.comp{\n\n}`);
+  
+  // 管理各个样式分类的展开/收起状态，默认全部展开
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    "CSS编辑器": true,
+    "布局": true,
+    "文字": true,
+    "背景": true,
+    "位置": true,
+    "边框": true,
+    "其他": true
+  });
+  
+  // 切换分类展开状态
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   useEffect(() => {
     form.resetFields();
@@ -41,8 +60,8 @@ export function ComponentStyle() {
       ...curComponent?.styles,
     });
 
-    setCss(toCSSStr(curComponent?.styles!));
-  }, [curComponent]);
+    setCss(toCSSStr(curComponent?.styles || {}));
+  }, [curComponent, form]);
 
   if (!curComponentId || !curComponent) return null;
 
@@ -57,7 +76,7 @@ export function ComponentStyle() {
    */
   function toCSSStr(css: Record<string, any>) {
     let str = `.comp {\n`;
-    for (let key in css) {
+    for (const key in css) {
       let value = css[key];
       if (!value) {
         continue;
@@ -111,24 +130,89 @@ export function ComponentStyle() {
     }
   }, 500);
 
-  return (
-    <div className="overflow-y-auto h-[100%] w-[100%] absolute pb-20 overscroll-y-contain ">
-      <div className=" border-[1px] border-[#ccc] h-[200px]">
-        <CssEditor value={css} onSave={handleEditorChange} />
-      </div>
-      <div className="pr-9">
-        <LayoutSetter curComponent={curComponent} onChange={valueChange} />
-        <FrontSetter curComponent={curComponent} onChange={valueChange} />
-        <BackGroundSetter curComponent={curComponent} onChange={valueChange} />
-        <LocationSetter curComponent={curComponent} onChange={valueChange} />
-        <BoardSetter curComponent={curComponent} onChange={valueChange} />
+  // 样式分类配置
+  const styleCategories = [
+    {
+      title: "CSS编辑器",
+      component: (
+        <div className=" border-[1px] border-[#ccc] h-[200px]">
+          <CssEditor value={css} onSave={handleEditorChange} />
+        </div>
+      )
+    },
+    {
+      title: "布局",
+      component: <LayoutSetter curComponent={curComponent} onChange={valueChange} />
+    },
+    {
+      title: "文字",
+      component: <FrontSetter curComponent={curComponent} onChange={valueChange} />
+    },
+    {
+      title: "背景",
+      component: <BackGroundSetter curComponent={curComponent} onChange={valueChange} />
+    },
+    {
+      title: "位置",
+      component: <LocationSetter curComponent={curComponent} onChange={valueChange} />
+    },
+    {
+      title: "边框",
+      component: <BoardSetter curComponent={curComponent} onChange={valueChange} />
+    }
+  ];
+  
+  // 获取当前组件的配置
+  const currentComponentConfig = componentConfig[curComponent?.name || ''];
+  
+  // 如果组件有styleSetter配置且不为空，则添加"其他"分类
+  if (currentComponentConfig?.styleSetter && currentComponentConfig.styleSetter.length > 0) {
+    styleCategories.push({
+      title: "其他",
+      component: (
         <OtherSetter
           form={form}
           onChange={valueChange}
           curComponent={curComponent}
           componentConfig={componentConfig}
         />
-      </div>
+      )
+    });
+  }
+
+  return (
+    <div className="overflow-y-auto h-[100%] w-[100%] absolute pb-30 overscroll-y-contain ">
+      {styleCategories.map(({ title, component }) => (
+        <div key={title} className="mb-4">
+          {/* 分类标题 */}
+          <div 
+            className="px-3 py-2 mb-3 cursor-pointer hover:bg-gray-50 rounded-lg transition-colors duration-200"
+            onClick={() => toggleSection(title)}
+          >
+            <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <h3 className="text-sm font-semibold text-gray-700">
+                {title}
+              </h3>
+              <svg 
+                className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                  expandedSections[title] ? 'rotate-90' : ''
+                }`}
+                fill="currentColor" 
+                viewBox="0 0 20 20"
+              >
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* 分类内容 */}
+          {expandedSections[title] && (
+            <div className={`transition-all duration-200 ease-in-out ${title === "CSS编辑器" ? "" : "pr-9"}`}>
+              {component}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
