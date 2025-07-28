@@ -56,7 +56,7 @@ jobs:
     name: 🧹 Cleanup old deployments
     runs-on: ubuntu-latest
     steps:
-      - name: Keep last 5 deployments and delete the rest
+      - name: Keep last 15 deployments and delete the rest
         # 使用 GitHub CLI 和 jq 工具来手动实现清理逻辑
         env:
           # 将 GitHub Token 传入环境变量，以便 gh 命令使用
@@ -70,13 +70,13 @@ jobs:
 
           # 1. 使用 GitHub API 获取部署列表，并用 jq 工具处理 JSON
           #   - sort_by(.created_at) | reverse: 按创建时间倒序排序（最新的在最前面）
-          #   - .[5:]: 跳过最新的 5 个，选取所有更早的部署
+          #   - .[15:]: 跳过最新的 15 个，选取所有更早的部署
           #   - .[].id: 从选中的部署对象中，只提取 id 字段
-          DEPLOYMENT_IDS_TO_DELETE=$(gh api "repos/$OWNER/$REPO/deployments?environment=$ENVIRONMENT&per_page=100" | jq 'sort_by(.created_at) | reverse | .[5:] | .[].id')
+          DEPLOYMENT_IDS_TO_DELETE=$(gh api "repos/$OWNER/$REPO/deployments?environment=$ENVIRONMENT&per_page=100" | jq 'sort_by(.created_at) | reverse | .[15:] | .[].id')
 
           # 检查是否有需要删除的部署
           if [ -z "$DEPLOYMENT_IDS_TO_DELETE" ]; then
-            echo "No old deployments to delete. Found 5 or fewer."
+            echo "No old deployments to delete. Found 15 or fewer."
             exit 0
           fi
 
