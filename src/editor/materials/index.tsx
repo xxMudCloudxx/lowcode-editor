@@ -29,7 +29,7 @@ const manualMetasAll = import.meta.glob("./**/meta.tsx", {
   eager: true,
   import: "default",
 });
-// 过滤掉 _generated 目录（如果你的 Vite 版本支持 ignore 选项，也可以直接用 ignore）
+// 过滤掉 _generated 目录
 const manualMetas = Object.fromEntries(
   Object.entries(manualMetasAll).filter(([k]) => !k.startsWith("./_generated/"))
 );
@@ -90,18 +90,26 @@ function buildGeneratedList(): ComponentConfig[] {
   >;
 
   Object.values(autoMetas).forEach((meta) => {
-    const devKey = `./${meta.name}/dev.tsx`;
-    const prodKey = `./${meta.name}/prod.tsx`;
-    const devImporter = devComponents[devKey];
-    const prodImporter = prodComponents[prodKey];
+    // 不再假设路径结构，而是反向查找
+    // Object.keys(devComponents) 会拿到所有 glob 匹配到的实际路径数组
+    // e.g., ['./General/Button/dev.tsx', './Layout/Container/dev.tsx', ...]
+    const devKey = Object.keys(devComponents).find((key) =>
+      key.endsWith(`/${meta.name}/dev.tsx`)
+    );
+    const prodKey = Object.keys(prodComponents).find((key) =>
+      key.endsWith(`/${meta.name}/prod.tsx`)
+    );
+
+    const devImporter = devKey ? devComponents[devKey] : undefined;
+    const prodImporter = prodKey ? prodComponents[prodKey] : undefined;
 
     if (!devImporter || !prodImporter) {
       // eslint-disable-next-line no-console
       console.warn(
         `[materials] 跳过自动生成的组件 "${meta.name}"：未找到匹配的${
-          !devImporter ? ` ${devKey}` : ""
+          !devImporter ? ` dev.tsx` : ""
         }${!devImporter && !prodImporter ? " 和" : ""}${
-          !prodImporter ? ` ${prodKey}` : ""
+          !prodImporter ? ` prod.tsx` : ""
         }`
       );
       return;

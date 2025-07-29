@@ -102,11 +102,11 @@ export function ComponentAttr() {
     } = setting;
 
     const opts = normalizeOptions(options);
-    console.log("[AttrSetter]", {
-      curName: curComponent?.name,
-      has: !!componentConfig[curComponent?.name ?? ""],
-      keys: Object.keys(componentConfig),
-    });
+    // console.log("[AttrSetter]", {
+    //   curName: curComponent?.name,
+    //   has: !!componentConfig[curComponent?.name ?? ""],
+    //   keys: Object.keys(componentConfig),
+    // });
 
     switch (type) {
       case "select":
@@ -168,8 +168,8 @@ export function ComponentAttr() {
     <Form
       form={form}
       onValuesChange={valueChange}
-      labelCol={{ span: 8 }}
-      wrapperCol={{ span: 14 }}
+      labelCol={{ span: 12 }}
+      wrapperCol={{ span: 18 }}
       className="overflow-y-auto h-[100%] absolute overscroll-y-contain pt-9 pb-30"
     >
       {/* 固定的只读信息 */}

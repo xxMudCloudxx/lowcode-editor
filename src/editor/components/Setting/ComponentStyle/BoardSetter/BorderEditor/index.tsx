@@ -35,7 +35,7 @@ const BorderEditor = (props: BorderRadiusEditorProps) => {
     (v?: string) => {
       const nextMode = v === localType ? "" : v || "";
       setLocalType(nextMode);
-      console.log(nextMode);
+      // console.log(nextMode);
     },
     [onChange, localType]
   );

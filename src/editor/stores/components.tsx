@@ -299,7 +299,7 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
       const component = getComponentById(componentId, state.components);
       if (!component) return;
       state.clipboard = component;
-      console.log(state.clipboard);
+      // console.log(state.clipboard);
     });
   },
 
