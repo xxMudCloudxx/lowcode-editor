@@ -13,6 +13,8 @@ import { Segmented } from "antd";
 import { ComponentAttr } from "./ComponentAttr";
 import { ComponentStyle } from "./ComponentStyle";
 import { ComponentEvent } from "./ComponentEvent";
+import { ComponentBreadcrumb } from "./ComponentBreadcrumb";
+import { EmptyStatus } from "./emptyStatus";
 
 export function Setting() {
   const { curComponentId } = useComponetsStore();
@@ -22,35 +24,12 @@ export function Setting() {
 
   // 如果当前没有选中任何组件，则显示空状态
   if (!curComponentId) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <svg
-            className="w-8 h-8 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
-            />
-          </svg>
-        </div>
-        <h3 className="text-lg font-medium text-gray-700 mb-2">
-          选择组件进行配置
-        </h3>
-        <p className="text-sm text-gray-500 max-w-xs">
-          在画布中点击任意组件，即可在此处编辑其属性、样式和事件
-        </p>
-      </div>
-    );
+    return <EmptyStatus />;
   }
 
   return (
     <div className="h-full flex flex-col">
+      <ComponentBreadcrumb />
       {/* 分段控制器 */}
       <div className="mb-6">
         <Segmented
@@ -62,7 +41,7 @@ export function Setting() {
             { label: "样式", value: "样式" },
             { label: "事件", value: "事件" },
           ]}
-          className="!bg-gray-50 !p-1"
+          className="!bg-gray-50 !p-1 select-none"
         />
       </div>
 
