@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { useMaterailDrop } from "../../hooks/useMatrialDrop";
-import type { CommonComponentProps } from "../../interface";
+import { useMaterailDrop } from "../../../hooks/useMatrialDrop";
+import type { CommonComponentProps } from "../../../interface";
 import { Form as AntdForm, Input } from "antd";
 import { useDrag } from "react-dnd";
 

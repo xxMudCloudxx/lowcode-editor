@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type { CommonComponentProps } from "../../interface";
+import type { CommonComponentProps } from "../../../interface";
 import dayjs from "dayjs";
 import axios from "axios";
 import { Table as AntdTable } from "antd";

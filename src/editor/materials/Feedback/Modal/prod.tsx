@@ -1,5 +1,5 @@
 import type React from "react";
-import type { CommonComponentProps } from "../../interface";
+import type { CommonComponentProps } from "../../../interface";
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { Modal as AntdModal } from "antd";
 

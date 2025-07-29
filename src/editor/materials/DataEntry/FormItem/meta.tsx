@@ -1,4 +1,4 @@
-import type { ComponentConfig } from "../../stores/component-config";
+import type { ComponentConfig } from "../../../stores/component-config";
 
 export default {
   name: "FormItem",

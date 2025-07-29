@@ -1,5 +1,5 @@
 import { Button as AntdButton } from "antd";
-import type { CommonComponentProps } from "../../interface";
+import type { CommonComponentProps } from "../../../interface";
 
 /**
  * @description Button 组件的“生产”版本，用于预览和最终渲染。

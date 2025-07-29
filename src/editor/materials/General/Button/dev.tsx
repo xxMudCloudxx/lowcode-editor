@@ -1,5 +1,5 @@
 import { Button as AntdButton } from "antd";
-import type { CommonComponentProps } from "../../interface";
+import type { CommonComponentProps } from "../../../interface";
 import { useDrag } from "react-dnd";
 
 /**

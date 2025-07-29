@@ -4,7 +4,7 @@ import React, {
   useMemo,
   type ForwardRefRenderFunction,
 } from "react";
-import type { CommonComponentProps } from "../../interface";
+import type { CommonComponentProps } from "../../../interface";
 import dayjs from "dayjs";
 import { Form as AntdForm, DatePicker, Input } from "antd";
 export interface FormRef {

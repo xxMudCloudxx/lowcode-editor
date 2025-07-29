@@ -1,5 +1,5 @@
-import type { CommonComponentProps } from "../../interface";
-import { useMaterailDrop } from "../../hooks/useMatrialDrop";
+import type { CommonComponentProps } from "../../../interface";
+import { useMaterailDrop } from "../../../hooks/useMatrialDrop";
 import { useEffect, useRef } from "react";
 import { useDrag } from "react-dnd";
 

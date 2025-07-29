@@ -1,4 +1,4 @@
-import { type CommonComponentProps } from "../../interface";
+import { type CommonComponentProps } from "../../../interface";
 
 /**
  * @description Container 组件的“生产”版本，用于预览和最终渲染。

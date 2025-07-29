@@ -1,5 +1,5 @@
-import { useMaterailDrop } from "../../hooks/useMatrialDrop";
-import type { CommonComponentProps } from "../../interface";
+import { useMaterailDrop } from "../../../hooks/useMatrialDrop";
+import type { CommonComponentProps } from "../../../interface";
 
 /**
  * @description Modal 组件的“开发”版本，用于编辑器画布内。
