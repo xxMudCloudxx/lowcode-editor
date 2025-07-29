@@ -34,7 +34,7 @@ const EmptyStatus = () => {
         </svg>
       </div>
       <h3 className="text-lg font-medium text-gray-700 mb-2">
-        選擇組件進行配置
+        选择组件进行配置
       </h3>
       <p className="text-sm text-gray-500 max-w-xs">
         在画布中点击任意组件，即可在此处编辑其属性、样式和事件
