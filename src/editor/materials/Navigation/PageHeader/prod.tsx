@@ -3,12 +3,7 @@ import type { CommonComponentProps } from "../../../interface";
 
 const { Title, Text } = Typography;
 
-const PageHeaderProd = ({
-  id,
-  styles,
-  title,
-  subTitle,
-}: CommonComponentProps) => {
+const PageHeaderProd = ({ styles, title, subTitle }: CommonComponentProps) => {
   return (
     <div
       style={{
