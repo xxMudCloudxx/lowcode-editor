@@ -84,7 +84,6 @@ const PairedInputEditor = ({
           placeholder={prop1.placeholder}
           onChange={(val) => handleChange(prop1.propertyName, val)}
           style={width}
-          controls={false}
         />
         <InputNumber
           prefix={prop2.label}
@@ -93,7 +92,6 @@ const PairedInputEditor = ({
           placeholder={prop2.placeholder}
           onChange={(val) => handleChange(prop2.propertyName, val)}
           style={width}
-          controls={false}
         />
       </Space>
     </div>

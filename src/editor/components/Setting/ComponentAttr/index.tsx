@@ -23,6 +23,8 @@ import {
   useComponentConfigStore,
   type ComponentSetter,
 } from "../../../stores/component-config";
+import JsonEditor from "../../common/JsonEditor";
+import { BreadcrumbSetter } from "./BreadcrumbSetter";
 
 type AnyObject = Record<string, any>;
 
@@ -127,6 +129,8 @@ export function ComponentAttr() {
       case "number":
         return <InputNumber style={{ width: "100%" }} {...controlProps} />;
 
+      case "json":
+        return <JsonEditor {...controlProps} />;
       case "radio":
         // Radio.Group 的 options 也支持 string[]，这里做了归一化
         return <Radio.Group options={opts} {...controlProps} />;
@@ -140,6 +144,13 @@ export function ComponentAttr() {
       case "segmented":
         // Segmented 需要 { label, value }，normalizeOptions 已处理
         return <Segmented options={opts as any} {...controlProps} />;
+      case "custom":
+        switch (setting.component) {
+          case "BreadcrumbSetter":
+            return <BreadcrumbSetter {...controlProps} />;
+          default:
+            return <div>未知的自定义设置器：{setting.component}</div>;
+        }
 
       default:
         // 未识别类型时兜底为 Input，便于容错
@@ -168,7 +179,7 @@ export function ComponentAttr() {
     <Form
       form={form}
       onValuesChange={valueChange}
-      labelCol={{ span: 12 }}
+      labelCol={{ span: 6 }}
       wrapperCol={{ span: 18 }}
       className="overflow-y-auto h-[100%] absolute overscroll-y-contain pt-9 pb-30"
     >
