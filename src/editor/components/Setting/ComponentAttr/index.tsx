@@ -25,8 +25,15 @@ import {
 } from "../../../stores/component-config";
 import JsonEditor from "../../common/JsonEditor";
 import { BreadcrumbSetter } from "./BreadcrumbSetter";
+import AttrListSetter from "../../common/AttrListSetter";
 
 type AnyObject = Record<string, any>;
+
+// 创建一个自定义设置器的“注册表”或“地图”
+const customSetters: Record<string, React.FC<any>> = {
+  BreadcrumbSetter,
+  AttrListSetter,
+};
 
 /**
  * @description 归一化 options。支持：
@@ -97,6 +104,8 @@ export function ComponentAttr() {
       options,
       name: _omitName,
       label: _omitLabel,
+      component: componentName,
+      props: customSetterProps,
       // 你还可以在这里继续剥离不希望下发的字段：
       // required: _omitRequired,
       // tooltip: _omitTooltip,
@@ -144,17 +153,15 @@ export function ComponentAttr() {
       case "segmented":
         // Segmented 需要 { label, value }，normalizeOptions 已处理
         return <Segmented options={opts as any} {...controlProps} />;
-      case "custom":
-        switch (setting.component) {
-          case "BreadcrumbSetter":
-            return <BreadcrumbSetter {...controlProps} />;
-          default:
-            return <div>未知的自定义设置器：{setting.component}</div>;
-        }
+      case "custom": {
+        const CustomComponent = customSetters[componentName as string];
 
-      default:
+        if (CustomComponent) {
+          return <CustomComponent {...customSetterProps} />;
+        }
         // 未识别类型时兜底为 Input，便于容错
         return <Input {...controlProps} allowClear />;
+      }
     }
   }
 
