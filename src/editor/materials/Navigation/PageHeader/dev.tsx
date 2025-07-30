@@ -30,7 +30,7 @@ const PageHeaderDev = ({
       style={{ ...styles, border: "1px solid #f0f0f0", padding: "16px 24px" }}
     >
       <Space direction="vertical">
-        <Title level={3} style={{ margin: 0 }}>
+        <Title level={3} style={{ margin: 0, ...styles }}>
           {title}
         </Title>
         <Text type="secondary">{subTitle}</Text>

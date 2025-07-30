@@ -1,4 +1,4 @@
-import { Dropdown as AntdDropdown, Button } from "antd";
+import { Button } from "antd";
 import type { CommonComponentProps } from "../../../interface";
 import { useDrag } from "react-dnd";
 import { useRef } from "react";

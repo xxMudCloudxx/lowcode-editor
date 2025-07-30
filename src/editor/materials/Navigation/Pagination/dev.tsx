@@ -26,7 +26,7 @@ const PaginationDev = ({
   return (
     <div ref={divRef} data-component-id={id} style={{ ...styles }}>
       {/* 只把干净的 rest props 传递给 Antd 组件 */}
-      <AntdPagination {...rest} />
+      <AntdPagination style={styles} {...rest} />
     </div>
   );
 };

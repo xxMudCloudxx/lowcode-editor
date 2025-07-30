@@ -18,7 +18,7 @@ const StepsDev = ({ id, styles, ...antProps }: CommonComponentProps) => {
 
   return (
     <div ref={divRef} data-component-id={id} style={styles}>
-      <AntdSteps {...antProps} />
+      <AntdSteps style={styles} {...antProps} />
     </div>
   );
 };

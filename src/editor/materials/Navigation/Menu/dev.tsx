@@ -18,7 +18,7 @@ const MenuDev = ({ id, styles, ...antProps }: CommonComponentProps) => {
 
   return (
     <div ref={divRef} data-component-id={id} style={{ ...styles }}>
-      <AntdMenu {...antProps} />
+      <AntdMenu {...antProps} style={styles} />
     </div>
   );
 };
