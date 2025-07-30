@@ -1,5 +1,6 @@
 // src/editor/materials/General/Icon/meta.tsx
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_GENERAL } from "../../containerTypes";
 
 export default {
   name: "Icon",
@@ -11,7 +12,7 @@ export default {
     rotate: 0,
   },
   // 可以被放置在绝大多数容器中
-  parentTypes: ["Page", "Container", "Modal", "GridColumn", "Card", "ListItem"],
+  parentTypes: PT_GENERAL,
   setter: [
     {
       name: "icon",

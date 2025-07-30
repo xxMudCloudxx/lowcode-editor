@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_GENERAL } from "../../containerTypes";
 
 export default {
   name: "Button",
@@ -46,5 +47,5 @@ export default {
       label: "双击事件",
     },
   ],
-  parentTypes: ["Page", "Container", "Modal", "GridColumn"],
+  parentTypes: PT_GENERAL,
 } as Omit<ComponentConfig, "dev" | "prod">; // 使用 Omit 排除 dev 和 prod

@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_DATA } from "../../containerTypes";
 
 export default {
   name: "Form",
@@ -24,6 +25,6 @@ export default {
       label: "提交",
     },
   ],
-  // 表单可以被放置在“页面”、“容器”或“弹窗”中
-  parentTypes: ["Page", "Container", "Modal", "GridColumn"],
+  // 表单可以被放置在"页面"、"容器"或"弹窗"中
+  parentTypes: PT_DATA,
 } as Omit<ComponentConfig, "dev" | "prod">;

@@ -1,5 +1,6 @@
 // src/editor/materials/DataDisplay/Avatar/meta.tsx
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_GENERAL } from "../../containerTypes";
 
 export default {
   name: "Avatar",
@@ -10,7 +11,7 @@ export default {
     size: "default",
     icon: "UserOutlined",
   },
-  parentTypes: ["Page", "Container", "Modal", "GridColumn", "Card", "ListItem"],
+  parentTypes: PT_GENERAL,
   setter: [
     {
       name: "shape",

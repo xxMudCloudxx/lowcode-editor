@@ -1,5 +1,6 @@
 // src/editor/materials/Navigation/Tabs/meta.tsx
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_LAYOUT } from "../../containerTypes";
 
 export default {
   name: "Tabs",
@@ -9,8 +10,7 @@ export default {
     type: "line",
     tabPosition: "top",
   },
-  // Tabs 是一个容器，可以被放置在这些父容器中
-  parentTypes: ["Page", "Container", "Modal", "GridColumn"],
+  parentTypes: PT_LAYOUT,
   // 属性设置器
   setter: [
     {

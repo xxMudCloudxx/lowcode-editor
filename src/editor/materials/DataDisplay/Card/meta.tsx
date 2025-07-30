@@ -1,5 +1,6 @@
 // src/editor/materials/DataDisplay/Card/meta.tsx
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_CARD } from "../../containerTypes";
 
 export default {
   name: "Card",
@@ -9,7 +10,7 @@ export default {
     title: "卡片标题",
     bordered: true,
   },
-  parentTypes: ["Page", "Container", "Modal", "GridColumn", "ListItem"],
+  parentTypes: PT_CARD,
   setter: [
     {
       name: "title",

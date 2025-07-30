@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_PAGE_LEVEL } from "../../containerTypes";
 
 export default {
   name: "PageHeader",
@@ -20,5 +21,5 @@ export default {
       type: "input",
     },
   ],
-  parentTypes: ["Page", "Container", "Modal", "GridColumn"],
+  parentTypes: PT_PAGE_LEVEL,
 } as Omit<ComponentConfig, "dev" | "prod">;

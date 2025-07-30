@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_LAYOUT } from "../../containerTypes";
 
 export default {
   name: "Breadcrumb",
@@ -16,5 +17,5 @@ export default {
     },
   ],
   // 定义它可以被放置在哪些容器组件中
-  parentTypes: ["Page", "Container", "Modal", "GridColumn"],
+  parentTypes: PT_LAYOUT,
 } as Omit<ComponentConfig, "dev" | "prod">;

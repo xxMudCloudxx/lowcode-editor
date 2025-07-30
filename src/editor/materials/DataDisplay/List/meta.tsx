@@ -1,5 +1,6 @@
 // src/editor/materials/DataDisplay/List/meta.tsx
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_LIST } from "../../containerTypes";
 
 export default {
   name: "List",
@@ -10,7 +11,7 @@ export default {
     header: "列表头部",
     footer: "列表尾部",
   },
-  parentTypes: ["Page", "Container", "Modal", "GridColumn"],
+  parentTypes: PT_LIST,
   setter: [
     {
       name: "bordered",

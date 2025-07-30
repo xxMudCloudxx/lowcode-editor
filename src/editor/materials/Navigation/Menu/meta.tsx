@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_NAVIGATION } from "../../containerTypes";
 
 export default {
   name: "Menu",
@@ -36,5 +37,5 @@ export default {
       options: ["vertical", "horizontal", "inline"],
     },
   ],
-  parentTypes: ["Page", "Container", "Modal", "GridColumn"],
+  parentTypes: PT_NAVIGATION,
 } as Omit<ComponentConfig, "dev" | "prod">;

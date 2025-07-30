@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_NAVIGATION } from "../../containerTypes";
 
 export default {
   name: "Dropdown",
@@ -45,5 +46,5 @@ export default {
       ],
     },
   ],
-  parentTypes: ["Page", "Container", "Modal", "GridColumn"],
+  parentTypes: PT_NAVIGATION,
 } as Omit<ComponentConfig, "dev" | "prod">;

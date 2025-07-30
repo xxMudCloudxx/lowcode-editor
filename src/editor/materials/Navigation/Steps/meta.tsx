@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "../../../stores/component-config";
+import { PT_GENERAL } from "../../containerTypes";
 
 export default {
   name: "Steps",
@@ -39,5 +40,5 @@ export default {
       },
     },
   ],
-  parentTypes: ["Page", "Container", "Modal", "GridColumn"],
+  parentTypes: PT_GENERAL,
 } as Omit<ComponentConfig, "dev" | "prod">;

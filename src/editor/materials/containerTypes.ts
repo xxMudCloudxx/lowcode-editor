@@ -35,3 +35,10 @@ export const PT_CARD = [...C_BLOCK, ...C_ITEM];
 
 // 列表本身适合放在区块容器中。
 export const PT_LIST = C_BLOCK;
+
+// 页面级组件 (如 PageHeader, Pagination)。通常只应放在顶层容器中。
+export const PT_PAGE_LEVEL = ["Page", "Container"];
+
+// 导航类组件 (如 Menu, Dropdown)。它们非常灵活，可以放在几乎任何地方，
+// 甚至作为其他组件（如Button）的子元素或弹出层。
+export const PT_NAVIGATION = PT_GENERAL;
