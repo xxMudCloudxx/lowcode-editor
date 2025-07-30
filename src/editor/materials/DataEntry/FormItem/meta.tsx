@@ -3,7 +3,7 @@ import type { ComponentConfig } from "../../../stores/component-config";
 export default {
   name: "FormItem",
   desc: "表单项",
-  category: "表单",
+  category: "数据录入",
   defaultProps: {
     name: new Date().getTime(),
     label: "姓名",

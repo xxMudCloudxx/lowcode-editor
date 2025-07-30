@@ -58,7 +58,6 @@ export function EditArea() {
       if (ele && ele.dataset) {
         const componentId = ele.dataset.componentId;
         if (componentId) {
-          debugger;
           if (curComponentId === +componentId) {
             setCurComponentId(null);
           } else {

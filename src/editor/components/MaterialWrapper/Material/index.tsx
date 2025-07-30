@@ -9,7 +9,7 @@ export function Material() {
   const categoryOrder = [
     "基础",
     "布局",
-    "表单",
+    "数据录入",
     "数据展示",
     "导航",
     "反馈",
@@ -92,7 +92,7 @@ export function Material() {
 
           {/* 该分类下的组件 */}
           {expandedCategories[category] && (
-            <div className="transition-all duration-200 ease-in-out">
+            <div className="grid grid-cols-2 gap-2 transition-all duration-200 ease-in-out">
               {components.map((item, index) => (
                 <MaterialItem
                   name={item.name}

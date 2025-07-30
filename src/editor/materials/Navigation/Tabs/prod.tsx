@@ -25,7 +25,7 @@ const TabsProd = ({
     })?.filter(Boolean);
   }, [children]);
 
-  return <AntdTabs style={styles} {...rest} items={items} />;
+  return <AntdTabs style={styles} id={String(id)} {...rest} items={items} />;
 };
 
 export default TabsProd;
