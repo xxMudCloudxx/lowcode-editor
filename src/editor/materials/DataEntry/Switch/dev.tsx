@@ -16,7 +16,7 @@ const SwitchDev = ({
 
   return (
     <div ref={drag} data-component-id={id} style={{ display: "inline-block" }}>
-      <AntdSwitch {...props} style={styles} />
+      <AntdSwitch {...props} style={{ ...styles, pointerEvents: "none" }} />
     </div>
   );
 };

@@ -10,7 +10,10 @@ const RadioDev = ({ id, name, styles, ...props }: CommonComponentProps) => {
 
   return (
     <div ref={drag} data-component-id={id} style={{ display: "inline-block" }}>
-      <AntdRadio.Group {...props} style={styles} disabled />
+      <AntdRadio.Group
+        {...props}
+        style={{ ...styles, pointerEvents: "none" }}
+      />
     </div>
   );
 };

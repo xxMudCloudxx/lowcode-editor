@@ -20,7 +20,7 @@ const SliderDev = ({
       data-component-id={id}
       style={{ display: "inline-block", width: "200px" }}
     >
-      <AntdSlider {...props} style={styles} />
+      <AntdSlider {...props} style={{ ...styles, pointerEvents: "none" }} />
     </div>
   );
 };

@@ -11,7 +11,7 @@ const UploadDev = ({ id, name, styles, ...props }: CommonComponentProps) => {
 
   return (
     <div ref={drag} data-component-id={id} style={{ display: "inline-block" }}>
-      <AntdUpload {...props} style={styles} disabled>
+      <AntdUpload {...props} style={{ ...styles, pointerEvents: "none" }}>
         <Button icon={<UploadOutlined />}>Click to Upload</Button>
       </AntdUpload>
     </div>
