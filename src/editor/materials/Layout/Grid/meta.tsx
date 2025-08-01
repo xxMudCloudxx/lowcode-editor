@@ -9,7 +9,7 @@ export default {
     align: "top",
     wrap: false,
   },
-  desc: "栅格布局-行",
+  desc: "栅格-行",
   category: "布局",
   setter: [
     {

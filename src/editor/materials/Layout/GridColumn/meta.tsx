@@ -2,7 +2,7 @@ import type { ComponentConfig } from "../../../stores/component-config";
 
 export default {
   name: "GridColumn",
-  desc: "栅格布局-列",
+  desc: "栅格-列",
   category: "布局",
   defaultProps: {
     span: 12,

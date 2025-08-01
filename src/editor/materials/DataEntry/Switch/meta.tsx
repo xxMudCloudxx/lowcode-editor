@@ -2,8 +2,8 @@ import type { ComponentConfig } from "../../../stores/component-config";
 import { PT_GENERAL } from "../../containerTypes";
 
 export default {
-  name: "Slider",
-  desc: "滑动输入条",
+  name: "Switch",
+  desc: "滑块",
   category: "数据录入",
   defaultProps: {
     range: false,
