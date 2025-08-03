@@ -40,5 +40,15 @@ export default {
       },
     },
   ],
+  methods: [
+    {
+      name: "next",
+      label: "下一步",
+    },
+    {
+      name: "prev",
+      label: "上一步",
+    },
+  ],
   parentTypes: PT_GENERAL,
 } as Omit<ComponentConfig, "dev" | "prod">;

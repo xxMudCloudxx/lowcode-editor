@@ -40,4 +40,10 @@ export default {
       type: "switch",
     },
   ],
+  methods: [
+    {
+      name: "setActiveKey",
+      label: "切换标签页",
+    },
+  ],
 } as Omit<ComponentConfig, "dev" | "prod">;

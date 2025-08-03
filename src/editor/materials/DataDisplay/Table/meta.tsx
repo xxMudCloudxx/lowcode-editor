@@ -33,6 +33,12 @@ export default {
       default: true, // antd 默认为 true
     },
   ],
+  methods: [
+    {
+      name: "refresh",
+      label: "刷新数据",
+    },
+  ],
   // 表格可以被放置在"页面"、"容器"或"弹窗"中
   parentTypes: PT_DATA,
 } as Omit<ComponentConfig, "dev" | "prod">;

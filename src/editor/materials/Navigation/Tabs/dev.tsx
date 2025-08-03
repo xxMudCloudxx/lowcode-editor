@@ -29,6 +29,7 @@ const TabsDev = ({
   const items = useMemo(() => {
     return React.Children.map(children, (child: any) => {
       if (!child) return null;
+      //  在 dev 模式下，由于 Suspense 的包裹，需要多访问一层 children
       const tabPaneProps = child.props?.children?.props;
       if (!tabPaneProps) return null;
 

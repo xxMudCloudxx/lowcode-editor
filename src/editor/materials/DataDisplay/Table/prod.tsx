@@ -1,14 +1,27 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
 import type { CommonComponentProps } from "../../../interface";
 import dayjs from "dayjs";
 import axios from "axios";
 import { Table as AntdTable } from "antd";
 
+export interface TableRef {
+  refresh: () => void;
+}
+
 /**
  * @description Table 组件的“开发”版本，用于编辑器画布内。
  * @see /src/editor/materials/README.md - 详细规范请参考物料组件开发文档。
  */
-const TableProd = ({ url, children }: CommonComponentProps) => {
+const TableProd: React.ForwardRefRenderFunction<
+  TableRef,
+  Omit<CommonComponentProps, "ref">
+> = ({ url, children }, ref) => {
   const [data, setData] = useState<Array<Record<string, any>>>([]);
   const [loading, setLoading] = useState(false);
 
@@ -16,16 +29,26 @@ const TableProd = ({ url, children }: CommonComponentProps) => {
     if (url) {
       setLoading(true);
 
-      const { data } = await axios.get(url);
-      setData(data);
-
-      setLoading(false);
+      try {
+        const { data } = await axios.get(url);
+        setData(data);
+      } catch (error) {
+        console.error("获取数据失败", error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     getData();
-  }, []);
+  }, [url]);
+
+  useImperativeHandle(ref, () => ({
+    refresh: () => {
+      getData();
+    },
+  }));
 
   const columns = useMemo(() => {
     return React.Children.map(children, (suspenseElement: any) => {
@@ -58,4 +81,4 @@ const TableProd = ({ url, children }: CommonComponentProps) => {
   );
 };
 
-export default TableProd;
+export default forwardRef(TableProd);
