@@ -3,41 +3,46 @@ import { PT_GENERAL } from "../../containerTypes";
 
 export default {
   name: "Switch",
-  desc: "滑块",
+  desc: "开关", // 描述修正为 “开关”
   category: "数据录入",
   defaultProps: {
-    range: false,
+    defaultChecked: false,
     disabled: false,
-    min: 0,
-    max: 100,
-    step: 1,
+    loading: false,
+    size: "default",
   },
   parentTypes: PT_GENERAL,
   setter: [
     {
-      name: "range",
-      label: "双滑块",
+      name: "defaultChecked",
+      label: "默认选中",
       type: "switch",
-    },
-    {
-      name: "min",
-      label: "最小值",
-      type: "inputNumber",
-    },
-    {
-      name: "max",
-      label: "最大值",
-      type: "inputNumber",
-    },
-    {
-      name: "step",
-      label: "步长",
-      type: "inputNumber",
     },
     {
       name: "disabled",
       label: "禁用",
       type: "switch",
+    },
+    {
+      name: "loading",
+      label: "加载中",
+      type: "switch",
+    },
+    {
+      name: "size",
+      label: "尺寸",
+      type: "radio",
+      options: ["default", "small"],
+    },
+    {
+      name: "checkedChildren",
+      label: "选中时内容",
+      type: "input",
+    },
+    {
+      name: "unCheckedChildren",
+      label: "非选中内容",
+      type: "input",
     },
   ],
 } as Omit<ComponentConfig, "dev" | "prod">;

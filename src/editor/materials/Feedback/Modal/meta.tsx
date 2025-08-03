@@ -3,8 +3,11 @@ import type { ComponentConfig } from "../../../stores/component-config";
 export default {
   name: "Modal",
   category: "反馈",
+  desc: "弹窗",
   defaultProps: {
     title: "弹窗",
+    // 默认在编辑器中可见
+    visibleInEditor: true,
   },
   setter: [
     {
@@ -12,8 +15,12 @@ export default {
       label: "标题",
       type: "input",
     },
+    {
+      name: "visibleInEditor",
+      label: "可见",
+      type: "switch",
+    },
   ],
-  stylesSetter: [],
   events: [
     {
       name: "onOk",
@@ -34,7 +41,5 @@ export default {
       label: "关闭弹窗",
     },
   ],
-  desc: "弹窗",
-  // 弹窗本身作为一个可拖拽的配置项，可以被放置在“页面”上
   parentTypes: ["Page"],
 } as Omit<ComponentConfig, "dev" | "prod">;
