@@ -190,7 +190,7 @@ export function ComponentEvent() {
           </div>
         ) : (
           <Collapse
-            className="border-0 bg-transparent overflow-y-auto h-[80%] absolute overscroll-y-contain pb-90"
+            className="border-0 bg-transparent overflow-y-auto h-[80%] w-[100%] absolute overscroll-y-contain pb-90"
             // 使用过滤后的 items
             items={filteredItems}
             defaultActiveKey={componentConfig[curComponent.name].events?.map(
