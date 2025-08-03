@@ -5,7 +5,7 @@
  * 负责管理和展示组件所有可配置的事件及其绑定的动作列表。
  * @module Components/Setting/ComponentEvent
  */
-import { Button, Collapse, type CollapseProps } from "antd";
+import { Button, Collapse, Input, type CollapseProps } from "antd";
 import {
   type ComponentEvent,
   useComponentConfigStore,
@@ -14,7 +14,7 @@ import {
   getComponentById,
   useComponetsStore,
 } from "../../../stores/components";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ActionModal, type ActionConfig } from "./ActionModal";
 import { ActionCard } from "./ActionCard";
 
@@ -43,6 +43,8 @@ export function ComponentEvent() {
   const { curComponent, updateComponentProps, components } =
     useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
+
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   // --- Modal and Action State Management ---
   const [actionModalOpen, setActionModalOpen] = useState(false); // 控制动作配置模态框的显隐
@@ -121,13 +123,105 @@ export function ComponentEvent() {
   }
 
   // 将组件的事件配置转换为 antd Collapse 的数据源
-  const items: CollapseProps["items"] = (
-    componentConfig[curComponent.name].events || []
-  ).map((event) => {
+  const filteredItems: CollapseProps["items"] = useMemo(() => {
+    const allEvents = componentConfig[curComponent.name].events || [];
+    const keyword = searchKeyword.trim().toLowerCase();
+
+    if (!keyword) {
+      // 如果没有关键词，直接返回所有事件
+      return allEvents.map(mapEventToItem);
+    }
+
+    const scoredEvents = allEvents
+      .map((event) => {
+        const eventLabel = event.label.toLowerCase();
+        let score = 0;
+
+        if (eventLabel.includes(keyword)) {
+          // 基础分：包含
+          score = 1;
+          // 额外加分：开头匹配
+          if (eventLabel.startsWith(keyword)) {
+            score += 2;
+          }
+          // 额外加分：结尾匹配 (更符合你的 "End" 案例)
+          if (eventLabel.endsWith(keyword)) {
+            score += 1.5;
+          }
+          // 最高分：完全匹配
+          if (eventLabel === keyword) {
+            score += 3;
+          }
+        }
+        return { ...event, score };
+      })
+      .filter((event) => event.score > 0) // 过滤掉不匹配的
+      .sort((a, b) => {
+        // 主要排序：按分数从高到低
+        if (a.score !== b.score) {
+          return b.score - a.score;
+        }
+        // 次要排序（分数相同时）：按字符串长度从短到长
+        return a.label.length - b.label.length;
+      });
+
+    return scoredEvents.map(mapEventToItem);
+  }, [componentConfig, curComponent, searchKeyword, components]);
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* 5. 添加搜索框 */}
+      <div className="px-1 mb-4">
+        <Input.Search
+          placeholder="搜索事件名称..."
+          onSearch={(value) => setSearchKeyword(value)}
+          onChange={(e) => setSearchKeyword(e.target.value)}
+          allowClear
+        />
+      </div>
+
+      {/* 事件配置区域 */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        {componentConfig[curComponent.name].events?.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">
+            <div className="text-3xl mb-3">🎯</div>
+            <div className="text-sm font-medium mb-1">该组件暂无可配置事件</div>
+            <div className="text-xs">请选择其他支持事件的组件</div>
+          </div>
+        ) : (
+          <Collapse
+            className="border-0 bg-transparent overflow-y-auto h-[80%] absolute overscroll-y-contain pb-90"
+            // 使用过滤后的 items
+            items={filteredItems}
+            defaultActiveKey={componentConfig[curComponent.name].events?.map(
+              (item) => item.name
+            )}
+            ghost
+            expandIconPosition="end"
+            size="small"
+            expandIcon={({ isActive }) => <ArrowIcon isActive={isActive} />}
+          />
+        )}
+      </div>
+
+      {/* 动作配置模态框 */}
+      <ActionModal
+        visible={actionModalOpen}
+        handleOk={handleModalOk}
+        action={curAction}
+        handleCancel={() => {
+          setActionModalOpen(false);
+        }}
+      />
+    </div>
+  );
+
+  // 辅助函数：将 event 对象映射为 Collapse.item 对象，避免重复代码
+  function mapEventToItem(event: ComponentEvent) {
     return {
       key: event.name,
       label: (
-        <div className="flex items-center justify-between  min-h-[40px]">
+        <div className="flex items-center justify-between min-h-[40px]">
           <div className="flex items-center">
             <span className="text-base font-medium text-gray-800 leading-6">
               {event.label}
@@ -136,9 +230,9 @@ export function ComponentEvent() {
           <Button
             type="primary"
             onClick={(e) => {
-              e.stopPropagation(); // 阻止 Collapse 的折叠/展开
-              setCurEvent(event); // 记录当前事件
-              setCurAction(undefined); // 清空上一次的编辑状态
+              e.stopPropagation();
+              setCurEvent(event);
+              setCurAction(undefined);
               setCurActionIndex(undefined);
               setActionModalOpen(true);
             }}
@@ -149,17 +243,16 @@ export function ComponentEvent() {
           </Button>
         </div>
       ),
-      // 渲染已配置的动作列表
       children: (
         <div className="pt-0">
-          {(curComponent.props[event.name]?.actions || []).length === 0 ? (
+          {(curComponent?.props[event.name]?.actions || []).length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <div className="text-2xl mb-2">⚡</div>
               <div className="text-sm">暂无动作配置</div>
               <div className="text-xs mt-1">点击上方按钮添加动作</div>
             </div>
           ) : (
-            (curComponent.props[event.name]?.actions || []).map(
+            (curComponent?.props[event.name]?.actions || []).map(
               (item: ActionConfig, index: number) => {
                 const commonProps = {
                   onEdit: () => editAction(item, index),
@@ -251,40 +344,5 @@ export function ComponentEvent() {
         </div>
       ),
     };
-  });
-
-  return (
-    <div>
-      {/* 事件配置区域 */}
-      {componentConfig[curComponent.name].events?.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
-          <div className="text-3xl mb-3">🎯</div>
-          <div className="text-sm font-medium mb-1">该组件暂无可配置事件</div>
-          <div className="text-xs">请选择其他支持事件的组件</div>
-        </div>
-      ) : (
-        <Collapse
-          className="border-0 bg-transparent h-full absolute overflow-y-auto overscroll-y-contain pb-90"
-          items={items}
-          defaultActiveKey={componentConfig[curComponent.name].events?.map(
-            (item) => item.name
-          )}
-          ghost
-          expandIconPosition="end"
-          size="small"
-          expandIcon={({ isActive }) => <ArrowIcon isActive={isActive} />}
-        />
-      )}
-
-      {/* 动作配置模态框 */}
-      <ActionModal
-        visible={actionModalOpen}
-        handleOk={handleModalOk}
-        action={curAction}
-        handleCancel={() => {
-          setActionModalOpen(false);
-        }}
-      />
-    </div>
-  );
+  }
 }
