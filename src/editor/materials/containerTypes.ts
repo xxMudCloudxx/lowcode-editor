@@ -13,7 +13,7 @@
 export const C_PAGE = ["Page", "Container", "Modal", "GridColumn", "TabPane"];
 
 // 内容区块级容器。例如 Card，它本身可以容纳其他组件。
-export const C_BLOCK = [...C_PAGE, "Card"];
+export const C_BLOCK = [...C_PAGE, "Card", "Tooltip"];
 
 // 列表项级容器。通常用于承载更小、更原子化的内容。
 export const C_ITEM = ["ListItem"];
