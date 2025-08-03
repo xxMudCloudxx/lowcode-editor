@@ -73,13 +73,19 @@ export function Preview() {
                 args
               );
             } else if (action.type == "componentMethod") {
-              // 核心逻辑：实现组件间通信
-              // 从 componentRefs 字典中找到目标组件的实例
               const component =
                 componentRefs.current[action.config.componentId];
               if (component) {
-                // 调用目标组件实例上的方法
-                component[action.config.method]?.(...args);
+                // 关键改动：
+                // 检查配置中是否有 args
+                if (action.config.args) {
+                  //  将 args 对象的值转为数组，作为参数传递
+                  const params = Object.values(action.config.args);
+                  component[action.config.method]?.(...params);
+                } else {
+                  // 如果没有配置 args，则不传递任何参数（或传递原始事件参数，取决于你的设计）
+                  component[action.config.method]?.();
+                }
               }
             }
           });

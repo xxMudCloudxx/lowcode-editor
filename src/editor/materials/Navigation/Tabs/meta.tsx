@@ -44,6 +44,14 @@ export default {
     {
       name: "setActiveKey",
       label: "切换标签页",
+      // 描述方法需要的参数
+      params: [
+        {
+          name: "key",
+          label: "目标Key",
+          type: "input", // 表示在配置时需要一个输入框
+        },
+      ],
     },
   ],
 } as Omit<ComponentConfig, "dev" | "prod">;

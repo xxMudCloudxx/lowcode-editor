@@ -41,6 +41,7 @@ export interface ComponentEvent {
 export interface ComponentMethod {
   name: string; // 方法名，如 'open'
   label: string; // 在设置面板中显示的方法标签，如 '打开弹窗'
+  params?: Array<any>; // 某些方需要配置对应的参数
 }
 
 /**

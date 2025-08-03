@@ -39,13 +39,15 @@ export function ComponentEvent() {
       return;
     }
 
-    const actions = curComponent.props[event.name]?.actions;
+    const actions = curComponent.props[event.name]?.actions || [];
 
-    actions.splice(index, 1);
+    const newActions = actions.filter(
+      (_: ActionConfig, i: number) => i !== index
+    );
 
     updateComponentProps(curComponent.id, {
       [event.name]: {
-        actions: actions,
+        actions: newActions,
       },
     });
   }
