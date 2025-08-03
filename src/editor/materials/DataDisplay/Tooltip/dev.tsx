@@ -46,7 +46,7 @@ const TooltipDev = ({
         {hasChildren ? (
           children
         ) : (
-          <div className="h-[80px] w-full flex items-center justify-center bg-gray-100 text-gray-400 text-sm select-none pointer-events-none">
+          <div className="h-[80px] w-full flex items-center justify-center bg-gray-100 text-gray-400 text-sm select-none pointer-events-none rounded-2xl border-1">
             请拖拽需有Tooltiptis提示的组件到这里
           </div>
         )}
