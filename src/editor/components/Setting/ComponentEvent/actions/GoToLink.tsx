@@ -35,18 +35,20 @@ export function GoToLink(props: GoToLinkProps) {
   }
 
   return (
-    <div className="mt-[40px]">
-      <div className="flex items-center gap-[10px]">
-        <div>跳转链接</div>
-        <div>
-          <TextArea
-            style={{ height: 200, width: 500, border: "1px solid #000" }}
-            onChange={(e) => {
-              urlChange(e.target.value);
-            }}
-            value={value || ""}
-          />
-        </div>
+    <div className="pt-4 space-y-4">
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
+          跳转链接
+        </label>
+        <TextArea
+          className="w-full resize-none border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+          placeholder="请输入跳转链接地址..."
+          rows={6}
+          onChange={(e) => {
+            urlChange(e.target.value);
+          }}
+          value={value || ""}
+        />
       </div>
     </div>
   );

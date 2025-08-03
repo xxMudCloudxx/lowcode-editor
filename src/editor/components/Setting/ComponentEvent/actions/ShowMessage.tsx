@@ -61,34 +61,38 @@ export function ShowMessage(props: ShowMessageProps) {
   }
 
   return (
-    <div className="mt-[30px]">
-      <div className="flex items-center gap-[20px]">
-        <div>类型：</div>
-        <div>
-          <Select
-            style={{ width: 500, height: 50 }}
-            options={[
-              { label: "成功", value: "success" },
-              { label: "失败", value: "error" },
-            ]}
-            onChange={(value) => {
-              messageTypeChange(value);
-            }}
-            value={type}
-          />
-        </div>
+    <div className="pt-4 space-y-6">
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
+          消息类型
+        </label>
+        <Select
+          className="w-full"
+          size="large"
+          placeholder="请选择消息类型"
+          options={[
+            { label: "成功消息", value: "success" },
+            { label: "错误消息", value: "error" },
+          ]}
+          onChange={(value) => {
+            messageTypeChange(value);
+          }}
+          value={type}
+        />
       </div>
-      <div className="flex items-center gap-[20px] mt-[50px]">
-        <div>文本：</div>
-        <div>
-          <Input
-            style={{ width: 500, height: 50 }}
-            onChange={(e) => {
-              messageTextChange(e.target.value);
-            }}
-            value={text}
-          />
-        </div>
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
+          消息内容
+        </label>
+        <Input
+          className="w-full"
+          size="large"
+          placeholder="请输入消息内容..."
+          onChange={(e) => {
+            messageTextChange(e.target.value);
+          }}
+          value={text}
+        />
       </div>
     </div>
   );

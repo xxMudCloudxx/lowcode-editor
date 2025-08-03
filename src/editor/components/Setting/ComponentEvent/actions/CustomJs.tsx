@@ -40,13 +40,15 @@ export function CustomJS(props: CustomJsProps) {
   };
 
   return (
-    <div className="mt-[40px]">
-      <div className="flex items-start gap-[20px]">
-        <div>自定义 JS</div>
-        <div>
+    <div className="pt-4 space-y-4">
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
+          自定义 JavaScript 代码
+        </label>
+        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
           <MonacoEditor
-            width={"600px"}
-            height={"400px"}
+            width={"100%"}
+            height={"300px"}
             path="action.js"
             language="javascript"
             onMount={handleEditorMount}
@@ -62,9 +64,19 @@ export function CustomJS(props: CustomJsProps) {
                 verticalScrollbarSize: 6,
                 horizontalScrollbarSize: 6,
               },
+              padding: {
+                top: 12,
+                bottom: 12,
+              },
+              lineNumbers: "on",
+              roundedSelection: false,
+              automaticLayout: true,
             }}
           />
         </div>
+        <p className="text-xs text-gray-500">
+          提示：使用 Ctrl+J (Windows) 或 Cmd+J (Mac) 格式化代码
+        </p>
       </div>
     </div>
   );

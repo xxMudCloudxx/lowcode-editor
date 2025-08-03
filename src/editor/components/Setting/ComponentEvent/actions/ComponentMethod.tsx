@@ -62,43 +62,66 @@ export function ComponentMethod(props: ComponentMethodProps) {
   };
 
   return (
-    <Form
-      form={form}
-      onValuesChange={handleValuesChange}
-      layout="vertical"
-      labelCol={{ span: 6 }}
-      wrapperCol={{ span: 18 }}
-      className="mt-4 "
-    >
-      <Form.Item name="componentId" label="组件">
-        <TreeSelect
-          treeData={components}
-          fieldNames={{ label: "desc", value: "id" }}
-          showSearch
-          treeNodeFilterProp="desc"
-        />
-      </Form.Item>
-
-      {selectedComponent && (
-        <Form.Item name="method" label="方法">
-          <Select
-            options={componentConfig[selectedComponent.name]?.methods?.map(
-              (method) => ({
-                label: method.label,
-                value: method.name,
-              })
-            )}
+    <div className="pt-4 space-y-6">
+      <Form
+        form={form}
+        onValuesChange={handleValuesChange}
+        layout="vertical"
+        className="space-y-4"
+      >
+        <Form.Item 
+          name="componentId" 
+          label={<span className="text-sm font-medium text-gray-700">目标组件</span>}
+          className="mb-4"
+        >
+          <TreeSelect
+            className="w-full"
+            size="large"
+            placeholder="请选择要调用方法的组件"
+            treeData={components}
+            fieldNames={{ label: "desc", value: "id" }}
+            showSearch
+            treeNodeFilterProp="desc"
+            dropdownStyle={{ maxHeight: 300 }}
           />
         </Form.Item>
-      )}
 
-      {/* 动态渲染参数输入框 */}
-      {selectedMethodConfig?.params?.map((param: any) => (
-        <Form.Item key={param.name} name={param.name} label={param.label}>
-          {/* 这里可以根据 param.type 渲染不同控件，暂时只实现 input */}
-          <Input />
-        </Form.Item>
-      ))}
-    </Form>
+        {selectedComponent && (
+          <Form.Item 
+            name="method" 
+            label={<span className="text-sm font-medium text-gray-700">调用方法</span>}
+            className="mb-4"
+          >
+            <Select
+              className="w-full"
+              size="large"
+              placeholder="请选择要调用的方法"
+              options={componentConfig[selectedComponent.name]?.methods?.map(
+                (method) => ({
+                  label: method.label,
+                  value: method.name,
+                })
+              )}
+            />
+          </Form.Item>
+        )}
+
+        {/* 动态渲染参数输入框 */}
+        {selectedMethodConfig?.params?.map((param: any) => (
+          <Form.Item 
+            key={param.name} 
+            name={param.name} 
+            label={<span className="text-sm font-medium text-gray-700">{param.label}</span>}
+            className="mb-4"
+          >
+            <Input 
+              className="w-full"
+              size="large"
+              placeholder={`请输入${param.label}...`}
+            />
+          </Form.Item>
+        ))}
+      </Form>
+    </div>
   );
 }
