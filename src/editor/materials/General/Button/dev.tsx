@@ -22,15 +22,24 @@ const ButtonDev = ({
     },
   });
   return (
-    <AntdButton
-      type={type}
-      data-component-id={id}
-      style={styles}
+    <div
       ref={drag}
-      {...antProps}
+      data-component-id={id}
+      style={{ display: "inline-block" }} // 让外壳尺寸包裹按钮
     >
-      {text}
-    </AntdButton>
+      <AntdButton
+        type={type}
+        // 注意：data-component-id 已经移到外壳上
+        style={{
+          ...styles,
+          pointerEvents: "none", // 禁用“内核”的鼠标事件
+        }}
+        // 注意：ref 已经移到外壳上
+        {...antProps}
+      >
+        {text}
+      </AntdButton>
+    </div>
   );
 };
 
