@@ -3,90 +3,40 @@
 import * as fs from "fs";
 import * as path from "path";
 import { withCustomConfig, PropItem } from "react-docgen-typescript";
-
-/** ========= 目标 antd 组件清单 =========
- * propsType: 从 antd/es 路径直接引入 Props 类型，配合 ComponentProps 双通道解析
- */
-type Target = {
-  name: string; // 文件名与 meta.name
-  importStmt: string; // wrapper 中的 import 语句
-  componentExpr: string; // 组件表达式（支持 'Checkbox.Group'）
-  desc?: string;
-  propsType?: { from: string; typeName: string }; // 直接引 Props 的兜底方式
-};
-
-const TARGETS: Target[] = [
-  {
-    name: "Button",
-    importStmt: `import { Button } from 'antd';`,
-    componentExpr: "Button",
-    desc: "按钮",
-    propsType: { from: "antd/es/button", typeName: "ButtonProps" },
-  },
-  {
-    name: "Select",
-    importStmt: `import { Select } from 'antd';`,
-    componentExpr: "Select",
-    desc: "选择器",
-    // SelectProps 是泛型，这里用 any 兜底；docgen 仍能抽出枚举与基础字段
-    propsType: { from: "antd/es/select", typeName: "SelectProps<any>" },
-  },
-  {
-    name: "CheckboxGroup",
-    importStmt: `import { Checkbox } from 'antd';`,
-    componentExpr: "Checkbox.Group",
-    desc: "多选组",
-    propsType: { from: "antd/es/checkbox", typeName: "CheckboxGroupProps" },
-  },
-  {
-    name: "Form",
-    importStmt: `import { Form } from 'antd';`,
-    componentExpr: "Form",
-    desc: "表单",
-    propsType: { from: "antd/es/Form", typeName: "FormProps" },
-  },
-];
+import { COMPONENT_MAP } from "./component-map.js";
 
 const ROOT = process.cwd();
+const MATERIALS_DIR = path.resolve(ROOT, "src/editor/materials");
 const OUT_DIR = path.resolve(ROOT, "src/editor/materials/_generated");
 const TMP_DIR = path.resolve(ROOT, "scripts/.docgen-temp");
 
 const COMPONENT_CONFIG_IMPORT = `import type { ComponentConfig } from '../../stores/component-config';`;
 
-/** ========= FS 小工具 ========= */
+/** ========= 工具函数 (保持不变) ========= */
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
-function clearDir(dir: string) {
-  if (!fs.existsSync(dir)) return;
-  for (const f of fs.readdirSync(dir)) {
-    fs.rmSync(path.join(dir, f), { recursive: true, force: true });
-  }
 }
 function write(file: string, content: string) {
   fs.writeFileSync(file, content.replace(/\r\n/g, "\n"));
 }
-function toPascalCase(s: string) {
-  return s.replace(/(^\w|-\w)/g, (m) => m.replace("-", "").toUpperCase());
+function clearDir(dir: string) {
+  if (fs.existsSync(dir)) {
+    for (const f of fs.readdirSync(dir))
+      fs.rmSync(path.join(dir, f), { recursive: true, force: true });
+  }
 }
 const QUOTE_TRIM = /^['"`]|['"`]$/g;
-
-/** ========= 类型辅助 ========= */
 type DocType = { name?: string; raw?: string; value?: unknown };
-
-/** ========= 联合/枚举提取成选项 ========= */
 function extractLiteralOptions(t?: DocType): string[] {
   if (!t) return [];
   const out: string[] = [];
-
   const v = t.value as unknown;
   if (Array.isArray(v)) {
-    for (const item of v as Array<{ value?: unknown; name?: unknown }>) {
-      const s = String(item?.value ?? item?.name ?? "").trim();
-      if (s) out.push(s.replace(QUOTE_TRIM, "").replace(QUOTE_TRIM, ""));
+    for (const item of v as Array<{ value?: unknown }>) {
+      const s = String(item?.value ?? "").trim();
+      if (s) out.push(s.replace(QUOTE_TRIM, ""));
     }
   }
-
   const raw = (t.raw ?? "").toString();
   if (raw && /'[^']*'\s*\|/.test(raw)) {
     raw
@@ -95,189 +45,130 @@ function extractLiteralOptions(t?: DocType): string[] {
       .filter(Boolean)
       .forEach((s) => out.push(s));
   }
-  return Array.from(new Set(out)); // string[]
+  return Array.from(new Set(out));
 }
-
 function lower(t?: DocType): string {
-  const n = (t?.name ?? t?.raw ?? "").toString();
-  return n.toLowerCase();
+  return (t?.name ?? t?.raw ?? "").toString().toLowerCase();
 }
-
-/** ========= 控件映射 ========= */
 function guessControlByType(
   propName: string,
   t?: DocType
 ): { control: string; options?: string[] } {
   const options = extractLiteralOptions(t);
-  if (options.length > 0) {
-    return { control: "select", options };
-  }
+  if (options.length > 0) return { control: "select", options };
   const tn = lower(t);
   if (tn.includes("boolean")) return { control: "switch" };
-  if (tn.includes("number") || tn.includes("bigint") || tn.includes("integer"))
-    return { control: "inputNumber" };
+  if (tn.includes("number")) return { control: "inputNumber" };
+  if (tn.includes("react.reactnode")) return { control: "input" };
   return { control: "input" };
 }
-
-/** ========= 过滤不展示的属性 ========= */
-function shouldDropProp(propName: string, typeNameLower: string) {
-  if (propName === "children") return false; // 文本/插槽通常保留
-  if (/^on[A-Z]/.test(propName)) return true; // 事件统一放到 events
+function shouldDropProp(propName: string) {
   const blacklist = new Set([
     "style",
+    "styles",
     "className",
+    "children",
+    "id",
+    "name",
+    "isSelected",
+    "ref",
+    "key",
     "prefixCls",
     "rootClassName",
-    "rootStyle",
-    "key",
-    "ref",
-    "__PRIVATE_",
   ]);
-  if (blacklist.has(propName)) return true;
-  if (typeNameLower.includes("=>")) return true; // 函数签名不做 setter
-  return false;
+  return blacklist.has(propName) || propName.startsWith("__");
 }
-
-/** ========= 常见字段中文 label ========= */
 const FRIENDLY_LABEL: Record<string, string> = {
-  type: "按钮类型",
-  htmlType: "原生类型",
+  type: "类型",
   size: "尺寸",
   danger: "危险态",
   ghost: "幽灵",
   block: "块级",
-  loading: "加载",
+  loading: "加载中",
   href: "链接",
-  target: "打开方式",
-  children: "文本",
+  title: "标题",
+  text: "文本",
 };
 
-/** ========= 兜底：当 docgen 拿不到任何 props 时的 Button 配置 ========= */
-const FALLBACK_SETTERS: Record<string, Array<any>> = {
-  Button: [
-    {
-      name: "type",
-      label: "按钮类型",
-      type: "radio",
-      options: ["primary", "default", "dashed", "text", "link"],
-    },
-    {
-      name: "size",
-      label: "尺寸",
-      type: "segmented",
-      options: ["small", "middle", "large"],
-    },
-    { name: "danger", label: "危险态", type: "switch" },
-    { name: "ghost", label: "幽灵", type: "switch" },
-    { name: "block", label: "块级", type: "switch" },
-    { name: "loading", label: "加载", type: "switch" },
-    {
-      name: "htmlType",
-      label: "原生类型",
-      type: "select",
-      options: ["button", "submit", "reset"],
-    },
-    { name: "href", label: "链接", type: "input" },
-    {
-      name: "target",
-      label: "打开方式",
-      type: "select",
-      options: ["_self", "_blank", "_parent", "_top"],
-    },
-    { name: "children", label: "文本", type: "input" },
-  ],
-};
-
-const FALLBACK_EVENTS: Record<string, Array<any>> = {
-  Button: [{ name: "onClick", label: "点击事件" }],
-};
-
-/** ========= 生成 wrapper（双通道取 Props） ========= */
-function genWrapperFile(target: Target) {
-  const hasPropsType = !!target.propsType;
-  const importPropsType = hasPropsType
-    ? `import type { ${target.propsType!.typeName} } from '${
-        target.propsType!.from
-      }';`
-    : "";
-
-  // 使用“函数声明组件”而不是 React.FC = () => ，提升 docgen 兼容性
-  const file = `
-/* AUTO-GENERATED. DO NOT EDIT. */
-import * as React from 'react';
-${target.importStmt}
-${importPropsType}
-
-type __A_${target.name} = React.ComponentProps<typeof ${target.componentExpr}>;
-${
-  hasPropsType ? `type __B_${target.name} = ${target.propsType!.typeName};` : ""
-}
-type __${target.name}Props = ${
-    hasPropsType
-      ? `__A_${target.name} & __B_${target.name}`
-      : `__A_${target.name}`
-  };
-
-export function __Docgen${toPascalCase(target.name)}(props: __${
-    target.name
-  }Props) { return null as any }
-export default __Docgen${toPascalCase(target.name)};
-`.trimStart();
-
-  const fp = path.join(TMP_DIR, `${target.name}.tsx`);
-  write(fp, file);
-  return fp;
+/** ========= 生成临时 wrapper 文件 ========= */
+function generateWrapperFile(componentName: string) {
+  const config = COMPONENT_MAP[componentName];
+  if (!config) return null;
+  const fileContent = `
+/* AUTO-GENERATED for react-docgen. DO NOT EDIT. */
+import type { ${config.propsType.typeName} } from '${config.propsType.from}';
+export function __Docgen${componentName}(props: ${config.propsType.typeName}) { return null; }
+export default __Docgen${componentName};
+    `.trim();
+  const filePath = path.join(TMP_DIR, `${componentName}.tsx`);
+  write(filePath, fileContent);
+  return filePath;
 }
 
 /** ========= 主流程 ========= */
 async function run() {
   ensureDir(OUT_DIR);
   ensureDir(TMP_DIR);
-  clearDir(OUT_DIR);
   clearDir(TMP_DIR);
 
-  const files = TARGETS.map(genWrapperFile);
+  // 关键修正：重构文件扫描逻辑，深入到分类文件夹内部
+  const componentsToProcess: { name: string; category: string }[] = [];
+  const categoryFolders = fs
+    .readdirSync(MATERIALS_DIR, { withFileTypes: true })
+    .filter(
+      (dirent) =>
+        dirent.isDirectory() &&
+        !dirent.name.startsWith("_") &&
+        dirent.name !== "Page"
+    );
+
+  for (const categoryDir of categoryFolders) {
+    const categoryPath = path.join(MATERIALS_DIR, categoryDir.name);
+    const componentDirs = fs
+      .readdirSync(categoryPath, { withFileTypes: true })
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => {
+        componentsToProcess.push({
+          name: dirent.name,
+          category: categoryDir.name,
+        });
+      });
+  }
+
+  const filesToParse = componentsToProcess
+    .map((comp) => generateWrapperFile(comp.name))
+    .filter((f): f is string => !!f);
+
+  console.log(
+    `[gen-meta] Found ${filesToParse.length} components with mappings to process.`
+  );
+  if (filesToParse.length === 0) return;
 
   const parser = withCustomConfig(path.resolve(ROOT, "tsconfig.json"), {
     shouldRemoveUndefinedFromOptional: true,
     shouldExtractLiteralValuesFromEnum: true,
     savePropValueAsString: true,
-    // 放宽过滤：先让 props 进入，后用 shouldDropProp 精准控制
-    propFilter: (_prop: PropItem) => true,
+    propFilter: (prop: PropItem) => !shouldDropProp(prop.name),
   });
 
-  const docs = parser.parse(files);
-
-  const seen = new Set<string>();
+  const docs = parser.parse(filesToParse);
   const exportLines: string[] = [];
 
   for (const doc of docs) {
-    const displayName = doc.displayName; // __DocgenButton
-    const compName = displayName.replace(/^__Docgen/, "");
-    const target = TARGETS.find((t) => toPascalCase(t.name) === compName);
-    if (!target) continue;
-    if (seen.has(target.name)) continue;
-    seen.add(target.name);
+    if (!doc.props) continue;
+
+    const compName = doc.displayName.replace(/^__Docgen/, "");
+    const componentInfo = componentsToProcess.find((c) => c.name === compName);
+    const category = componentInfo ? componentInfo.category : "其他";
 
     const props = (doc.props ?? {}) as Record<string, PropItem>;
-
-    // 调试：看看 docgen 实际拿到的字段
-    // console.log('[docgen]', target.name, 'props:', Object.keys(props));
-
-    // 事件：onXxx（含来自 React 的 HTML 事件）
     const events = Object.entries(props)
-      .filter(
-        ([n, p]) =>
-          /^on[A-Z]/.test(n) && ((p.type?.name ?? "") as string).includes("=>")
-      )
-      .map(([name]) => ({ name, label: name }));
-
-    // setter：过滤 + 映射
+      .filter(([n]) => /^on[A-Z]/.test(n))
+      .map(([name]) => ({ name, label: `${name}事件` }));
     const setters = Object.entries(props)
-      .filter(([n, p]) => !shouldDropProp(n, lower(p.type as DocType)))
+      .filter(([n]) => !/^on[A-Z]/.test(n))
       .map(([name, p]) => {
-        const t = p.type as DocType | undefined;
-        const g = guessControlByType(name, t);
+        const g = guessControlByType(name, p.type as DocType);
         const item: any = {
           name,
           label: FRIENDLY_LABEL[name] ?? name,
@@ -288,62 +179,44 @@ async function run() {
         }
         return item;
       });
-
-    // 默认值（若有就尽量保留）
     const defaultProps: Record<string, any> = {};
     for (const [name, p] of Object.entries(props)) {
       const raw = p.defaultValue?.value;
       if (raw != null) defaultProps[name] = String(raw).replace(QUOTE_TRIM, "");
     }
 
-    // 兜底：如果 docgen 仍然拿不到任何 setter，就用我们内置的 fallback
-    const finalSetters =
-      setters.length > 0 ? setters : FALLBACK_SETTERS[target.name] ?? [];
-    const finalEvents =
-      events.length > 0 ? events : FALLBACK_EVENTS[target.name] ?? [];
+    const content =
+      `/* eslint-disable */\n/**\n * 此文件由 scripts/gen-antd-metas.ts 自动生成。\n * 请勿手动修改；如需变更，请参考该脚本中的 component-map.ts。\n */\n${COMPONENT_CONFIG_IMPORT}\n\nconst meta = {\n  name: ${JSON.stringify(
+        compName
+      )},\n  desc: ${JSON.stringify(compName)},\n  category: ${JSON.stringify(
+        category
+      )},\n  defaultProps: ${JSON.stringify(
+        defaultProps,
+        null,
+        2
+      )},\n  setter: ${JSON.stringify(
+        setters,
+        null,
+        2
+      )},\n  events: ${JSON.stringify(
+        events,
+        null,
+        2
+      )},\n} as Omit<ComponentConfig, "dev" | "prod">;\n\nexport default meta;\n`.trimStart();
 
-    if (setters.length === 0) {
-      console.warn(
-        `[gen-antd] ${target.name} docgen 未解析到 props，使用 fallback setter。`
-      );
-    }
-
-    // ${target.importStmt} 用不到
-    const content = `
-/* eslint-disable */
-/**
- * 此文件由 scripts/gen-antd-metas.ts 自动生成。
- * 请勿手动修改；如需变更，请调整脚本或 TARGETS。
- */
-${COMPONENT_CONFIG_IMPORT}
-
-const meta = {
-  name: ${JSON.stringify(target.name)},
-  desc: ${JSON.stringify(target.desc ?? `${target.name}（自动生成）`)},
-  defaultProps: ${JSON.stringify(defaultProps)},
-  setter: ${JSON.stringify(finalSetters, null, 2)},
-  events: ${JSON.stringify(finalEvents, null, 2)},
-  parentTypes: ["Page", "Container", "Modal"]
-} as Omit<ComponentConfig, "dev" | "prod">;
-
-export default meta;
-`.trimStart();
-
-    const outFile = path.join(OUT_DIR, `${target.name}.meta.tsx`);
+    const outFile = path.join(OUT_DIR, `${compName}.meta.tsx`);
     write(outFile, content);
     console.log(`✔ Generated: ${path.relative(ROOT, outFile)}`);
 
     exportLines.push(
-      `export { default as ${target.name} } from './${target.name}.meta';`
+      `export { default as ${compName} } from './${compName}.meta';`
     );
   }
 
-  // 汇总导出
   const indexFile = path.join(OUT_DIR, "index.tsx");
   write(indexFile, `${Array.from(new Set(exportLines)).join("\n")}\n`);
   console.log(`✔ Generated: ${path.relative(ROOT, indexFile)}`);
 
-  // 清理临时目录
   clearDir(TMP_DIR);
 }
 

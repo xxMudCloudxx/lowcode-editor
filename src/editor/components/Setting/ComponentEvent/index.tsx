@@ -264,7 +264,7 @@ export function ComponentEvent() {
         </div>
       ) : (
         <Collapse
-          className="border-0 bg-transparent"
+          className="border-0 bg-transparent h-full absolute overflow-y-auto overscroll-y-contain pb-90"
           items={items}
           defaultActiveKey={componentConfig[curComponent.name].events?.map(
             (item) => item.name
