@@ -16,7 +16,7 @@ export interface ActionCardProps {
 export const ActionCard = (props: ActionCardProps) => {
   const { title, children, onEdit, onDelete } = props;
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-2 shadow-sm hover:shadow-md transition-shadow duration-200 group">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-2 shadow-sm hover:shadow-md transition-shadow duration-200 group mr-6">
       {/* 标题和操作按钮 */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
