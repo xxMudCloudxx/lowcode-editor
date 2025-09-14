@@ -42,6 +42,7 @@ const SizeEditor = (props: SizeEditorProps) => {
         propertyName: "height",
         placeholder: `${Math.round(height)}`,
       }}
+      unStyle={true}
     />
   );
 };

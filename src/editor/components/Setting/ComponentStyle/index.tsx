@@ -11,7 +11,7 @@
 import { Form } from "antd";
 import { useComponentConfigStore } from "../../../stores/component-config";
 import { useState } from "react";
-import CssEditor from "../CssEditor";
+import CssEditor from "./CssEditor";
 import LayoutSetter from "./LayoutSetter";
 import FrontSetter from "./FrontSetter";
 import BackGroundSetter from "./BackGroundSetter";
@@ -56,7 +56,7 @@ export function ComponentStyle() {
     {
       title: "CSS编辑器",
       component: (
-        <div className=" border-[1px] border-[#ccc] h-[200px]">
+        <div className=" border-[1px] border-[#ccc] h-[200px] w-[95%]">
           <CssEditor value={css} onSave={handleEditorChange} />
         </div>
       ),
