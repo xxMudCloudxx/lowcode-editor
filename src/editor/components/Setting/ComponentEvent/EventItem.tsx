@@ -81,7 +81,7 @@ export function EventItem({
           };
 
           return (
-            <div key={index} className="mb-2 last:mb-0">
+            <div key={index} className="mb-2 last:mb-0 ">
               {item.type === "goToLink" ? (
                 <ActionCard title="跳转链接" {...commonProps}>
                   <div className="flex items-center">
