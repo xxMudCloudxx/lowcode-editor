@@ -39,7 +39,7 @@ export default {
       type: "select",
       options: ["_self", "_blank", "_parent", "_top"],
     },
-    { name: "children", label: "文本", type: "input" },
+    { name: "text", label: "文本", type: "input" },
   ],
   styleSetter: [
     // {

@@ -40,19 +40,13 @@ export function FormElementRenderer({
 }: FormElementRendererProps) {
   // 将 setting (静态配置) 与 restProps (动态注入的 props) 分离开
 
-  // 从静态配置中提取渲染所需的信息
   const {
     type,
     options,
     component: componentName,
-    props: customSetterProps, // 这是 meta.tsx 中为 custom setter 定义的 props
-  } = setting;
-
-  // 从静态配置中提取应直接传递给 antd 控件的额外 props
-  const {
+    props: customSetterProps,
     name: _omitName,
     label: _omitLabel,
-    type: _omitType,
     ...controlProps
   } = setting;
 
@@ -96,7 +90,6 @@ export function FormElementRenderer({
     case "custom": {
       const CustomComponent = customSetters[componentName as string];
       if (CustomComponent) {
-        // ✔️ 修正：将 restProps (value, onChange) 和 customSetterProps (静态配置) 合并传递
         return <CustomComponent {...restProps} {...customSetterProps} />;
       }
       return <Input {...controlProps} {...restProps} allowClear />;
