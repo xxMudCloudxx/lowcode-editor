@@ -8,6 +8,7 @@
 export function normalizeOptions(
   options?: any[]
 ): Array<{ label: any; value: any }> {
+  if (!Array.isArray(options)) return [];
   if (!options) return [];
   if (options.length > 0 && typeof options[0] === "string") {
     return (options as string[]).map((v) => ({ label: v, value: v }));
