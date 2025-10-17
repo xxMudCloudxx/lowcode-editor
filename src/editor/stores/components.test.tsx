@@ -1,6 +1,70 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import React from "react";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  beforeAll,
+  afterEach,
+  vi,
+} from "vitest";
+
+vi.mock("antd", () => ({
+  __esModule: true,
+  Spin: () => <div data-testid="spin" />,
+  message: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+    loading: vi.fn(),
+  },
+}));
+
+import {
+  act,
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import { useComponetsStore, getComponentById } from "./components";
-import { act } from "@testing-library/react";
+import { Preview } from "../components/Preview";
+import { useComponentConfigStore } from "./component-config";
+import { message } from "antd";
+
+const TestButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { text?: string }
+>(({ text, children, ...props }, ref) => (
+  <button ref={ref} {...props}>
+    {React.Children.count(children) > 0 ? children : text}
+  </button>
+));
+
+const LazyTestButton = React.lazy(
+  () => Promise.resolve({ default: TestButton })
+);
+
+const TestPage = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ children, ...props }, ref) => (
+  <div ref={ref} {...props}>
+    {children}
+  </div>
+));
+
+const LazyTestPage = React.lazy(() => Promise.resolve({ default: TestPage }));
+
+let originalComponentConfig: ReturnType<
+  typeof useComponentConfigStore.getState
+>["componentConfig"];
+
+beforeAll(() => {
+  originalComponentConfig =
+    useComponentConfigStore.getState().componentConfig;
+});
 
 // 在每个测试用例开始前，重置 store 状态
 beforeEach(() => {
@@ -91,6 +155,53 @@ describe("useComponetsStore 核心 actions", () => {
     expect(button?.props.type).toBe("primary");
   });
 
+  it("updateComponentProps: 支持 replace 并能写入事件配置", () => {
+    act(() => {
+      useComponetsStore
+        .getState()
+        .addComponent(
+          {
+            id: 202,
+            name: "Button",
+            desc: "按钮",
+            props: { text: "旧文本", size: "small" },
+          },
+          1
+        );
+    });
+
+    const actions = [
+      { type: "showMessage", config: { type: "success", text: "事件触发" } },
+    ];
+
+    act(() => {
+      useComponetsStore
+        .getState()
+        .updateComponentProps(202, {
+          text: "新文本",
+          onClick: { actions },
+        });
+    });
+
+    let state = useComponetsStore.getState();
+    let button = getComponentById(202, state.components);
+
+    expect(button?.props.text).toBe("新文本");
+    expect(button?.props.size).toBe("small");
+    expect(button?.props.onClick?.actions).toEqual(actions);
+
+    act(() => {
+      useComponetsStore
+        .getState()
+        .updateComponentProps(202, { width: 120 }, true);
+    });
+
+    state = useComponetsStore.getState();
+    button = getComponentById(202, state.components);
+
+    expect(button?.props).toEqual({ width: 120 });
+  });
+
   it("moveComponents: 应该能将一个组件从根目录移动到另一个容器中", () => {
     // 准备初始状态：Page > [Button, Container]
     act(() => {
@@ -163,6 +274,56 @@ describe("useComponetsStore 核心 actions", () => {
     expect(pastedComponent?.parentId).toBe(1);
   });
 
+  it("updateComponentStyles: 支持合并和替换样式", () => {
+    act(() => {
+      useComponetsStore
+        .getState()
+        .addComponent(
+          {
+            id: 303,
+            name: "Container",
+            desc: "容器",
+            props: {},
+            styles: { width: 100 },
+          },
+          1
+        );
+    });
+
+    act(() => {
+      useComponetsStore.getState().setCurComponentId(303);
+    });
+
+    act(() => {
+      useComponetsStore
+        .getState()
+        .updateComponentStyles(303, { height: 200 });
+    });
+
+    let state = useComponetsStore.getState();
+    let container = getComponentById(303, state.components);
+
+    expect(container?.styles).toEqual({ width: 100, height: 200 });
+    expect(useComponetsStore.getState().curComponent?.styles).toEqual({
+      width: 100,
+      height: 200,
+    });
+
+    act(() => {
+      useComponetsStore
+        .getState()
+        .updateComponentStyles(303, { width: 320 }, true);
+    });
+
+    state = useComponetsStore.getState();
+    container = getComponentById(303, state.components);
+
+    expect(container?.styles).toEqual({ width: 320 });
+    expect(useComponetsStore.getState().curComponent?.styles).toEqual({
+      width: 320,
+    });
+  });
+
   it("setCurComponentId: 应该能正确设置和清除当前选中的组件", () => {
     // Mock temporal 的 pause/resume
     const temporalState = useComponetsStore.temporal.getState();
@@ -188,5 +349,92 @@ describe("useComponetsStore 核心 actions", () => {
     state = useComponetsStore.getState();
     expect(state.curComponentId).toBeNull();
     expect(state.curComponent).toBeNull();
+  });
+
+  it("setMode: 能够在编辑和预览模式之间切换", () => {
+    expect(useComponetsStore.getState().mode).toBe("edit");
+
+    act(() => {
+      useComponetsStore.getState().setMode("preview");
+    });
+    expect(useComponetsStore.getState().mode).toBe("preview");
+
+    act(() => {
+      useComponetsStore.getState().setMode("edit");
+    });
+    expect(useComponetsStore.getState().mode).toBe("edit");
+  });
+});
+
+describe("Preview 事件编排", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    act(() => {
+      useComponentConfigStore.setState({
+        componentConfig: originalComponentConfig,
+      });
+    });
+  });
+
+  it("触发 showMessage 动作时能够调用 message.success", async () => {
+    act(() => {
+      useComponentConfigStore.setState({
+        componentConfig: {
+          Page: {
+            name: "Page",
+            desc: "页面",
+            defaultProps: {},
+            setter: [],
+            styleSetter: [],
+            events: [],
+            dev: LazyTestPage,
+            prod: LazyTestPage,
+          },
+          Button: {
+            name: "Button",
+            desc: "按钮",
+            defaultProps: { text: "默认按钮" },
+            setter: [],
+            styleSetter: [],
+            events: [{ name: "onClick", label: "点击事件" }],
+            dev: LazyTestButton,
+            prod: LazyTestButton,
+          },
+        },
+      });
+    });
+
+    const eventConfig = {
+      actions: [
+        { type: "showMessage", config: { type: "success", text: "预览触发" } },
+      ],
+    };
+
+    act(() => {
+      useComponetsStore
+        .getState()
+        .addComponent(
+          {
+            id: 501,
+            name: "Button",
+            desc: "按钮",
+            props: {
+              text: "触发事件",
+              onClick: eventConfig,
+            },
+          },
+          1
+        );
+    });
+
+    render(<Preview />);
+
+    const button = await screen.findByRole("button", { name: "触发事件" });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(message.success).toHaveBeenCalledWith("预览触发");
+    });
+    expect(message.success).toHaveBeenCalledTimes(1);
   });
 });
