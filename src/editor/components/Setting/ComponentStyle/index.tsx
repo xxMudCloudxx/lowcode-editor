@@ -130,7 +130,7 @@ export function ComponentStyle() {
   }
 
   return (
-    <div className="overflow-y-auto h-[100%] w-[100%] absolute pb-30 overscroll-y-contain ">
+    <div className="overflow-y-auto h-[100%] w-[95%] absolute pb-30 overscroll-y-contain ">
       {styleCategories.map(({ title, component }) => (
         <div key={title} className="mb-4">
           {/* 分类标题 */}

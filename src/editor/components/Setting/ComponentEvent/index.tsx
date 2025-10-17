@@ -80,7 +80,7 @@ export function ComponentEvent() {
         ) : (
           // 折叠面板，直接使用上面生成的 collapseItems
           <Collapse
-            className="border-0 bg-transparent overflow-y-auto h-[80%] w-[100%] absolute overscroll-y-contain pb-90"
+            className="border-0 bg-transparent overflow-y-auto h-[80%] w-[90%] absolute overscroll-y-contain pb-90"
             items={collapseItems}
             defaultActiveKey={allEvents?.map((item) => item.name)}
             ghost
