@@ -11,7 +11,9 @@ import { Button, Space, Popconfirm, Typography, Popover } from "antd";
 const { Text, Title } = Typography;
 import { useComponetsStore } from "../../stores/components";
 import { useStore } from "zustand";
-import { QuestionCircleOutlined } from "@ant-design/icons";
+import { DownloadOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { exportSourceCode } from "../../../code-generator";
+import type { ISchema } from "../../../code-generator/types/ir";
 
 /**
  * @description 快捷键指南的 Popover 内容。
@@ -65,13 +67,59 @@ export function Header() {
     resetComponents();
   };
 
+  // 3. 添加导出源码的处理函数
+  const handleExportCode = async () => {
+    console.log("开始导出源码...");
+
+    // 从 store 获取当前 schema
+    // 注意：getState() 可以让你在事件处理器中获取最新状态
+    const { components } = useComponetsStore.getState();
+
+    if (!components || components.length === 0) {
+      console.error("Schema 为空，无法导出");
+      return;
+    }
+
+    try {
+      // 你的 store 里的类型是 IComponent[]，而出码入口需要 ISchema (即 ISchemaNode[])
+      // 它们的结构兼容，所以我们使用类型断言
+      const result = await exportSourceCode(components as ISchema);
+
+      if (result.success && result.files) {
+        console.log("出码成功！生成文件列表:", result.files);
+
+        // 打印第一个文件的内容（即生成的 TSX）
+        if (result.files.length > 0) {
+          console.log("生成的 TSX 代码:\n", result.files[0].content);
+          alert("出码成功，请查看控制台！");
+        } else {
+          console.warn("出码成功，但未生成任何文件。");
+        }
+      } else {
+        console.error("出码失败:", result.message);
+        alert(`出码失败: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("执行 exportSourceCode 时发生异常:", error);
+      alert(`出码异常: ${error}`);
+    }
+  };
+
   return (
     <div className="w-full h-full">
       <div className="h-full flex justify-between items-center">
         {/* 应用标题 */}
         <div className="flex items-center space-x-3">
-          <svg className="w-8 h-8" viewBox="0 0 1112 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
-            <path d="M952.181449 1024.005564H158.694126C71.050677 1024.005564 0 953.093996 0 865.617475V158.438168C0 70.961648 71.050677 0.050079 158.694126 0.050079h793.487323C1039.824898 0.050079 1112.862033 70.961648 1112.862033 158.438168v707.179307c0 87.47652-73.037135 158.388089-160.680584 158.388089zM311.601369 289.455415L89.028963 512.027822l217.008096 222.572406 61.207412-55.643101-161.364995-166.929305 166.929305-161.364995-61.207412-61.207412z m400.630332-133.543444h-144.672064L478.530674 795.80764H400.630332v72.336032h155.800685l77.900342-639.895669h77.900342V155.911971z m89.028963 133.543444l-61.207412 61.207412 166.929305 161.364995-161.364995 166.929305 61.207412 55.643101 217.008097-222.572406-222.572407-222.572407z" fill="currentColor" />
+          <svg
+            className="w-8 h-8"
+            viewBox="0 0 1112 1024"
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M952.181449 1024.005564H158.694126C71.050677 1024.005564 0 953.093996 0 865.617475V158.438168C0 70.961648 71.050677 0.050079 158.694126 0.050079h793.487323C1039.824898 0.050079 1112.862033 70.961648 1112.862033 158.438168v707.179307c0 87.47652-73.037135 158.388089-160.680584 158.388089zM311.601369 289.455415L89.028963 512.027822l217.008096 222.572406 61.207412-55.643101-161.364995-166.929305 166.929305-161.364995-61.207412-61.207412z m400.630332-133.543444h-144.672064L478.530674 795.80764H400.630332v72.336032h155.800685l77.900342-639.895669h77.900342V155.911971z m89.028963 133.543444l-61.207412 61.207412 166.929305 161.364995-161.364995 166.929305 61.207412 55.643101 217.008097-222.572406-222.572407-222.572407z"
+              fill="currentColor"
+            />
           </svg>
           <div>
             <Title level={4} className="!mb-0 !text-gray-800 font-semibold">
@@ -161,6 +209,11 @@ export function Header() {
                   </Button>
                 </Popconfirm>
               </div>
+
+              {/* 4. 出码按钮 */}
+              <Button icon={<DownloadOutlined />} onClick={handleExportCode}>
+                测试出码
+              </Button>
 
               {/* 预览按钮 */}
               <Button
