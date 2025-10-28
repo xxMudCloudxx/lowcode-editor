@@ -118,6 +118,37 @@ export const componentMetadataMap: Record<string, IComponentMetadata> = {
     dependency: { package: "antd", version: "^5.0.0", destructuring: true },
     isContainer: false, // Select 的 Option 通常通过 props 配置
   },
+  Space: {
+    componentName: "Space",
+    dependency: {
+      package: "antd",
+      version: "^5.0.0",
+      destructuring: true,
+    },
+    isContainer: true,
+  },
+  Container: {
+    componentName: "div", // 我们将其出码为普通的 div
+    dependency: {
+      package: "", // 无需导入
+      destructuring: false,
+    },
+    isContainer: true,
+  },
+  //  (这是一个复杂组件)
+  // --- 临时方案 (阶段一) ---
+  // Icon 组件依赖 props.name 动态加载图标 (e.g., <Icon name="SmileOutlined" />)
+  // 并且依赖 @ant-design/icons。
+  // 在阶段一，我们的解析器还不能根据 props 动态修改导入，
+  // 所以我们暂时也将其映射为 div，避免报错。
+  Icon: {
+    componentName: "div", // 暂时映射为 div
+    dependency: {
+      package: "", // 无需导入
+      destructuring: false,
+    },
+    isContainer: false,
+  },
   // ... Card, Image, Table, Avatar, Tooltip, Radio, Slider, Switch, Upload, ...
   // ... Icon, Space, Breadcrumb, Dropdown, Menu, PageHeader, Pagination, Steps, Tabs ...
   // ... Container (可能是自定义的布局容器) ...

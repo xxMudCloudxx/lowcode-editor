@@ -44,14 +44,15 @@ export class ModuleBuilder {
    * @returns 在代码中实际使用的组件名称 (处理了别名和子组件情况)。
    */
   addImport(dep: IRDependency, componentName: string): string {
+    // 如果 package 为空（例如原生的 'div' 或 'span'），则不需要导入，直接返回组件名
+    if (!dep.package) {
+      return componentName;
+    }
+
+    const source = dep.package;
+
     // 优先使用 dep.exportName (例如 'Row')，否则使用 componentName (例如 'Button')
     let importName = dep.exportName || componentName;
-
-    // 如果存在 subName (如 List.Item)，实际导入的是主组件名 (List)
-    if (dep.subName) {
-      importName = dep.exportName || componentName.split(".")[0];
-    }
-    const source = dep.package;
     // 使用 importName@source 作为唯一标识，避免重复添加相同的导入
     const key = `${importName}@${source}`;
 
