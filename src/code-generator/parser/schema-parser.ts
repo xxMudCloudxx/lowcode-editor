@@ -23,7 +23,7 @@ import {
   getProjectDependencies,
 } from "./component-metadata";
 // 导入 componentMetadataMap 用于 getAllDependencies 函数
-import { componentMetadataMap } from "../const/component-metadata"; // ! 新增导入
+import { componentMetadataMap } from "../const/component-metadata";
 import { uniqueId } from "lodash-es";
 
 /**
@@ -37,7 +37,6 @@ export class SchemaParser {
   private pageDependencies: Set<IRDependency>;
 
   constructor() {
-    // Initialize in the constructor
     this.pageDependencies = new Set();
   }
 
@@ -53,7 +52,7 @@ export class SchemaParser {
     };
 
     // --- 重要假设：目前只处理 schema 数组的第一个元素作为单页面 ---
-    // 你需要根据实际情况调整如何处理多页面或页面选择逻辑
+    // 需要根据实际情况调整如何处理多页面或页面选择逻辑
     if (schema && schema.length > 0) {
       // 查找根节点 (通常是 'Page')
       const rootSchemaNode =
@@ -159,7 +158,7 @@ export class SchemaParser {
     }
 
     // --- 特殊处理 Button 的 text 属性到 children ---
-    // 这是根据你的 Schema 做的适配，如果 Button 的文本在 props.text 而不是 children
+    // 这是根据我的 Schema 做的适配，如果 Button 的文本在 props.text 而不是 children
     if (schemaNode.name === "Button" && irNode.props.text) {
       // 检查 Button 是否已有 children，避免覆盖 (虽然通常 Button 不会有 children 和 text 同时存在)
       if (!irNode.children && !irNode.props.children) {
@@ -206,7 +205,7 @@ export class SchemaParser {
     value: any,
     schemaNode: ISchemaNode
   ): IRPropValue {
-    // 1. 处理 onClick Action (根据你的 Schema 结构)
+    // 1. 处理 onClick Action (根据我的 Schema 结构)
     // 检查是否是对象、非 null，且包含 actions 数组
     if (
       key === "onClick" &&

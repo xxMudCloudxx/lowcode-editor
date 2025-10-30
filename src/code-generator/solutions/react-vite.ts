@@ -39,6 +39,7 @@ const reactViteSolution: ICodeGeneratorSolution = {
     // 3. 执行插件流水线 (Pipeline)
     // 阶段一：只处理页面组件的 JSX 生成
     irProject.pages.forEach((page) => {
+      debugger;
       // 为每个页面创建一个 ModuleBuilder
       const moduleBuilder = projectBuilder.createModuleBuilder();
 

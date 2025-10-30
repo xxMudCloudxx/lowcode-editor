@@ -181,7 +181,7 @@ export interface ISchemaNode {
   styles?: Record<string, string>;
   desc?: string; // 描述信息，可忽略
   parentId?: number | string; // 可忽略，IR 中通过层级关系体现
-  // onClick?: { actions: any[] }; // 你的 Schema 中事件的结构
+  // onClick?: { actions: any[] }; // 我的 Schema 中事件的结构
   [key: string]: any; // 其他可能的字段
 }
 

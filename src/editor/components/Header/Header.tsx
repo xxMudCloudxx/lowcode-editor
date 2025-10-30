@@ -72,7 +72,7 @@ export function Header() {
     console.log("开始导出源码...");
 
     // 从 store 获取当前 schema
-    // 注意：getState() 可以让你在事件处理器中获取最新状态
+    // 注意：getState() 可以让我在事件处理器中获取最新状态
     const { components } = useComponetsStore.getState();
 
     if (!components || components.length === 0) {
@@ -81,7 +81,7 @@ export function Header() {
     }
 
     try {
-      // 你的 store 里的类型是 IComponent[]，而出码入口需要 ISchema (即 ISchemaNode[])
+      // 我的 store 里的类型是 IComponent[]，而出码入口需要 ISchema (即 ISchemaNode[])
       // 它们的结构兼容，所以我们使用类型断言
       const result = await exportSourceCode(components as ISchema);
 

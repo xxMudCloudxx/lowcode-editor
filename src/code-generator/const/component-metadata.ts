@@ -25,7 +25,7 @@ export interface IComponentMetadata {
  * @description key 是 Schema 中的组件 name (例如 'Button', 'Grid')。
  * value 是该组件的元数据信息 (IComponentMetadata)。
  * 这个映射表是 SchemaParser 解析 schema 时查找组件对应导入信息的依据。
- * ! 注意：请根据你的 lowcode-editor 项目实际使用的物料组件进行填充和维护。
+ * ! 将根据项目实际使用的物料组件进行填充和维护。
  */
 export const componentMetadataMap: Record<string, IComponentMetadata> = {
   Page: {
@@ -102,7 +102,7 @@ export const componentMetadataMap: Record<string, IComponentMetadata> = {
     dependency: { package: "antd", version: "^5.0.0", destructuring: true },
     isContainer: true, // Modal 可以包含内容
   },
-  // --- 请根据 src/editor/materials/ 下的实际组件补充 ---
+  // --- 将根据 src/editor/materials/ 下的实际组件补充 ---
   Input: {
     componentName: "Input",
     dependency: { package: "antd", version: "^5.0.0", destructuring: true },
@@ -141,6 +141,7 @@ export const componentMetadataMap: Record<string, IComponentMetadata> = {
   // 并且依赖 @ant-design/icons。
   // 在阶段一，我们的解析器还不能根据 props 动态修改导入，
   // 所以我们暂时也将其映射为 div，避免报错。
+  // TODO：在后面的阶段中完善
   Icon: {
     componentName: "div", // 暂时映射为 div
     dependency: {

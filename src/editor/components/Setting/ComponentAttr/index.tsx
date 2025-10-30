@@ -23,8 +23,6 @@ export function ComponentAttr() {
 
   if (!curComponent || !meta) return null;
 
-  console.log(form);
-
   return (
     <Form
       form={form}

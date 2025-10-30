@@ -65,7 +65,7 @@ export function getProjectDependencies(
     }
   });
   // 添加 React 和 ReactDOM 作为基础依赖 (版本号可根据项目配置调整)
-  projectDeps["react"] = "^18.0.0"; // 或者从你的项目 package.json 读取
+  projectDeps["react"] = "^18.0.0"; // 或者从我的项目 package.json 读取
   projectDeps["react-dom"] = "^18.0.0";
 
   // 如果使用了 antd，可能还需要 @ant-design/icons

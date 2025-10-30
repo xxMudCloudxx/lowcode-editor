@@ -6,7 +6,7 @@
  */
 
 // 导入类型定义，假设它们在 types/ir.ts 中
-// ISchema 是你的编辑器 Schema 结构
+// ISchema 是我的编辑器 Schema 结构
 import type { ISchema } from "./types/ir";
 
 // 导入 ProjectBuilder 和生成的文件类型
