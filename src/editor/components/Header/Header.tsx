@@ -90,7 +90,9 @@ export function Header() {
 
         // 打印第一个文件的内容（即生成的 TSX）
         if (result.files.length > 0) {
-          console.log("生成的 TSX 代码:\n", result.files[0].content);
+          result.files.map((file) => {
+            console.log("生成的 TSX 代码:\n", file.content);
+          });
           alert("出码成功，请查看控制台！");
         } else {
           console.warn("出码成功，但未生成任何文件。");

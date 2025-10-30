@@ -11,6 +11,7 @@ import type { ModuleBuilder } from "../../../generator/module-builder";
 // ! 修正：移除了未使用的 kebabCase，添加了使用的 uniqueId
 import { isEmpty, camelCase, upperFirst, uniqueId } from "lodash-es";
 import { getActionHandler } from "./handlers/actions";
+import type { IComponentPlugin } from "../../../types/plugin";
 
 /**
  * (重构后) 生成单条 Action 的核心调用代码字符串
@@ -30,26 +31,9 @@ function generateActionCallString(
 }
 
 /**
- * 代码生成器插件接口定义
- * (可以放到 src/code-generator/types/core.ts 或类似文件)
- */
-export interface ICodeGeneratorPlugin {
-  /** 插件类型 */
-  type: "component" | "project" | "postprocessor" | "publisher";
-  /** 插件名称 */
-  name: string;
-  /**
-   * 插件执行函数
-   * @param irNode - 当前处理的 IR 节点 (对于 component 类型插件)。
-   * @param moduleBuilder - 当前模块的构建器实例。
-   */
-  run: (irNode: IRNode, moduleBuilder: ModuleBuilder) => void;
-}
-
-/**
  * React JSX 生成插件实现
  */
-const jsxPlugin: ICodeGeneratorPlugin = {
+const jsxPlugin: IComponentPlugin = {
   type: "component",
   name: "react-jsx",
   /**
@@ -58,10 +42,36 @@ const jsxPlugin: ICodeGeneratorPlugin = {
    * @param moduleBuilder - 当前模块的构建器实例。
    */
   run: (irNode: IRNode, moduleBuilder: ModuleBuilder) => {
-    // 递归生成 JSX 字符串，初始缩进级别为 0
-    const jsxString = generateJSX(irNode, moduleBuilder, 0);
-    // 将生成的 JSX 设置到 ModuleBuilder 中
-    moduleBuilder.setJSX(jsxString);
+    // 1. 检查传入的节点是否为页面根节点 ('Page')
+    //    (基于 react-vite.ts 的调用，这里传入的 irNode 始终是 page.node)
+    if (irNode.componentName === "Page" && irNode.children) {
+      // 2. 如果是 Page 节点, 我们不渲染 <Page> 标签, 而是渲染它的子节点列表
+      const childrenJsxStrings = irNode.children
+        .map((childNode) => generateJSX(childNode, moduleBuilder, 0)) // 告诉 generateJSX 子节点从缩进 0 开始
+        .join("\n"); // 用换行符连接所有子组件
+
+      // 3. 将子节点的 JSX 列表（用 React Fragment 包裹）设置到 moduleBuilder
+      //    (generateJSX 内部已处理了第一层缩进, 这里不需要额外空格)
+      moduleBuilder.setJSX(
+        `<>
+${childrenJsxStrings}
+</>`
+      );
+
+      // (可选的警告) 这种方法会丢弃 Page 根节点上定义的样式 (irNode.styles)
+      if (irNode.styles && Object.keys(irNode.styles).length > 0) {
+        console.warn(`[CodeGenerator] 警告: Page 根节点上的 'styles' 将被忽略。
+        请考虑将页面背景等样式在 "src/global.scss" 中定义，
+        或在 "src/App.tsx" 中为 <AppRouter /> 添加一个带样式的 wrapper div。`);
+      }
+    } else {
+      // 4. (保留) 如果不是 Page 节点, 或者 Page 节点没有 children,
+      //    则执行原始的逻辑：渲染 irNode 自身
+      const jsxString = generateJSX(irNode, moduleBuilder, 0); //
+      moduleBuilder.setJSX(jsxString);
+    }
+
+    // ! --- 修改结束 ---
   },
 };
 

@@ -75,6 +75,16 @@ export interface IRDependency {
 }
 
 /**
+ * 代表一个组件的状态
+ * @description 存储页面所需的状态。
+ */
+
+export interface IState {
+  name: string; // 状态名, e.g., "modal_1761401141684_open"
+  initialValue: any; // 初始值, e.g., false
+}
+
+/**
  * 代表一个组件节点
  * @description 在 IR 树中表示单个组件实例。
  */

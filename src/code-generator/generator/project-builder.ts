@@ -51,6 +51,12 @@ export class ProjectBuilder {
   }
 
   /**
+   * 读取项目IR
+   */
+  getIrProject() {
+    return this.ir;
+  }
+  /**
    * 添加一个文件到项目中。
    * 如果文件路径已存在，会覆盖旧文件并打印警告。
    * @param file - 要添加的文件对象 (IGeneratedFile)。
