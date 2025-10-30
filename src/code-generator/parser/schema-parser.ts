@@ -15,6 +15,8 @@ import type {
   IRLiteral,
   IRAction,
   IRDependency,
+  IRJSExpression,
+  IRJSFunction,
 } from "../types/ir";
 // 确认从 ./component-metadata 导入辅助函数
 import {
@@ -25,6 +27,12 @@ import {
 // 导入 componentMetadataMap 用于 getAllDependencies 函数
 import { componentMetadataMap } from "../const/component-metadata";
 import { uniqueId } from "lodash-es";
+import {
+  nodeMapperRegistry,
+  nodeTransformerRegistry,
+  propMapperRegistry,
+  type IParserContext,
+} from "./component-handlers";
 
 /**
  * Schema 解析器类
@@ -100,6 +108,23 @@ export class SchemaParser {
    * @returns 解析后的 IRNode 对象。
    */
   private parseNode(schemaNode: ISchemaNode): IRNode {
+    const transformer = Object.prototype.hasOwnProperty.call(
+      nodeTransformerRegistry,
+      schemaNode.name
+    )
+      ? nodeTransformerRegistry[schemaNode.name]
+      : undefined;
+    if (transformer) {
+      const context: IParserContext = {
+        pageDependencies: this.pageDependencies,
+        parseNode: this.parseNode.bind(this),
+        parsePropValue: this.parsePropValue.bind(this),
+      };
+      const result = transformer(schemaNode, context);
+      if (result) {
+        return result;
+      }
+    }
     // getComponentMetadata 内部会使用 componentMetadataMap
     const metadata = getComponentMetadata(schemaNode.name);
     if (!metadata) {
@@ -157,29 +182,14 @@ export class SchemaParser {
       }
     }
 
-    // --- 特殊处理 Button 的 text 属性到 children ---
-    // 这是根据我的 Schema 做的适配，如果 Button 的文本在 props.text 而不是 children
-    if (schemaNode.name === "Button" && irNode.props.text) {
-      // 检查 Button 是否已有 children，避免覆盖 (虽然通常 Button 不会有 children 和 text 同时存在)
-      if (!irNode.children && !irNode.props.children) {
-        irNode.props.children = irNode.props.text; // 将 text 转为 children prop
-      } else {
-        console.warn(
-          `组件 '${schemaNode.name}' (ID: ${schemaNode.id}) 同时具有 'text' 属性和子节点/children 属性，已忽略 'text' 属性。`
-        );
-      }
-      delete irNode.props.text; // 删除原始的 text prop
-    }
-    // --- 特殊处理 Typography 的 content 属性到 children ---
-    if (schemaNode.name === "Typography" && irNode.props.content) {
-      if (!irNode.children && !irNode.props.children) {
-        irNode.props.children = irNode.props.content;
-      } else {
-        console.warn(
-          `组件 '${schemaNode.name}' (ID: ${schemaNode.id}) 同时具有 'content' 属性和子节点/children 属性，已忽略 'content' 属性。`
-        );
-      }
-      delete irNode.props.content;
+    const mapper = Object.prototype.hasOwnProperty.call(
+      nodeMapperRegistry,
+      schemaNode.name
+    )
+      ? nodeMapperRegistry[schemaNode.name]
+      : undefined;
+    if (mapper) {
+      mapper(irNode, schemaNode);
     }
 
     // --- 解析 Children ---
@@ -205,59 +215,151 @@ export class SchemaParser {
     value: any,
     schemaNode: ISchemaNode
   ): IRPropValue {
-    // 1. 处理 onClick Action (根据我的 Schema 结构)
-    // 检查是否是对象、非 null，且包含 actions 数组
+    // 步骤 1: (高优先级) 运行“组件特定”处理器 (e.g., FormItem)
+    const propMapper = Object.prototype.hasOwnProperty.call(
+      propMapperRegistry,
+      schemaNode.name
+    )
+      ? propMapperRegistry[schemaNode.name]
+      : undefined;
+
+    if (propMapper) {
+      const result = propMapper(value, key, schemaNode);
+      if (result) {
+        return result; // 组件特定处理器已处理 (e.g., FormItem.name)
+      }
+    }
+
+    // 步骤 2: (中优先级) 基于 "值结构" (Value Structure) 进行全局解析
+
+    // 2a. 检查是否为 Action 结构
+    // (不再检查 key === 'onClick'，自动支持所有 { actions: [...] } 结构的事件)
     if (
-      key === "onClick" &&
       typeof value === "object" &&
       value !== null &&
-      Array.isArray(value.actions)
+      Array.isArray(value.actions) // [!> 关键检查 <!]
     ) {
-      // 简化处理：假设只有一个 action
-      if (value.actions.length > 0) {
-        const action = value.actions[0];
-        // 确保 action 结构符合预期
+      return this.parseActionProp(value, key, schemaNode);
+    }
+
+    // 2b. 检查是否为 JSExpression / JSFunction 结构
+    if (typeof value === "object" && value !== null && "type" in value) {
+      switch (value.type) {
+        case "JSExpression":
+          return this.parseJSExpressionProp(value, key, schemaNode);
+        case "JSFunction":
+          return this.parseJSFunctionProp(value, key, schemaNode);
+      }
+    }
+
+    // 步骤 3: (低优先级) Fallback (默认作为 Literal)
+    // (所有不符合上述结构的，包括 'onSale' (boolean),
+    //  'title' (string), 'data' (array) 都会落到这里)
+    return this.parseLiteralProp(value, key, schemaNode);
+  }
+
+  // --- 私有辅助方法 ---
+  // (这些方法是为 parsePropValue 服务的)
+
+  /**
+   * 辅助方法：解析 Action 类型的属性
+   * (逻辑迁移自原 的 'onClick' 块)
+   */
+  private parseActionProp(
+    value: any,
+    key: string,
+    schemaNode: ISchemaNode
+  ): IRPropValue {
+    const actions: IRAction[] = value.actions
+      .map((action: any) => {
         if (action && action.type && action.config) {
           return {
             type: "Action",
-            actionType: action.type, // e.g., 'componentMethod'
+            actionType: action.type,
             config: action.config,
           } as IRAction;
         }
-      }
-      // 如果没有 action 或结构不符，返回 null 字面量
+        return null;
+      })
+      .filter((action: any): action is IRAction => !!action);
+
+    if (actions.length === 0) {
       console.warn(
-        `在组件 '${schemaNode.name}' (ID: ${schemaNode.id}) 的 onClick 属性中发现无效的 action 结构。`
+        `在组件 '${schemaNode.name}' (ID: ${schemaNode.id}) 的 '${key}' 属性中发现无效的 action 结构。`
       );
       return { type: "Literal", value: null } as IRLiteral;
     }
 
-    // 2. 处理简单字面量 (string, number, boolean, null, undefined)
+    // 如果只有一个 action，返回单个 IRAction，否则返回数组
+    return actions.length === 1 ? actions[0] : actions;
+  }
+
+  /**
+   * 辅助方法：解析 JSExpression 类型的属性
+   * (逻辑迁移自原)
+   */
+  private parseJSExpressionProp(
+    value: any,
+    key: string,
+    schemaNode: ISchemaNode
+  ): IRPropValue {
+    if (typeof value.value === "string") {
+      return {
+        type: "JSExpression",
+        value: value.value,
+      } as IRJSExpression;
+    }
+
+    console.warn(
+      `属性 '${key}' (在 ${schemaNode.name}) 的值结构不是一个有效的 JSExpression。将降级为 Literal。`
+    );
+    return this.parseLiteralProp(value, key, schemaNode); // 降级为字面量
+  }
+
+  /**
+   * 辅助方法：解析 JSFunction 类型的属性
+   * (逻辑迁移自原)
+   */
+  private parseJSFunctionProp(
+    value: any,
+    key: string,
+    schemaNode: ISchemaNode
+  ): IRPropValue {
+    if (typeof value.value === "string") {
+      return {
+        type: "JSFunction",
+        value: value.value,
+      } as IRJSFunction;
+    }
+
+    console.warn(
+      `属性 '${key}' (在 ${schemaNode.name}) 的值结构不是一个有效的 JSFunction。将降级为 Literal。`
+    );
+    return this.parseLiteralProp(value, key, schemaNode); // 降级为字面量
+  }
+
+  /**
+   * 辅助方法：解析字面量
+   * (聚合原 的 fallback 逻辑)
+   */
+  private parseLiteralProp(
+    value: any,
+    key: string,
+    schemaNode: ISchemaNode
+  ): IRLiteral {
+    // 1. 处理简单字面量
     if (
       ["string", "number", "boolean"].includes(typeof value) ||
       value === null ||
       value === undefined
     ) {
-      // 特殊处理 FormItem 的 name 属性，如果它是数字，转为字符串
-      // 这种特定组件的逻辑耦合较高，未来可考虑通过组件元数据配置或插件化方式解耦
-      if (
-        schemaNode.name === "FormItem" &&
-        key === "name" &&
-        typeof value === "number"
-      ) {
-        return { type: "Literal", value: String(value) } as IRLiteral;
-      }
-      // 默认返回 Literal 类型
       return { type: "Literal", value: value } as IRLiteral;
     }
 
-    // 3. 处理数组和普通对象 (递归处理其内部值，但在这个阶段简化，直接认为是 Literal)
-    // TODO: 未来需要更精细地处理对象和数组内部可能包含的 JSExpression, JSFunction 等
+    // 2. 处理对象和数组字面量
     if (typeof value === "object") {
       try {
-        // 使用 JSON.parse(JSON.stringify(...)) 进行简单的深拷贝，确保值的独立性
-        // 注意：这种方式会丢失函数、undefined、Date 对象等特殊类型
-        // 如果属性值中可能包含这些类型，需要更完善的深拷贝实现
+        // 使用 JSON.parse(JSON.stringify(...)) 进行简单的深拷贝
         return {
           type: "Literal",
           value: JSON.parse(JSON.stringify(value)),
@@ -268,12 +370,11 @@ export class SchemaParser {
           value,
           e
         );
-        // 序列化失败时返回 null
         return { type: "Literal", value: null } as IRLiteral;
       }
     }
 
-    // 对于其他未能识别的类型，打印警告并暂时作为 Literal 处理
+    // 3. Fallback (其他未能识别的类型)
     console.warn(
       `在组件 '${schemaNode.name}' (ID: ${schemaNode.id}) 的属性 '${key}' 中发现无法识别的值类型。已将其视为 Literal 处理。值:`,
       value

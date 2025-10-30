@@ -6,10 +6,28 @@
  */
 
 // ! 修正：仅导入类型
-import type { IRNode, IRPropValue } from "../../../types/ir";
+import type { IRAction, IRNode, IRPropValue } from "../../../types/ir";
 import type { ModuleBuilder } from "../../../generator/module-builder";
 // ! 修正：移除了未使用的 kebabCase，添加了使用的 uniqueId
 import { isEmpty, camelCase, upperFirst, uniqueId } from "lodash-es";
+import { getActionHandler } from "./handlers/actions";
+
+/**
+ * (重构后) 生成单条 Action 的核心调用代码字符串
+ * @param action
+ * @param moduleBuilder
+ * @returns {string} - e.g., "message.info('hello')"
+ */
+function generateActionCallString(
+  action: IRAction,
+  moduleBuilder: ModuleBuilder
+): string {
+  // 1. 获取处理器
+  const handler = getActionHandler(action.actionType);
+
+  // 2. 执行处理器
+  return handler(action, moduleBuilder);
+}
 
 /**
  * 代码生成器插件接口定义
@@ -49,6 +67,80 @@ const jsxPlugin: ICodeGeneratorPlugin = {
 
 export default jsxPlugin;
 
+// --- 辅助函数：生成单个 Action 的调用代码 ---
+// (我们将复用这个函数)
+function generateSingleActionMethod(
+  action: IRAction,
+  moduleBuilder: ModuleBuilder
+): { handlerName: string; methodBody: string } {
+  const handlerName = `handle${upperFirst(
+    camelCase(action.actionType || "action")
+  )}${action.config.componentId || uniqueId("Action")}`;
+
+  // 步骤 2：调用新函数
+  const actionCall = generateActionCallString(action, moduleBuilder);
+
+  const methodBody = `
+  /**
+   * 动作: ${action.actionType}
+   * Config: ${JSON.stringify(action.config)}
+   */
+  const ${handlerName} = () => {
+    ${actionCall}
+  };`;
+
+  return { handlerName, methodBody };
+}
+
+/**
+ * (新增) 生成包含多个 Action 调用的方法
+ * @param actions
+ * @param moduleBuilder
+ * @returns
+ */
+function generateMultiActionMethod(
+  actions: IRAction[],
+  moduleBuilder: ModuleBuilder
+): { handlerName: string; methodBody: string } {
+  // 步骤 3：实现多事件处理
+  const handlerName = `handleOnClick${uniqueId("Actions")}`;
+
+  // 循环生成所有 action 调用
+  const actionCalls = actions
+    .map((action) => {
+      // 复用 generateActionCallString
+      const callString = generateActionCallString(action, moduleBuilder);
+      // 添加注释
+      return `
+    // Action: ${action.actionType}
+    ${callString}`;
+    })
+    .join("\n");
+
+  const methodBody = `
+  /**
+   * 处理多个动作
+   */
+  const ${handlerName} = () => {
+    ${actionCalls}
+  };`;
+
+  return { handlerName, methodBody };
+}
+
+/**
+ * 类型守卫：检查是否为 IRAction[]
+ */
+function isIRActionArray(propValue: any): propValue is IRAction[] {
+  return (
+    Array.isArray(propValue) &&
+    propValue.length > 0 &&
+    typeof propValue[0] === "object" &&
+    propValue[0] !== null &&
+    "type" in propValue[0] &&
+    propValue[0].type === "Action"
+  );
+}
 // --- JSX 生成核心逻辑 ---
 
 /**
@@ -224,9 +316,18 @@ function generatePropValueString(
   propValue: IRPropValue,
   moduleBuilder: ModuleBuilder
 ): string | undefined {
-  // ! 修正：开始严格的类型检查
+  // 优先处理 IRAction[]
+  if (isIRActionArray(propValue)) {
+    // propValue 被收窄为 IRAction[]
+    const { handlerName, methodBody } = generateMultiActionMethod(
+      propValue,
+      moduleBuilder
+    );
+    moduleBuilder.addMethod(methodBody);
+    return handlerName;
+  }
 
-  // 1. 检查是否为 IRNode[] (Slot 数组)
+  // 检查是否为 IRNode[] (Slot 数组)
   if (Array.isArray(propValue)) {
     // TODO: 阶段二需要处理的类型
     // 返回包含多个 JSX 节点的数组字符串
@@ -240,7 +341,7 @@ function generatePropValueString(
     return undefined;
   }
 
-  // 2. 检查是否为 null 或非对象 (虽然 ts-check 应该会发现，但以防万一)
+  // 检查是否为 null 或非对象 (虽然 ts-check 应该会发现，但以防万一)
   if (typeof propValue !== "object" || propValue === null) {
     // 这可能是一个无效的 IRPropValue，或者是一个未被正确包装的原始类型
     // 在我们的定义中，IRPropValue 总是对象或数组
@@ -248,7 +349,18 @@ function generatePropValueString(
     return undefined;
   }
 
-  // 3. 检查 'type' 属性是否存在
+  // 检查是否为单个 IRAction
+  if ("type" in propValue && propValue.type === "Action") {
+    // propValue 被收窄为 IRAction
+    const { handlerName, methodBody } = generateSingleActionMethod(
+      propValue,
+      moduleBuilder
+    );
+    moduleBuilder.addMethod(methodBody);
+    return handlerName;
+  }
+
+  // 检查 'type' 属性是否存在
   if ("type" in propValue) {
     // 3a. 它有 'type' 属性，所以它必须是 (IRLiteral | IRVariable | IRJSExpression | IRJSFunction | IRAction)
     // TypeScript 现在可以将 propValue 正确地收窄
@@ -269,32 +381,14 @@ function generatePropValueString(
         // 其他字面量
         return JSON.stringify(propValue.value);
 
-      case "Action":
-        // propValue 被收窄为 IRAction (有 actionType 和 config)
-        const handlerName = `handle${upperFirst(
-          camelCase(propValue.actionType || "action")
-        )}${propValue.config.componentId || uniqueId("Action")}`;
-        // 在 ModuleBuilder 中添加一个 TODO 注释的方法体
-        const methodBody = `
-    /**
-     * TODO: 实现动作处理逻辑
-     * Action Type: ${propValue.actionType}
-     * Config: ${JSON.stringify(propValue.config)}
-     */
-    const ${handlerName} = () => {
-      console.log('Action triggered: ${propValue.actionType}', ${JSON.stringify(
-          propValue.config
-        )});
-    };`;
-        moduleBuilder.addMethod(methodBody);
-        return handlerName;
-
       // --- 阶段二需要处理的类型 ---
       case "JSExpression":
         // propValue 被收窄为 IRJSExpression (有 value)
+        // 直接返回原始值，JSX 插件会自动用 {} 包裹
         return propValue.value;
       case "JSFunction":
         // propValue 被收窄为 IRJSFunction (有 value)
+        // 直接返回原始值，JSX 插件会自动用 {} 包裹
         return propValue.value;
       case "Variable":
         // propValue 被收窄为 IRVariable (有 name)

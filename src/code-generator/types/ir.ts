@@ -122,6 +122,7 @@ export type IRPropValue =
   | IRVariable
   | IRJSExpression
   | IRJSFunction
+  | IRAction[]
   | IRAction
   | IRNode // 用于处理 Slot 或 Render Props
   | IRNode[]; // 用于处理 Slot 或 Render Props (列表)
