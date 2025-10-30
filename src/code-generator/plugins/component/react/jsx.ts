@@ -8,8 +8,7 @@
 // ! 修正：仅导入类型
 import type { IRAction, IRNode, IRPropValue } from "../../../types/ir";
 import type { ModuleBuilder } from "../../../generator/module-builder";
-// ! 修正：移除了未使用的 kebabCase，添加了使用的 uniqueId
-import { isEmpty, camelCase, upperFirst, uniqueId } from "lodash-es";
+import { camelCase, upperFirst, uniqueId } from "lodash-es";
 import { getActionHandler } from "./handlers/actions";
 import type { IComponentPlugin } from "../../../types/plugin";
 
@@ -226,18 +225,73 @@ function generateJSX(
     delete irNode.props.children;
   }
 
-  // 4. 处理 Styles (生成内联样式对象字符串)
-  const styleString = generateStyleString(irNode.styles);
-  // 如果存在样式，生成 style={{...}} 属性
-  const styleProp = styleString ? ` style={${styleString}}` : "";
+  // 处理 className
+  const classList: string[] = [];
+
+  //  检查 irNode.props.className (来自用户在编辑器中设置的)
+  if (irNode.props.className) {
+    const classNameProp = irNode.props.className;
+
+    if (
+      typeof classNameProp === "object" &&
+      classNameProp !== null &&
+      !Array.isArray(classNameProp) &&
+      "type" in classNameProp // 确保它是一个带 type 的对象
+    ) {
+      if (classNameProp.type === "Literal") {
+        classList.push(String(classNameProp.value));
+      } else {
+        // 它是 JSExpression, Variable, JSFunction 等
+        const classNameValue = generatePropValueString(
+          classNameProp,
+          moduleBuilder
+        );
+        classList.push(`\${${classNameValue}}`);
+      }
+    } else if (
+      !Array.isArray(classNameProp) &&
+      (classNameProp as any).componentName
+    ) {
+      // 这是一个 IRNode，虽然不推荐，但我们还是处理一下
+      console.warn("className prop 是一个 IRNode，这不被推荐。", classNameProp);
+      const classNameValue = generatePropValueString(
+        classNameProp,
+        moduleBuilder
+      );
+      classList.push(`\${${classNameValue}}`);
+    }
+    // (忽略数组或其他不太可能出现在 className 里的类型)
+  }
+
+  // 4b. 检查 irNode.css (由 css.ts 插件生成的)
+  if (irNode.css) {
+    // irNode.css 是 'node_123'，我们需要 'styles.node_123'
+    classList.push(`\${styles.${irNode.css}}`);
+  }
+
+  let classNameProp = ""; // <-- TS6133 发生在这里
+  if (classList.length > 0) {
+    // 统一使用模板字符串来合并所有 class，无论静态还是动态
+    // e.g., className={`my-class ${styles.node_123} ${myVar}`}
+    classNameProp = ` className={\`${classList.join(" ")}\`}`;
+  }
+  // ! --- 修正结束 ---
+
+  // // 4. 处理 Styles (生成内联样式对象字符串)
+  // const styleString = generateStyleString(irNode.styles);
+  // // 如果存在样式，生成 style={{...}} 属性
+  // const styleProp = styleString ? ` style={${styleString}}` : "";
+  // 交给module-builder处理了
 
   // 5. 组合 JSX 字符串
   if (childrenString) {
     // 如果有子节点或有效的文本子节点，使用开合标签形式
-    return `${indent}<${componentNameInCode}${propsString}${styleProp}>\n${childrenString}\n${indent}</${componentNameInCode}>`;
+    // return `${indent}<${componentNameInCode}${propsString}${styleProp}>\n${childrenString}\n${indent}</${componentNameInCode}>`;
+    return `${indent}<${componentNameInCode}${propsString}${classNameProp}>\n${childrenString}\n${indent}</${componentNameInCode}>`;
   } else {
     // 如果没有子节点，使用自闭合标签形式
-    return `${indent}<${componentNameInCode}${propsString}${styleProp} />`;
+    // return `${indent}<${componentNameInCode}${propsString}${styleProp} />`;
+    return `${indent}<${componentNameInCode}${propsString}${classNameProp} />`;
   }
 }
 
@@ -445,21 +499,21 @@ function generatePropValueString(
  * @returns React style 属性接受的对象字符串 (e.g., `{"backgroundColor":"red","fontSize":"12px"}`)，
  * 如果 styles 为空或无效则返回 undefined。
  */
-function generateStyleString(
-  styles?: Record<string, string>
-): string | undefined {
-  // 如果 styles 不存在或为空对象，则返回 undefined
-  if (!styles || isEmpty(styles)) {
-    return undefined;
-  }
-  const styleObject: Record<string, string> = {};
-  // 遍历原始样式对象
-  for (const key in styles) {
-    if (Object.prototype.hasOwnProperty.call(styles, key)) {
-      // 将 CSS 属性名转换为驼峰式 (e.g., background-color -> backgroundColor)
-      styleObject[camelCase(key)] = styles[key];
-    }
-  }
-  // 将处理后的样式对象转换为 JSON 字符串
-  return JSON.stringify(styleObject);
-}
+// function generateStyleString(
+//   styles?: Record<string, string>
+// ): string | undefined {
+//   // 如果 styles 不存在或为空对象，则返回 undefined
+//   if (!styles || isEmpty(styles)) {
+//     return undefined;
+//   }
+//   const styleObject: Record<string, string> = {};
+//   // 遍历原始样式对象
+//   for (const key in styles) {
+//     if (Object.prototype.hasOwnProperty.call(styles, key)) {
+//       // 将 CSS 属性名转换为驼峰式 (e.g., background-color -> backgroundColor)
+//       styleObject[camelCase(key)] = styles[key];
+//     }
+//   }
+//   // 将处理后的样式对象转换为 JSON 字符串
+//   return JSON.stringify(styleObject);
+// }

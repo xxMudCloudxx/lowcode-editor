@@ -12,6 +12,7 @@ import jsxPlugin from "../plugins/component/react/jsx";
 import { camelCase, upperFirst } from "lodash";
 import type { IComponentPlugin, IProjectPlugin } from "../types/plugin";
 import { projectPlugins } from "../plugins/project";
+import cssPlugin from "../plugins/component/style/css";
 // 引入其他插件... (例如 CSS 插件, 路由插件等，将在后续阶段添加)
 
 /**
@@ -41,11 +42,7 @@ const reactViteSolution: ICodeGeneratorSolution = {
 
     // 3. --- 定义插件流水线 ---
     // 阶段一：组件级别插件
-    const componentPlugins: IComponentPlugin[] = [
-      jsxPlugin,
-      // 未来可以添加 cssPlugin (生成 CSS Module)
-      // cssPlugin,
-    ];
+    const componentPlugins: IComponentPlugin[] = [cssPlugin, jsxPlugin];
 
     // 阶段二/三：项目级别插件
     const projectPluginsList: IProjectPlugin[] = [
@@ -91,8 +88,19 @@ const reactViteSolution: ICodeGeneratorSolution = {
         fileType: "tsx",
       });
 
-      // (未来阶段) 在这里可以调用 CSS 插件生成页面的 CSS Module 文件等
-      // cssPlugin.run(page, projectBuilder, moduleBuilder); // 示例调用
+      // 生成 CSS Module 文件 (如果需要)
+      const cssContent = moduleBuilder.generateCssModule(componentPascalName);
+      if (cssContent) {
+        const cssFileName = `${componentPascalName}.module.scss`;
+        const cssFilePath = `src/pages/${componentPascalName}/${cssFileName}`;
+
+        projectBuilder.addFile({
+          fileName: cssFileName,
+          filePath: cssFilePath,
+          content: cssContent,
+          fileType: "scss",
+        });
+      }
     });
 
     // 5. --- 执行 Project 级别的插件 ---

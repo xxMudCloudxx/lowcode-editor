@@ -6,7 +6,7 @@
  */
 
 import type { IRDependency } from "../types/ir";
-import { camelCase, upperFirst } from "lodash-es"; // 使用 lodash-es 或自己实现
+import { camelCase, kebabCase, upperFirst } from "lodash-es"; // 使用 lodash-es 或自己实现
 
 /**
  * 导入语句接口定义
@@ -36,6 +36,16 @@ export class ModuleBuilder {
   private state: string[] = [];
   /** 存储生成的 useEffect hook 字符串 */
   private effects: string[] = [];
+  /**
+   * @private
+   * @description 存储 CSS 类名及其对应的样式规则
+   * @example
+   * {
+   * "node_123": { "font-size": "12px", "flexDirection": "row" },
+   * "node_456": { "color": "red" }
+   * }
+   */
+  private cssClasses: Map<string, Record<string, string>> = new Map();
 
   /**
    * 添加一个导入语句。
@@ -131,20 +141,75 @@ export class ModuleBuilder {
   }
 
   /**
+   * @public
+   * @description 注册一个 CSS 类及其样式
+   * @param className - 唯一的 CSS 类名 (e.g., "node_123")
+   * @param styles - 样式对象 (e.g., { "flexDirection": "row" })
+   */
+  public addCssClass(className: string, styles: Record<string, string>) {
+    // TODO: 可以增加合并逻辑，如果同一个类名被多次添加
+    this.cssClasses.set(className, styles);
+  }
+
+  /**
+   * @public
+   * @description 生成当前模块所有 CSS 规则的字符串
+   * @param componentName - (可选) 模块名，用于生成注释
+   * @returns 完整的 CSS Module 文件内容
+   */
+  public generateCssModule(componentName?: string): string {
+    if (this.cssClasses.size === 0) {
+      return "";
+    }
+
+    const header = `/**
+ * @file ${componentName || "Component"} CSS Modules
+ * @description 由 lowcode-editor 自动生成
+ */\n\n`;
+
+    const rules: string[] = [];
+    this.cssClasses.forEach((styles, className) => {
+      // 1. 将 JS 样式对象转换为 CSS 规则
+      const rulesString = Object.keys(styles)
+        .map((key) => `  ${kebabCase(key)}: ${styles[key]};`)
+        .join("\n");
+
+      // 2. 构造成 CSS 类
+      rules.push(`.${className} {\n${rulesString}\n}`);
+    });
+
+    return header + rules.join("\n\n");
+  }
+
+  /**
    * 生成最终的模块代码字符串 (React 函数式组件)。
    * @param moduleName - 模块/组件的名称 (用于生成组件名和接口名)。
    * @returns 完整的代码字符串。
    */
   generateModule(moduleName: string): string {
+    // 将 moduleName 转换为 PascalCase (首字母大写驼峰)
+    const componentName = upperFirst(camelCase(moduleName));
+    const propsInterfaceName = `${componentName}Props`;
+
+    // 检查是否存在 CSS 类
+    if (this.cssClasses.size > 0) {
+      // 构造 CSS 模块的导入路径 (e.g., './Index.module.scss')
+      const cssModuleSource = `./${componentName}.module.scss`;
+
+      // 将 CSS 模块导入添加到 imports Map 中，
+      // 稍后 generateImportStatements 将会自动处理它。
+      this.imports.set(`styles@${cssModuleSource}`, {
+        imported: "styles",
+        source: cssModuleSource,
+        destructuring: false, // 这是一个默认导入 (import styles from ...)
+      });
+    }
+
     const importStatements = this.generateImportStatements();
     // 使用空格进行缩进
     const stateStatements = this.state.map((s) => `  ${s}`).join("\n");
     const effectStatements = this.effects.map((e) => `  ${e}`).join("\n\n");
     const methodStatements = this.methods.map((m) => `  ${m}`).join("\n\n");
-
-    // 将 moduleName 转换为 PascalCase (首字母大写驼峰)
-    const componentName = upperFirst(camelCase(moduleName));
-    const propsInterfaceName = `${componentName}Props`;
 
     // 基础的函数式组件模板
     return `/* eslint-disable */
