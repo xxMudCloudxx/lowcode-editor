@@ -54,15 +54,15 @@ IR 是解耦“解析”和“生成”的关键。它是一种与具体 Schema 
 
 ### ☐ 阶段三：工程化 (待办)
 
-- [ ] **依赖生成:** `plugins/project/packageJSON.ts` (根据 `IRProject.dependencies` 生成 `package.json`)。
-- [ ] **构建配置:** `plugins/project/viteConfig.ts` (生成 `vite.config.ts`, `tsconfig.json`)。
-- [ ] **入口文件:** `plugins/project/entry.ts` (生成 `index.html` 和 `src/main.tsx`)。
+- [x] **依赖生成:** `plugins/project/packageJSON.ts` (根据 `IRProject.dependencies` 生成 `package.json`)。
+- [x] **构建配置:** `plugins/project/viteConfig.ts` (生成 `vite.config.ts`, `tsconfig.json`)。
+- [x] **入口文件:** `plugins/project/entry.ts` (生成 `index.html` 和 `src/main.tsx`)。
 - [ ] **发布器:** `publisher/zip/index.ts` (实现 Zip 压缩包下载功能)。
 
 ### ☐ 阶段四：高级功能与优化 (待办)
 
-- [ ] **代码格式化:** `postprocessor/prettier/index.ts` (集成 Prettier 自动格式化生成的代码)。
+- [x] **代码格式化:** `postprocessor/prettier/index.ts` (集成 Prettier 自动格式化生成的代码)。
 - [ ] **多页面支持:**
-  - [ ] `plugins/project/router.ts` (生成 `react-router` 路由配置)。
+  - [x] `plugins/project/router.ts` (生成 `react-router` 路由配置)。
   - [ ] `schema-parser.ts` 改造，支持解析多页面 Schema。
 - [ ] **状态管理:** (可选) 支持 Zustand 或 Redux 的全局状态生成。

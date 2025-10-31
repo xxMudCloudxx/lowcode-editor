@@ -12,8 +12,9 @@ const { Text, Title } = Typography;
 import { useComponetsStore } from "../../stores/components";
 import { useStore } from "zustand";
 import { DownloadOutlined, QuestionCircleOutlined } from "@ant-design/icons";
-import { exportSourceCode } from "../../../code-generator";
+import { exportCodeAndDownload } from "../../../code-generator";
 import type { ISchema } from "../../../code-generator/types/ir";
+import { useState } from "react";
 
 /**
  * @description 快捷键指南的 Popover 内容。
@@ -50,6 +51,7 @@ const shortcutsContent = (
  * 并通过 `useStore(useComponetsStore.temporal)` 来访问 zundo 中间件提供的撤销/重做状态和方法。
  */
 export function Header() {
+  const [isExporting, setIsExporting] = useState(false);
   const { mode, setMode, setCurComponentId, resetComponents } =
     useComponetsStore();
 
@@ -69,41 +71,27 @@ export function Header() {
 
   // 3. 添加导出源码的处理函数
   const handleExportCode = async () => {
-    console.log("开始导出源码...");
+    if (isExporting) return;
+    setIsExporting(true);
+    console.log("开始导出代码...");
 
     // 从 store 获取当前 schema
-    // 注意：getState() 可以让我在事件处理器中获取最新状态
     const { components } = useComponetsStore.getState();
 
     if (!components || components.length === 0) {
       console.error("Schema 为空，无法导出");
+      setIsExporting(false);
       return;
     }
 
     try {
-      // 我的 store 里的类型是 IComponent[]，而出码入口需要 ISchema (即 ISchemaNode[])
-      // 它们的结构兼容，所以我们使用类型断言
-      const result = await exportSourceCode(components as ISchema);
-
-      if (result.success && result.files) {
-        console.log("出码成功！生成文件列表:", result.files);
-
-        // 打印第一个文件的内容（即生成的 TSX）
-        if (result.files.length > 0) {
-          result.files.map((file) => {
-            console.log("生成的 TSX 代码:\n", file.content);
-          });
-          alert("出码成功，请查看控制台！");
-        } else {
-          console.warn("出码成功，但未生成任何文件。");
-        }
-      } else {
-        console.error("出码失败:", result.message);
-        alert(`出码失败: ${result.message}`);
-      }
+      await exportCodeAndDownload(components as ISchema, "my-lowcode-project");
     } catch (error) {
-      console.error("执行 exportSourceCode 时发生异常:", error);
-      alert(`出码异常: ${error}`);
+      // 错误已在 exportCodeAndDownload 内部通过 alert 处理
+      console.error("导出过程中发生未捕获异常:", error);
+    } finally {
+      setIsExporting(false);
+      console.log("导出流程结束。");
     }
   };
 
