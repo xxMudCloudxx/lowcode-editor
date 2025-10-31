@@ -6,6 +6,8 @@ import entryPlugin from "./entry";
 import packageJsonPlugin from "./package-json";
 import viteConfigPlugin from "./vite-config";
 import tsConfigPlugin from "./tsconfig";
+import gitignorePlugin from "./gitignore";
+import indexHtmlPlugin from "./index-html";
 // 以后还会有 utilsPlugin, packageJsonPlugin 等
 
 export const projectPlugins = [
@@ -15,6 +17,8 @@ export const projectPlugins = [
   packageJsonPlugin,
   viteConfigPlugin,
   tsConfigPlugin,
+  gitignorePlugin,
+  indexHtmlPlugin,
   // ...
 ];
 
