@@ -200,3 +200,27 @@ export interface ISchemaNode {
  * 输入的 Schema 结构 (假设输入是一个节点数组)
  */
 export type ISchema = ISchemaNode[];
+
+/**
+ * 生成的文件对象接口
+ */
+export interface IGeneratedFile {
+  /** 文件名 (含扩展名) */
+  fileName: string;
+  /** 文件在项目中的相对路径 */
+  filePath: string;
+  /** 文件内容 */
+  content: string;
+  /** 文件类型 */
+  fileType:
+    | "tsx"
+    | "ts"
+    | "js"
+    | "json"
+    | "css"
+    | "scss"
+    | "less"
+    | "html"
+    | "md"
+    | "other";
+}

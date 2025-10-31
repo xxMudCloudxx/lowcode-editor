@@ -5,7 +5,7 @@
  * @description 定义了不同类型的插件及其执行签名
  */
 
-import type { IRNode } from "./ir";
+import type { IGeneratedFile, IRNode } from "./ir";
 import type { ModuleBuilder } from "../generator/module-builder";
 import type { ProjectBuilder } from "../generator/project-builder";
 
@@ -45,7 +45,14 @@ export interface IProjectPlugin {
   run: (projectBuilder: ProjectBuilder) => void;
 }
 
-// (未来可以添加 Postprocessor 和 Publisher 类型的插件...)
+/**
+ * @interface IPostProcessor
+ * @description 后处理器：在所有文件生成后，对单个文件进行最终处理。
+ * @example prettier
+ */
+export type IPostProcessor = (
+  file: IGeneratedFile
+) => Promise<IGeneratedFile> | IGeneratedFile; // <-- 2. 定义类型
 
 /**
  * @type CodeGeneratorPlugin

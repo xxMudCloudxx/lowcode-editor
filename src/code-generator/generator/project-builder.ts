@@ -6,32 +6,9 @@
  */
 
 import { ModuleBuilder } from "./module-builder";
-import type { IRProject, IRPage } from "../types/ir";
+import type { IRProject, IRPage, IGeneratedFile } from "../types/ir";
 import { camelCase, upperFirst } from "lodash-es"; // 确保导入
-
-/**
- * 生成的文件对象接口
- */
-export interface IGeneratedFile {
-  /** 文件名 (含扩展名) */
-  fileName: string;
-  /** 文件在项目中的相对路径 */
-  filePath: string;
-  /** 文件内容 */
-  content: string;
-  /** 文件类型 */
-  fileType:
-    | "tsx"
-    | "ts"
-    | "js"
-    | "json"
-    | "css"
-    | "scss"
-    | "less"
-    | "html"
-    | "md"
-    | "other";
-}
+import type { IPostProcessor } from "../types/plugin";
 
 /**
  * 项目构建器类，用于管理和生成项目的所有文件。
@@ -83,6 +60,36 @@ export class ProjectBuilder {
    */
   generateFiles(): IGeneratedFile[] {
     return Array.from(this.files.values());
+  }
+
+  /**
+   * 应用后处理器到所有已生成的文件。
+   * @param processors - 要应用的后处理器数组。
+   */
+  async applyPostProcessors(processors: IPostProcessor[]): Promise<void> {
+    if (!processors || processors.length === 0) {
+      return;
+    }
+
+    console.log("Applying post-processors...");
+
+    // 必须使用循环来支持 await
+    const filePaths = Array.from(this.files.keys());
+
+    for (const filePath of filePaths) {
+      let processedFile = this.files.get(filePath)!;
+
+      // 将所有处理器依次应用到文件上
+      for (const processor of processors) {
+        // 等待异步处理器完成
+        processedFile = await processor(processedFile);
+      }
+
+      // 将处理后的文件放回 Map
+      this.files.set(filePath, processedFile);
+    }
+
+    console.log("Post-processing complete.");
   }
 
   // --- 辅助方法 ---

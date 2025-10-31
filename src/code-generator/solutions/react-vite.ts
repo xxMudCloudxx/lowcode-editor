@@ -10,9 +10,14 @@ import { SchemaParser } from "../parser/schema-parser";
 import { ProjectBuilder } from "../generator/project-builder";
 import jsxPlugin from "../plugins/component/react/jsx";
 import { camelCase, upperFirst } from "lodash";
-import type { IComponentPlugin, IProjectPlugin } from "../types/plugin";
+import type {
+  IComponentPlugin,
+  IPostProcessor,
+  IProjectPlugin,
+} from "../types/plugin";
 import { projectPlugins } from "../plugins/project";
 import cssPlugin from "../plugins/component/style/css";
+import { prettierPostProcessor } from "../postprocessor/prettier";
 // 引入其他插件... (例如 CSS 插件, 路由插件等，将在后续阶段添加)
 
 /**
@@ -24,7 +29,7 @@ export interface ICodeGeneratorSolution {
    * @param schema - 输入的低代码 Schema。
    * @returns 包含生成结果的 ProjectBuilder 实例。
    */
-  run: (schema: ISchema) => ProjectBuilder;
+  run: (schema: ISchema) => Promise<ProjectBuilder>;
 }
 
 /**
@@ -32,7 +37,7 @@ export interface ICodeGeneratorSolution {
  * 支持插件流水线
  */
 const reactViteSolution: ICodeGeneratorSolution = {
-  run: (schema: ISchema) => {
+  run: async (schema: ISchema) => {
     // 1. 解析 Schema -> IR (Intermediate Representation)
     const parser = new SchemaParser();
     const irProject = parser.parse(schema);
@@ -108,7 +113,13 @@ const reactViteSolution: ICodeGeneratorSolution = {
       plugin.run(projectBuilder);
     });
 
-    // 6. 返回填充了文件结果的 ProjectBuilder
+    // 6. --- 阶段四：执行后处理器 (Post-processors) ---
+    const postProcessors: IPostProcessor[] = [prettierPostProcessor()];
+
+    // ↓↓↓ 核心修改点：await 异步的后处理方法 ↓↓↓
+    await projectBuilder.applyPostProcessors(postProcessors);
+
+    // 7. 返回填充了文件结果的 ProjectBuilder
     return projectBuilder;
   },
 };
