@@ -45,7 +45,7 @@ IR 是解耦“解析”和“生成”的关键。它是一种与具体 Schema 
 
 ### ☐ 阶段二：功能完善 (进行中)
 
-- [ ] **样式处理:** 实现 `plugins/component/style/css.ts`，将 `styles` 抽离为 CSS Modules 或 CSS-in-JS。
+- [x] **样式处理:** 实现 `plugins/component/style/css.ts`，将 `styles` 抽离为 CSS Modules 或 CSS-in-JS。
 - [x] **高级属性解析:** 完善 `schema-parser.ts` 和 `jsx.ts`，支持 `JSExpression` (表达式)、`JSFunction` (函数) 和 `IRAction` (动作)。
 - [x] **Icon 组件:** 专项处理 `Icon` 组件，根据 `props.name` 动态从 `@ant-design/icons` 导入。
 - [ ] **全局文件:**
