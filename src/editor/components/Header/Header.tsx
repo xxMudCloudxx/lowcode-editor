@@ -12,6 +12,10 @@ const { Text, Title } = Typography;
 import { useComponetsStore } from "../../stores/components";
 import { useStore } from "zustand";
 import { QuestionCircleOutlined } from "@ant-design/icons";
+import { exportSourceCode } from "../../../code-generator";
+import type { IGeneratedFile, ISchema } from "../../../code-generator/types/ir";
+import { useState } from "react";
+import { CodePreviewDrawer } from "../CodePreviewDrawer";
 
 /**
  * @description 快捷键指南的 Popover 内容。
@@ -48,6 +52,10 @@ const shortcutsContent = (
  * 并通过 `useStore(useComponetsStore.temporal)` 来访问 zundo 中间件提供的撤销/重做状态和方法。
  */
 export function Header() {
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+  const [generatedFiles, setGeneratedFiles] = useState<IGeneratedFile[]>([]);
+
   const { mode, setMode, setCurComponentId, resetComponents } =
     useComponetsStore();
 
@@ -65,13 +73,53 @@ export function Header() {
     resetComponents();
   };
 
+  // 3. 添加导出源码的处理函数
+  const handleOpenCodePreview = async () => {
+    setIsExporting(true);
+    const { components } = useComponetsStore.getState();
+
+    if (!components || components.length === 0) {
+      console.error("Schema 为空，无法导出");
+      setIsExporting(false);
+      return;
+    }
+
+    try {
+      // 4. 调用 exportSourceCode 并指定 publisher: 'none'
+      const result = await exportSourceCode(components as ISchema, {
+        publisher: "none", // 关键！我们只想要文件，不要 blob
+      });
+
+      if (result.success && result.files) {
+        setGeneratedFiles(result.files);
+        setIsDrawerVisible(true); // 打开抽屉
+      } else {
+        console.error("出码失败:", result.message);
+        alert(`出码失败: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("执行 exportSourceCode 时发生异常:", error);
+      alert(`出码异常: ${error}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="w-full h-full">
       <div className="h-full flex justify-between items-center">
         {/* 应用标题 */}
         <div className="flex items-center space-x-3">
-          <svg className="w-8 h-8" viewBox="0 0 1112 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
-            <path d="M952.181449 1024.005564H158.694126C71.050677 1024.005564 0 953.093996 0 865.617475V158.438168C0 70.961648 71.050677 0.050079 158.694126 0.050079h793.487323C1039.824898 0.050079 1112.862033 70.961648 1112.862033 158.438168v707.179307c0 87.47652-73.037135 158.388089-160.680584 158.388089zM311.601369 289.455415L89.028963 512.027822l217.008096 222.572406 61.207412-55.643101-161.364995-166.929305 166.929305-161.364995-61.207412-61.207412z m400.630332-133.543444h-144.672064L478.530674 795.80764H400.630332v72.336032h155.800685l77.900342-639.895669h77.900342V155.911971z m89.028963 133.543444l-61.207412 61.207412 166.929305 161.364995-161.364995 166.929305 61.207412 55.643101 217.008097-222.572406-222.572407-222.572407z" fill="currentColor" />
+          <svg
+            className="w-8 h-8"
+            viewBox="0 0 1112 1024"
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M952.181449 1024.005564H158.694126C71.050677 1024.005564 0 953.093996 0 865.617475V158.438168C0 70.961648 71.050677 0.050079 158.694126 0.050079h793.487323C1039.824898 0.050079 1112.862033 70.961648 1112.862033 158.438168v707.179307c0 87.47652-73.037135 158.388089-160.680584 158.388089zM311.601369 289.455415L89.028963 512.027822l217.008096 222.572406 61.207412-55.643101-161.364995-166.929305 166.929305-161.364995-61.207412-61.207412z m400.630332-133.543444h-144.672064L478.530674 795.80764H400.630332v72.336032h155.800685l77.900342-639.895669h77.900342V155.911971z m89.028963 133.543444l-61.207412 61.207412 166.929305 161.364995-161.364995 166.929305 61.207412 55.643101 217.008097-222.572406-222.572407-222.572407z"
+              fill="currentColor"
+            />
           </svg>
           <div>
             <Title level={4} className="!mb-0 !text-gray-800 font-semibold">
@@ -161,6 +209,17 @@ export function Header() {
                   </Button>
                 </Popconfirm>
               </div>
+
+              {/* 4. 出码按钮 */}
+              <Button onClick={handleOpenCodePreview} loading={isExporting}>
+                {isExporting ? "生成中..." : "出码预览"}
+              </Button>
+              <CodePreviewDrawer
+                visible={isDrawerVisible}
+                loading={isExporting}
+                files={generatedFiles}
+                onClose={() => setIsDrawerVisible(false)}
+              />
 
               {/* 预览按钮 */}
               <Button
