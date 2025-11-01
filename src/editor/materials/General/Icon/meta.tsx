@@ -26,6 +26,7 @@ export default {
         { label: "加载中", value: "LoadingOutlined" },
         { label: "成功", value: "CheckCircleOutlined" },
         { label: "错误", value: "CloseCircleOutlined" },
+        { label: "刷新", value: "ReloadOutlined" },
       ],
     },
     {

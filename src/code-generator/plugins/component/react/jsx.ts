@@ -171,20 +171,24 @@ function generateJSX(
 
   // 1. 获取元数据和动态标签名
   const meta = getComponentCodeGenMeta(irNode.componentName);
+
+  // (使用可选链 ?. 保证了向后兼容性)
+  // (这会读取 irNode.props 上的 'url' 或 'icon'，并向 moduleBuilder 添加 hooks/imports)
+  meta.getLogicFragments?.(irNode.props, moduleBuilder);
+
   const tagName = meta.getTagName(irNode.props);
 
   // 2. 处理组件导入
   moduleBuilder.addImport(irNode.dependency, irNode.componentName);
 
-  // 3. 获取转换和过滤后的 Props
-  const transformedProps = meta.getTransformedProps(irNode.props);
+  const jsxProps = meta.getTransformedProps(irNode.props);
 
-  // 4. 分离 children, className 和其他 props
   const {
     children: childrenProp,
     className: classNamePropValue,
-    ...restOfProps
-  } = transformedProps;
+    ...restOfProps // <--- 这是已清理过的 props (e.g., 不含 'spin' 或 'type')
+  } = jsxProps;
+
   const cssClassName = irNode.css ? `\${styles.${irNode.css}}` : null;
 
   // 5. 处理 Props 字符串

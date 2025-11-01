@@ -5,6 +5,7 @@
  * @description 定义了编辑器中使用的物料组件与其在最终代码中对应的导入信息等的映射关系。
  */
 
+import type { ModuleBuilder } from "../generator/module-builder";
 import type { IRDependency, IRLiteral, IRPropValue } from "../types/ir";
 
 /**
@@ -135,24 +136,127 @@ export const componentMetadataMap: Record<string, IComponentMetadata> = {
     },
     isContainer: true,
   },
-  //  (这是一个复杂组件)
-  // --- 临时方案 (阶段一) ---
-  // Icon 组件依赖 props.name 动态加载图标 (e.g., <Icon name="SmileOutlined" />)
-  // 并且依赖 @ant-design/icons。
-  // 在阶段一，我们的解析器还不能根据 props 动态修改导入，
-  // 所以我们暂时也将其映射为 div，避免报错。
-  // TODO：在后面的阶段中完善
-  Icon: {
-    componentName: "div", // 暂时映射为 div
+  Avatar: {
+    componentName: "Avatar",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  Card: {
+    componentName: "Card",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  Image: {
+    componentName: "Image",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: false,
+  },
+  Table: {
+    componentName: "Table",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  TableColumn: {
+    componentName: "TableColumn",
     dependency: {
-      package: "", // 无需导入
-      destructuring: false,
+      package: "antd",
+      version: "^5.0.0",
+      destructuring: true,
+      exportName: "Table",
+      subName: "Column",
     },
     isContainer: false,
   },
-  // ... Card, Image, Table, Avatar, Tooltip, Radio, Slider, Switch, Upload, ...
-  // ... Icon, Space, Breadcrumb, Dropdown, Menu, PageHeader, Pagination, Steps, Tabs ...
-  // ... Container (可能是自定义的布局容器) ...
+  Tooltip: {
+    componentName: "Tooltip",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  Radio: {
+    componentName: "Radio.Group",
+    dependency: {
+      package: "antd",
+      version: "^5.0.0",
+      destructuring: true,
+      exportName: "Radio",
+      subName: "Group",
+    },
+    isContainer: true,
+  },
+  Slider: {
+    componentName: "Slider",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: false,
+  },
+  Switch: {
+    componentName: "Switch",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: false,
+  },
+  Upload: {
+    componentName: "Upload",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  Breadcrumb: {
+    componentName: "Breadcrumb",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  Dropdown: {
+    componentName: "Dropdown",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  Menu: {
+    componentName: "Menu",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  PageHeader: {
+    componentName: "PageHeader",
+    // AntD 5 中已移除 PageHeader，这里指向我们项目中的自定义封装
+    dependency: {
+      package: "@/components",
+      destructuring: true, // 使用 default export
+    },
+    isContainer: false, // 实现不包含 children
+  },
+  Pagination: {
+    componentName: "Pagination",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: false,
+  },
+  Steps: {
+    componentName: "Steps",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  Tabs: {
+    componentName: "Tabs",
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
+  TabPane: {
+    componentName: "Tabs.TabPane",
+    dependency: {
+      package: "antd",
+      version: "^5.0.0",
+      destructuring: true,
+      exportName: "Tabs",
+      subName: "TabPane",
+    },
+    isContainer: true,
+  },
+  Icon: {
+    componentName: "QuestionCircleOutlined", // 这是一个逻辑名称，getTagName 将会覆盖它
+    dependency: {
+      package: "@ant-design/icons", // 依赖 antd 图标库
+      version: "^5.0.0", // 确保版本匹配
+      destructuring: true, // 我们将使用解构导入
+    },
+    isContainer: false,
+  },
 };
 
 // --- 2. 出码元数据 (Code-Gen Metadata) ---
@@ -180,6 +284,16 @@ export interface ComponentCodeGenMeta {
   getTransformedProps: (
     props: Record<string, any>
   ) => Record<string, IRPropValue>;
+
+  /**
+   * 用于生成 React Hooks (useState, useEffect) 或辅助函数。
+   * @param props *原始*的 Schema props (包含 'url' 等)
+   * @param moduleBuilder 用于添加 hooks, imports 等
+   */
+  getLogicFragments?: (
+    props: Record<string, any>,
+    moduleBuilder: ModuleBuilder
+  ) => void;
 }
 
 // 帮助函数：创建一个 IRLiteral 类型的 children
@@ -312,6 +426,197 @@ codeGenLogicMap.set("Form", {
 codeGenLogicMap.set("FormItem", {
   getTagName: () => "Form.Item",
   getTransformedProps: (props) => defaultLogic.getTransformedProps(props),
+});
+codeGenLogicMap.set("Dropdown", {
+  getTagName: () => "Dropdown",
+  getTransformedProps: (props) => {
+    const transformed = {
+      ...defaultLogic.getTransformedProps(props),
+    };
+
+    const buttonTextProp = transformed.buttonText as IRLiteral | undefined;
+    if (buttonTextProp && buttonTextProp.type === "Literal") {
+      delete transformed.buttonText;
+      if (!transformed.children && buttonTextProp.value) {
+        transformed.children = createLiteralChildren(buttonTextProp.value);
+      }
+    }
+
+    const triggerProp = transformed.trigger as IRLiteral | undefined;
+    if (triggerProp && triggerProp.type === "Literal") {
+      const triggerValue = Array.isArray(triggerProp.value)
+        ? triggerProp.value
+        : [triggerProp.value];
+      transformed.trigger = { type: "Literal", value: triggerValue };
+    }
+
+    return transformed;
+  },
+});
+
+codeGenLogicMap.set("TabPane", {
+  getTagName: () => "Tabs.TabPane",
+  getTransformedProps: (props) => {
+    const transformed = {
+      ...defaultLogic.getTransformedProps(props),
+    };
+
+    if (!transformed.key && props.id !== undefined) {
+      transformed.key = createLiteralChildren(String(props.id));
+    }
+
+    return transformed;
+  },
+});
+
+codeGenLogicMap.set("PageHeader", {
+  getTagName: () => "PageHeader",
+  getTransformedProps: (props) => {
+    // 我的自定义组件 props 是 title 和 subTitle
+    // 需要从 Schema 的 props 中过滤掉所有非运行时 prop
+    const { desc, parentId, id, name, ...validProps } = props;
+    return defaultLogic.getTransformedProps(validProps);
+
+    // // 确保 title 和 subTitle 被正确传递
+    // const transformed = {
+    //   ...defaultLogic.getTransformedProps(validProps),
+    // };
+    // if (props.title) {
+    //   transformed.title = createLiteralChildren(props.title);
+    // }
+    // if (props.subTitle) {
+    //   transformed.subTitle = createLiteralChildren(props.subTitle);
+    // }
+    // return transformed;
+  },
+});
+
+codeGenLogicMap.set("Icon", {
+  /**
+   * 1. 动态获取标签名
+   */
+  getTagName: (props) => {
+    // props.icon 是一个 IRPropValue 对象 (IRLiteral)
+    const iconProp = props.icon as IRLiteral | undefined;
+
+    let iconName: string | undefined;
+    // 检查它是否是 Literal 并且值是 string
+    if (
+      iconProp &&
+      iconProp.type === "Literal" &&
+      typeof iconProp.value === "string"
+    ) {
+      iconName = iconProp.value;
+    }
+
+    // 如果 icon prop 为空或不是字面量(e.g., JSExpression)，
+    // 我们降级为 Antd 默认的 QuestionCircleOutlined
+    return iconName || "QuestionCircleOutlined";
+  },
+
+  /**
+   * 2. 负责 JSX 属性：
+   */
+  getTransformedProps: (props) => {
+    // 过滤掉 'icon', 'type', 和其他编辑器属性
+    const { desc, parentId, id, name, type, icon, ...validProps } = props;
+
+    // 将剩余的通用 props (如 spin, style) 交给 defaultLogic 处理
+    return defaultLogic.getTransformedProps(validProps);
+  },
+
+  /**
+   * 3. 负责组件逻辑：
+   */
+  getLogicFragments: (props, moduleBuilder) => {
+    // props.icon 是一个 IRPropValue 对象 (IRLiteral)
+    const iconProp = props.icon as IRLiteral | undefined;
+
+    let iconName: string | undefined;
+    if (
+      iconProp &&
+      iconProp.type === "Literal" &&
+      typeof iconProp.value === "string"
+    ) {
+      iconName = iconProp.value;
+    }
+
+    // [! 修正 !]
+    // jsx.ts 已经导入了 "QuestionCircleOutlined" (基于 componentMetadataMap)
+    // 我们只需要导入 *非默认* 的图标
+    if (iconName && iconName !== "QuestionCircleOutlined") {
+      moduleBuilder.addImport(
+        {
+          package: "@ant-design/icons",
+          version: "^5.0.0",
+          destructuring: true,
+          exportName: iconName,
+        },
+        iconName // [! 修正 !] 确保 addImport 接收正确的第二个参数
+      );
+    }
+    // 如果是默认图标，则无需操作，jsx.ts 已经处理了
+  },
+});
+
+codeGenLogicMap.set("Table", {
+  // TODO：后面增加逻辑生成函数用于组件联动
+  getTagName: () => "Table",
+  getTransformedProps: (props) => {
+    // 解构并过滤掉 'url' 属性，它仅在编辑器中使用
+    const { url, ...restOfProps } = props;
+
+    // 使用过滤掉 'url' 后的 restOfProps
+    const transformed = {
+      ...defaultLogic.getTransformedProps(restOfProps),
+    };
+
+    const columnsProp = transformed.columns as IRLiteral | undefined;
+    if (
+      columnsProp &&
+      columnsProp.type === "Literal" &&
+      !transformed.dataSource
+    ) {
+      // 如果 columns 是一个字面量数组 (来自编辑器的配置)
+      // 并且没有设置 dataSource，我们自动生成一条模拟数据
+      const columns = columnsProp.value || [];
+      const dataSource: Record<string, any>[] = [
+        columns.reduce((acc: Record<string, any>, col: any) => {
+          acc[col.dataIndex] = "示例数据";
+          return acc;
+        }, {}),
+      ];
+      // 将模拟数据包装为 IRLiteral
+      transformed.dataSource = createLiteralChildren(dataSource);
+    }
+
+    return transformed;
+  },
+});
+
+codeGenLogicMap.set("TableColumn", {
+  getTagName: () => "Table.Column",
+  getTransformedProps: (props) => {
+    // 1. 过滤掉编辑器特有的 'type' 属性
+    const { desc, parentId, id, name, type, ...validProps } = props;
+
+    // 2. 将所有 'validProps' (包括 title, dataIndex, key 等)
+    //    交给 defaultLogic.getTransformedProps 处理。
+    //    它会正确地将 "姓名" 转换为 { type: 'Literal', value: '姓名' }
+    //    并且会正确地保留 { type: 'JSExpression', value: 'state.name' }
+    const transformed = {
+      ...defaultLogic.getTransformedProps(validProps),
+    };
+
+    // 3. (可选) 确保 key 属性存在 (AntD Table 必需)
+    //    (注意：我们使用 props.id，而不是 validProps.id)
+    if (props.id && !transformed.key) {
+      transformed.key = createLiteralChildren(String(props.id));
+    }
+
+    return transformed;
+  },
+  // (getLogicFragments 将自动使用 defaultLogic 的空实现)
 });
 
 // --- 3. 导出的主函数 (Public API) ---
