@@ -9,7 +9,7 @@ import type { ISchema, IRNode } from "../types/ir";
 import { SchemaParser } from "../parser/schema-parser";
 import { ProjectBuilder } from "../generator/project-builder";
 import jsxPlugin from "../plugins/component/react/jsx";
-import { camelCase, upperFirst } from "lodash";
+import { camelCase, upperFirst } from "lodash-es";
 import type { IComponentPlugin, IProjectPlugin } from "../types/plugin";
 import { projectPlugins } from "../plugins/project";
 import cssPlugin from "../plugins/component/style/css";

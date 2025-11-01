@@ -7,7 +7,7 @@
 
 import type { ProjectBuilder } from "../../generator/project-builder";
 import type { IProjectPlugin } from "../../types/plugin";
-import { upperFirst, camelCase } from "lodash";
+import { upperFirst, camelCase } from "lodash-es";
 
 /**
  * 生成路由配置文件内容
