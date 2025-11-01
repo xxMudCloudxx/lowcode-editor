@@ -1,12 +1,10 @@
-// src/editor/components/CodePreviewDrawer/index.tsx
-
 import React, { useState, useEffect } from "react";
 import { Drawer, Layout, Tree, Button, Spin, Empty, Space } from "antd";
 import type { TreeDataNode } from "antd";
 import Editor from "@monaco-editor/react";
 import type { IGeneratedFile } from "../../../code-generator/types/ir";
 import { buildFileTree, getFileLanguage } from "../../utils/fileTree";
-import { openInCodeSandbox } from "../../utils/openInCodeSandbox";
+import { openInCodeSandbox } from "../../utils/openInCodeSandbox"; // 保留
 import { zipPublisher } from "../../../code-generator/publisher/zip-publisher";
 import { downloadBlob } from "../../../code-generator/utils/download";
 
@@ -28,16 +26,13 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<IGeneratedFile | null>(null);
   const [isSandboxLoading, setIsSandboxLoading] = useState(false);
-
   const [isZipLoading, setIsZipLoading] = useState(false);
 
   useEffect(() => {
+    // 用于构建文件树
     if (visible && files.length > 0) {
-      // 1. 将扁平的文件列表转换为 Antd Tree 所需的树形结构
       const fileTree = buildFileTree(files);
       setTreeData(fileTree);
-
-      // 2. 默认选中一个文件, 比如 package.json 或 main.tsx
       const defaultFile =
         files.find((f) => f.fileName === "package.json") ||
         files.find((f) => f.fileName === "main.tsx") ||
@@ -46,22 +41,18 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
     }
   }, [visible, files]);
 
-  // 3. 处理文件树点击
   const handleSelect = (
     _selectedKeys: React.Key[],
     info: { node: TreeDataNode & { fileData?: IGeneratedFile } }
   ) => {
-    // 仅当点击的是文件（叶节点）时才更新
     if (info.node.isLeaf && info.node.fileData) {
       setSelectedFile(info.node.fileData);
     }
   };
 
-  // 4. 处理 CodeSandbox 打开
   const handleOpenCodeSandbox = async () => {
     setIsSandboxLoading(true);
     try {
-      // (注意：这里使用的是原始文件，暂不支持编辑器修改)
       await openInCodeSandbox(files);
     } catch (error) {
       console.error("Failed to open in CodeSandbox:", error);
@@ -70,11 +61,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
     }
   };
 
-  // 添加 handleDownloadZip 函数
   const handleDownloadZip = async () => {
     setIsZipLoading(true);
     try {
-      // 我们直接使用 props.files，无需重新生成代码
       const projectName = "my-lowcode-project";
       const blob = await zipPublisher(files, {
         projectName: projectName,
@@ -82,28 +71,18 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
       downloadBlob(blob, `${projectName}.zip`);
     } catch (error) {
       console.error("Failed to download ZIP:", error);
-      // 可以在这里添加 antd 的 message.error 提示
     } finally {
       setIsZipLoading(false);
     }
   };
 
   const drawerTitle = (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
+    <div className="flex justify-between items-center">
       <span>源码预览</span>
       <Space>
-        {/* 下载按钮 */}
         <Button loading={isZipLoading} onClick={handleDownloadZip}>
           下载ZIP
         </Button>
-
-        {/*  CodeSandbox 按钮 */}
         <Button
           type="primary"
           loading={isSandboxLoading}
@@ -121,20 +100,16 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
       placement="right"
       onClose={onClose}
       open={visible}
-      width="80vw" // 占屏幕宽度的 80%
+      width="80vw"
+      height="100vh"
     >
-      <Layout style={{ height: "100%" }}>
-        {loading ? (
-          <Spin size="large" style={{ margin: "auto" }} />
-        ) : (
-          <>
+      <Spin spinning={loading} size="large" className="h-full">
+        {!loading && files.length > 0 ? (
+          <Layout className="h-full overflow-hidden">
+            {/* Sider: 文件树 */}
             <Sider
-              width={240}
-              style={{
-                background: "#fff",
-                overflow: "auto",
-                borderRight: "1px solid #f0f0f0",
-              }}
+              width={"10vw"} // 确保 Sider 有宽度
+              className="!bg-white overflow-auto border-r border-gray-200 h-[100vh]"
             >
               <Tree
                 showLine
@@ -143,26 +118,39 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
                 onSelect={handleSelect}
                 defaultExpandAll
                 selectedKeys={selectedFile ? [selectedFile.filePath] : []}
+                className="p-2"
               />
             </Sider>
-            <Content style={{ height: "100%", display: "flex" }}>
-              {selectedFile ? (
-                <Editor
-                  height="100%"
-                  language={getFileLanguage(selectedFile.fileType)}
-                  value={selectedFile.content}
-                  options={{ readOnly: true }} // 默认只读
-                />
-              ) : (
-                <Empty
-                  description="请在左侧选择一个文件"
-                  style={{ margin: "auto" }}
-                />
-              )}
+
+            {/* Content: 代码编辑器 */}
+            <Content className="h-[100vh] overflow-hidden">
+              <div className="h-full">
+                {selectedFile ? (
+                  <Editor
+                    height="100%" // 占满 Content
+                    language={getFileLanguage(selectedFile.fileType)}
+                    value={selectedFile.content}
+                    options={{ readOnly: true }}
+                  />
+                ) : (
+                  <Empty
+                    description="请在左侧选择一个文件"
+                    className="flex flex-col items-center justify-center h-full"
+                  />
+                )}
+              </div>
             </Content>
-          </>
+          </Layout>
+        ) : (
+          // [修改] 切换了判断条件
+          !loading && (
+            <Empty
+              description="未生成任何文件"
+              className="flex flex-col items-center justify-center h-full"
+            />
+          )
         )}
-      </Layout>
+      </Spin>
     </Drawer>
   );
 };
