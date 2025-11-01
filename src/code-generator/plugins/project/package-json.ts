@@ -27,6 +27,11 @@ const packageJsonPlugin: IProjectPlugin = {
       "react-dom": "^18.2.0",
       // 您的 router.ts 插件会生成路由，因此需要此依赖
       "react-router-dom": "^6.23.0",
+      "@vitejs/plugin-react": "^4.2.1",
+      typescript: "^5.2.2",
+      vite: "^5.2.0",
+      // react-vite.ts 方案中的 cssPlugin 生成了 .scss 文件
+      sass: "^1.77.0",
     };
 
     // 2. 定义开发依赖
@@ -35,14 +40,9 @@ const packageJsonPlugin: IProjectPlugin = {
       "@types/react-dom": "^18.2.22",
       "@typescript-eslint/eslint-plugin": "^7.2.0",
       "@typescript-eslint/parser": "^7.2.0",
-      "@vitejs/plugin-react": "^4.2.1",
       eslint: "^8.57.0",
       "eslint-plugin-react-hooks": "^4.6.0",
       "eslint-plugin-react-refresh": "^0.4.6",
-      typescript: "^5.2.2",
-      vite: "^5.2.0",
-      // react-vite.ts 方案中的 cssPlugin 生成了 .scss 文件
-      sass: "^1.77.0",
     };
 
     // 3. 定义 scripts

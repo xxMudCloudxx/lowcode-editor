@@ -37,7 +37,7 @@ const tsConfigPlugin: IProjectPlugin = {
         /* Linting */
         strict: true,
         noUnusedLocals: true,
-        noUnusedParameters: true,
+        noUnusedParameters: false,
         noFallthroughCasesInSwitch: true,
 
         /* Alias */

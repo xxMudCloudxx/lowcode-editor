@@ -11,10 +11,11 @@ import { Button, Space, Popconfirm, Typography, Popover } from "antd";
 const { Text, Title } = Typography;
 import { useComponetsStore } from "../../stores/components";
 import { useStore } from "zustand";
-import { DownloadOutlined, QuestionCircleOutlined } from "@ant-design/icons";
-import { exportCodeAndDownload } from "../../../code-generator";
-import type { ISchema } from "../../../code-generator/types/ir";
+import { QuestionCircleOutlined } from "@ant-design/icons";
+import { exportSourceCode } from "../../../code-generator";
+import type { IGeneratedFile, ISchema } from "../../../code-generator/types/ir";
 import { useState } from "react";
+import { CodePreviewDrawer } from "../CodePreviewDrawer";
 
 /**
  * @description 快捷键指南的 Popover 内容。
@@ -52,6 +53,9 @@ const shortcutsContent = (
  */
 export function Header() {
   const [isExporting, setIsExporting] = useState(false);
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+  const [generatedFiles, setGeneratedFiles] = useState<IGeneratedFile[]>([]);
+
   const { mode, setMode, setCurComponentId, resetComponents } =
     useComponetsStore();
 
@@ -70,12 +74,8 @@ export function Header() {
   };
 
   // 3. 添加导出源码的处理函数
-  const handleExportCode = async () => {
-    if (isExporting) return;
+  const handleOpenCodePreview = async () => {
     setIsExporting(true);
-    console.log("开始导出代码...");
-
-    // 从 store 获取当前 schema
     const { components } = useComponetsStore.getState();
 
     if (!components || components.length === 0) {
@@ -85,13 +85,23 @@ export function Header() {
     }
 
     try {
-      await exportCodeAndDownload(components as ISchema, "my-lowcode-project");
+      // 4. 调用 exportSourceCode 并指定 publisher: 'none'
+      const result = await exportSourceCode(components as ISchema, {
+        publisher: "none", // 关键！我们只想要文件，不要 blob
+      });
+
+      if (result.success && result.files) {
+        setGeneratedFiles(result.files);
+        setIsDrawerVisible(true); // 打开抽屉
+      } else {
+        console.error("出码失败:", result.message);
+        alert(`出码失败: ${result.message}`);
+      }
     } catch (error) {
-      // 错误已在 exportCodeAndDownload 内部通过 alert 处理
-      console.error("导出过程中发生未捕获异常:", error);
+      console.error("执行 exportSourceCode 时发生异常:", error);
+      alert(`出码异常: ${error}`);
     } finally {
       setIsExporting(false);
-      console.log("导出流程结束。");
     }
   };
 
@@ -201,9 +211,15 @@ export function Header() {
               </div>
 
               {/* 4. 出码按钮 */}
-              <Button icon={<DownloadOutlined />} onClick={handleExportCode}>
-                测试出码
+              <Button onClick={handleOpenCodePreview} loading={isExporting}>
+                {isExporting ? "生成中..." : "出码预览"}
               </Button>
+              <CodePreviewDrawer
+                visible={isDrawerVisible}
+                loading={isExporting}
+                files={generatedFiles}
+                onClose={() => setIsDrawerVisible(false)}
+              />
 
               {/* 预览按钮 */}
               <Button
