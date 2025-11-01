@@ -6,7 +6,7 @@ import { FullscreenOutlined, FullscreenExitOutlined } from "@ant-design/icons";
 
 export function Source() {
   // 1. 从 Zustand store 中获取组件数据和更新方法
-  const { components, setComponents } = useComponetsStore();
+  const { components, setComponents, setCurComponentId } = useComponetsStore();
 
   // 2. 状态管理
   // 将 stringified 后的 JSON 缓存，用于后续的“脏”状态比对
@@ -32,6 +32,16 @@ export function Source() {
     // 绑定快捷键 Ctrl/Cmd + J 进行代码格式化
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyJ, () => {
       editor.getAction("editor.action.formatDocument")?.run();
+    });
+
+    // 核心功能：当用户点击编辑器使其获得焦点时
+    // 立即将画布中当前选中的组件ID设为 null
+    // 这可以防止画布的 Ctrl+C/V (复制/粘贴组件) 快捷键与
+    // 编辑器的文本复制/粘贴快捷键冲突
+    editor.onDidFocusEditorText(() => {
+      if (setCurComponentId) {
+        setCurComponentId(null);
+      }
     });
   };
 
@@ -59,6 +69,9 @@ export function Source() {
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
+    if (setCurComponentId) {
+      setCurComponentId(null);
+    }
   };
 
   // 6. 动态样式与类名
@@ -67,7 +80,12 @@ export function Source() {
     : "relative h-full w-full flex flex-col";
 
   return (
-    <div className={editorWrapperClass}>
+    <div
+      className={editorWrapperClass}
+      onClick={() => {
+        setCurComponentId(null);
+      }}
+    >
       {/* 顶部操作栏 */}
       <div className="flex justify-end items-center mb-2 flex-shrink-0">
         <div className="flex-1">
