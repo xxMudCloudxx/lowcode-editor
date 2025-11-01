@@ -53,7 +53,7 @@ export function ComponentBreadcrumb() {
   }
 
   return (
-    <div className="flex items-center space-x-2 mb-1 px-1 py-1 select-none ">
+    <div className="flex items-center space-x-2 mb-1 px-1 py-1 select-none overflow-x-auto overscroll-x-contain ">
       {breadcrumbItems.map((item, index) => (
         <div key={item.id} className="flex items-center">
           <BreadcrumbItem

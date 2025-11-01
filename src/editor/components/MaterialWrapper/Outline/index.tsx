@@ -125,20 +125,22 @@ export function Outline() {
     return true;
   };
   return (
-    <Tree
-      fieldNames={{ title: "desc", key: "id" }}
-      treeData={components as any} // 直接使用 store 中的数据
-      showLine={{
-        showLeafIcon: false,
-      }}
-      defaultExpandAll
-      defaultExpandParent
-      allowDrop={allowDrop}
-      draggable={{ icon: false }} // 开启拖拽，并隐藏默认的拖拽图标
-      onDrop={onDrop}
-      onSelect={([selectedKey]) => {
-        setCurComponentId(selectedKey as number);
-      }}
-    />
+    <div className="w-[100%] custom-scrollbar overflow-y-auto absolute overscroll-y-contain pr-6 h-[100%] pb-20">
+      <Tree
+        fieldNames={{ title: "desc", key: "id" }}
+        treeData={components as any} // 直接使用 store 中的数据
+        showLine={{
+          showLeafIcon: false,
+        }}
+        defaultExpandAll
+        defaultExpandParent
+        allowDrop={allowDrop}
+        draggable={{ icon: false }} // 开启拖拽，并隐藏默认的拖拽图标
+        onDrop={onDrop}
+        onSelect={([selectedKey]) => {
+          setCurComponentId(selectedKey as number);
+        }}
+      />
+    </div>
   );
 }
