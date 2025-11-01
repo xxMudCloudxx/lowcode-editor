@@ -6,8 +6,9 @@ on:
   push:
     branches:
       - main # 注意：如果你的主分支不叫 main，请修改此处
+  workflow_dispatch: # 允许手动触发
 
-# 权限配置：授予 Actions 读写 GitHub Pages 的权限
+# 权限配置：授予 Actions 读写 GitHub Pages 和部署的权限
 permissions:
   contents: read
   pages: write
@@ -30,20 +31,48 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x # 建议使用一个较新的长期支持（LTS）版本
-          cache: "npm" # 缓存 npm 依赖，加快后续构建速度
+          node-version: 20.x
+          # 注意: pnpm 的缓存不再通过 setup-node 的 'cache' 字段处理
 
-      # 步骤3：安装依赖
-      # 使用 npm ci 而不是 npm install，它更快且能保证使用 lock 文件中的精确版本
+      # 步骤3：安装 pnpm
+      # 使用官方的 pnpm/action-setup@v3 action 来安装 pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.20.0 # 建议指定 pnpm 版本，与你本地开发环境保持一致
+
+      # 步骤4：获取 pnpm 缓存目录
+      # pnpm 将所有依赖存储在一个全局 store 中，我们需要获取这个 store 的路径
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      # 步骤5：配置 pnpm 缓存
+      # 使用 actions/cache@v4 来缓存 pnpm store
+      # path: 指定要缓存的目录（上一步获取的 store 路径）
+      # key: 缓存的唯一标识符。使用 pnpm-lock.yaml 的哈希值，当 lock 文件变更时，缓存自动失效
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      # 步骤6：安装依赖
+      # 使用 pnpm install --frozen-lockfile
+      # --frozen-lockfile 标志确保 CI 严格按照 pnpm-lock.yaml 文件安装，禁止任何修改
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      # 步骤4：构建项目
-      # 运行 package.json 中定义的 build 脚本
+      # 步骤7：构建项目
+      # 运行 package.json 中定义的 build 脚本 (通过 pnpm)
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
-      # 步骤5：上传构建产物
+      # 步骤8：上传构建产物
       # 将打包好的 dist 文件夹上传为一个名为 github-pages 的构件（artifact）
       # 后续的 deploy 任务会下载这个构件
       - name: Upload artifact
@@ -69,9 +98,9 @@ jobs:
           echo "Fetching deployments for environment: $ENVIRONMENT"
 
           # 1. 使用 GitHub API 获取部署列表，并用 jq 工具处理 JSON
-          #   - sort_by(.created_at) | reverse: 按创建时间倒序排序（最新的在最前面）
-          #   - .[15:]: 跳过最新的 15 个，选取所有更早的部署
-          #   - .[].id: 从选中的部署对象中，只提取 id 字段
+          #   - sort_by(.created_at) | reverse: 按创建时间倒序排序（最新的在最前面）
+          #   - .[15:]: 跳过最新的 15 个，选取所有更早的部署
+          #   - .[].id: 从选中的部署对象中，只提取 id 字段
           DEPLOYMENT_IDS_TO_DELETE=$(gh api "repos/$OWNER/$REPO/deployments?environment=$ENVIRONMENT&per_page=100" | jq 'sort_by(.created_at) | reverse | .[15:] | .[].id')
 
           # 检查是否有需要删除的部署
