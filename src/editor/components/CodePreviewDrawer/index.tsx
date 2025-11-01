@@ -109,7 +109,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
             {/* Sider: 文件树 */}
             <Sider
               width={"10vw"} // 确保 Sider 有宽度
-              className="!bg-white overflow-auto border-r border-gray-200 h-[100vh]"
+              className="bg-white! overflow-auto border-r border-gray-200 h-screen"
             >
               <Tree
                 showLine
@@ -123,7 +123,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
             </Sider>
 
             {/* Content: 代码编辑器 */}
-            <Content className="h-[100vh] overflow-hidden">
+            <Content className="h-screen overflow-hidden">
               <div className="h-full">
                 {selectedFile ? (
                   <Editor

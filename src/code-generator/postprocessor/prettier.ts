@@ -1,59 +1,65 @@
 // src/code-generator/postprocessor/prettier.ts
+import * as prettier from "prettier/standalone"; //  Standalone 运行时
+import type { Options } from "prettier"; // 导入类型
+import parserBabel from "prettier/plugins/babel"; // 导入 Babel/TS 解析器
+import parserPostCss from "prettier/plugins/postcss"; // 导入 CSS/SCSS 解析器
+import parserHtml from "prettier/plugins/html"; // 导入 HTML 解析器
+import parserEstree from "prettier/plugins/estree"; // 导入 Estree 打印机
 
-// 注意：这需要您在 lowcode-editor 项目中安装 prettier:
-// npm install prettier --save-dev
-
-import * as prettier from "prettier";
 import type { IGeneratedFile } from "../types/ir";
 import type { IPostProcessor } from "../types/plugin";
 
 /**
- * Prettier 后处理器工厂函数
- *
- * @returns 一个后处理器函数，它使用 Prettier 格式化文件内容。
+ * Prettier 后处理器工厂函数 (适配 Prettier v3 Standalone)
  */
 export function prettierPostProcessor(): IPostProcessor {
-  // 定义 Prettier 配置
-  const prettierOptions: prettier.Options = {
+  const prettierOptions: Options = {
     singleQuote: true,
-    trailingComma: "es5", // 'all' 在某些老 JS parser 中可能不支持
+    trailingComma: "es5",
     printWidth: 100,
     tabWidth: 2,
     semi: true,
   };
 
+  //  将 'parserEstree' 添加到插件列表
+  const prettierPlugins = [
+    parserBabel,
+    parserPostCss,
+    parserHtml,
+    parserEstree,
+  ];
+
   return async (file: IGeneratedFile): Promise<IGeneratedFile> => {
-    let parser: prettier.Options["parser"];
+    let parser: Options["parser"];
 
     // 根据文件类型推断 Prettier 解析器
     switch (file.fileType) {
       case "tsx":
       case "ts":
-        parser = "typescript";
+        parser = "babel-ts"; // 由 parserBabel 提供 (依赖 estree)
         break;
       case "js":
-        parser = "babel";
+        parser = "babel"; // 由 parserBabel 提供 (依赖 estree)
         break;
       case "json":
-        parser = "json";
+        parser = "json"; // 由 parserBabel 提供 (依赖 estree)
         break;
       case "css":
-        parser = "css";
+        parser = "css"; // 由 parserPostCss 提供
         break;
       case "scss":
-        parser = "scss";
+        parser = "scss"; // 由 parserPostCss 提供
         break;
       case "less":
-        parser = "less";
+        parser = "less"; // 由 parserPostCss 提供
         break;
       case "html":
-        parser = "html";
+        parser = "html"; // 由 parserHtml 提供
         break;
       case "md":
-        parser = "markdown";
+        parser = "markdown"; // Prettier v3 standalone 默认包含
         break;
       default:
-        // 对于 'other' 或无法识别的类型，不进行格式化
         return file;
     }
 
@@ -62,6 +68,7 @@ export function prettierPostProcessor(): IPostProcessor {
       const formattedContent = await prettier.format(file.content, {
         ...prettierOptions,
         parser: parser,
+        plugins: prettierPlugins,
       });
 
       // 返回包含格式化内容的新文件对象
@@ -71,7 +78,7 @@ export function prettierPostProcessor(): IPostProcessor {
       };
     } catch (error: any) {
       console.warn(
-        `[Prettier] 格式化文件失败 ${file.filePath}. Error: ${error.message}`
+        `[Prettier] 格式化文件失败 ${file.filePath}. Parser: ${parser}. Error: ${error.message}`
       );
       // 格式化失败时返回原文件
       return file;
