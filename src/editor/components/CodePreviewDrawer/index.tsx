@@ -142,7 +142,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
             </Content>
           </Layout>
         ) : (
-          // [修改] 切换了判断条件
+          // 切换了判断条件
           !loading && (
             <Empty
               description="未生成任何文件"
