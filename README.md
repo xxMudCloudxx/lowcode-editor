@@ -19,7 +19,6 @@
   项目的核心设计思想是<strong>配置驱动 UI</strong>，并将编辑时逻辑与运行时逻辑完全分离，确保了最终产物的纯净与高性能。
 </p>
 
-
 ## 🚀 核心特性与亮点
 
 ### 💡 技术亮点
@@ -47,34 +46,30 @@
 
 ### ✅ 编辑器核心模块
 
-| 模块 | 功能特性 | 技术实现 |
-| :--- | :--- | :--- |
-| **🎨 画布区域** | 递归渲染组件树，事件委托，悬浮/选中遮罩 | `React.createElement` + `Suspense` + `data-component-id` |
-| **⚙️ 设置面板** | 属性、样式、事件分栏，根据物料 `meta` 动态生成配置表单 | `Segmented` + `Antd Form` + `Monaco Editor` |
-| **🧩 物料面板** | 展示所有可用物料，提供组件大纲树和源码视图 | `Tree` + `Monaco Editor` + `React-DND` |
-| **📦 状态管理** | 组件树的增删改查、移动、复制粘贴、撤销重做 | `Zustand` + `immer` + `persist` + `temporal` 中间件 |
+| 模块            | 功能特性                                               | 技术实现                                                 |
+| :-------------- | :----------------------------------------------------- | :------------------------------------------------------- |
+| **🎨 画布区域** | 递归渲染组件树，事件委托，悬浮/选中遮罩                | `React.createElement` + `Suspense` + `data-component-id` |
+| **⚙️ 设置面板** | 属性、样式、事件分栏，根据物料 `meta` 动态生成配置表单 | `Segmented` + `Antd Form` + `Monaco Editor`              |
+| **🧩 物料面板** | 展示所有可用物料，提供组件大纲树和源码视图             | `Tree` + `Monaco Editor` + `React-DND`                   |
+| **📦 状态管理** | 组件树的增删改查、移动、复制粘贴、撤销重做             | `Zustand` + `immer` + `persist` + `temporal` 中间件      |
 
 ### ✅ 物料系统核心
 
-| 模块           | 描述                                                         | 技术实现                                    |
-| -------------- | ------------------------------------------------------------ | ------------------------------------------- |
-| **组件定义**   | 每个组件包含 `dev`、`prod`、`meta` 三个文件，实现编辑器逻辑和业务逻辑的彻底分离。 | `React.lazy` 懒加载                         |
-| **自动化注册** | 无需手动维护物料列表，系统通过文件约定自动扫描并注册所有物料。 | `import.meta.glob`                          |
+| 模块           | 描述                                                                                                | 技术实现                                    |
+| -------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **组件定义**   | 每个组件包含 `dev`、`prod`、`meta` 三个文件，实现编辑器逻辑和业务逻辑的彻底分离。                   | `React.lazy` 懒加载                         |
+| **自动化注册** | 无需手动维护物料列表，系统通过文件约定自动扫描并注册所有物料。                                      | `import.meta.glob`                          |
 | **元数据生成** | 新增 `gen:antd` 脚本，可自动分析 Antd 组件的 Props 并生成 `meta.tsx` 配置文件，简化新物料引入流程。 |                                             |
-| **拖放逻辑**   | 子物料通过 `parentTypes` 声明可被哪些容器接受，实现“反向注册”的高度解耦模式。 | `React-DND` + 自定义 `useMaterailDrop` Hook |
+| **拖放逻辑**   | 子物料通过 `parentTypes` 声明可被哪些容器接受，实现“反向注册”的高度解耦模式。                       | `React-DND` + 自定义 `useMaterailDrop` Hook |
 
 ### ✅ 出码模块 (Code Generation)
 
-| **模块**           | **功能特性**                                                 | **技术实现**                                                 |
-| ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| **⚙️ 出码流水线**   | 将编辑器 Schema 转换为一个**完整、可独立运行**的 React + Vite 项目。 | **解析 (Parser)** -> **中间表示 (IR)** -> **插件 (Plugins)** -> **后处理 (Postprocessor)** -> **发布 (Publisher)** |
-| **解析 (Parser)**  | 将编辑器的组件树 Schema 转换为与框架无关的**中间表示 (IR)**。 | `SchemaParser` 遍历 Schema，`component-metadata.ts` 提供组件映射。 |
-| **插件 (Plugins)** | **组件插件** (`jsx.ts`, `css.ts`) 负责生成 TSX 和 CSS Modules；<br /> **工程插件** (`router.ts`, `package-json.ts` 等) 负责生成路由、`package.json`、`vite.config.ts` 等工程文件。 | 模块化插件设计，参考 `alibaba/lowcode-engine` 的 `solutions` 思想。 |
-| **后处理 & 发布**  | **代码格式化**：自动调用 Prettier 格式化所有生成的代码文件。 <br />**打包发布**：将所有内存中的文件打包为 `Zip` 压缩包，支持一键下载 或在 CodeSandbox 中打开。 | `ProjectBuilder` 应用 `prettierPostProcessor`；  `zipPublisher` 生成 Blob。 |
-
-
-
-
+| **模块**           | **功能特性**                                                                                                                                                                       | **技术实现**                                                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **⚙️ 出码流水线**  | 将编辑器 Schema 转换为一个**完整、可独立运行**的 React + Vite 项目。                                                                                                               | **解析 (Parser)** -> **中间表示 (IR)** -> **插件 (Plugins)** -> **后处理 (Postprocessor)** -> **发布 (Publisher)** |
+| **解析 (Parser)**  | 将编辑器的组件树 Schema 转换为与框架无关的**中间表示 (IR)**。                                                                                                                      | `SchemaParser` 遍历 Schema，`component-metadata.ts` 提供组件映射。                                                 |
+| **插件 (Plugins)** | **组件插件** (`jsx.ts`, `css.ts`) 负责生成 TSX 和 CSS Modules；<br /> **工程插件** (`router.ts`, `package-json.ts` 等) 负责生成路由、`package.json`、`vite.config.ts` 等工程文件。 | 模块化插件设计，参考 `alibaba/lowcode-engine` 的 `solutions` 思想。                                                |
+| **后处理 & 发布**  | **代码格式化**：自动调用 Prettier 格式化所有生成的代码文件。 <br />**打包发布**：将所有内存中的文件打包为 `Zip` 压缩包，支持一键下载 或在 CodeSandbox 中打开。                     | `ProjectBuilder` 应用 `prettierPostProcessor`； `zipPublisher` 生成 Blob。                                         |
 
 ## 🛠️ 技术栈
 
@@ -88,8 +83,6 @@
 "zundo": "^2.3.0"         // 为 Zustand 状态提供撤销/重做功能
 ```
 
-
-
 ### UI 与交互
 
 ```ts
@@ -99,8 +92,6 @@
 "react-dnd-html5-backend": "^16.0.1",  // React-DND 的官方 HTML5 拖放后端
 "tailwindcss": "^4.1.11"               // 一个功能优先的 CSS 框架
 ```
-
-
 
 ### 工程化与构建
 
@@ -112,8 +103,6 @@
 "monaco-editor": "^0.52.2",               // 驱动 VS Code 的代码编辑器
 "@monaco-editor/react": "^4.7.0"          // Monaco Editor 的 React 封装
 ```
-
-
 
 ## 🏗️ 架构详解
 
@@ -188,8 +177,6 @@ src/
     └── index.ts        # 导出功能主入口 (exportSourceCode)。
 ```
 
-
-
 ### 状态管理 (Zustand)
 
 使用 Zustand 以一种极其简洁的方式管理着复杂的组件树状态。它巧妙地组合了多个中间件：
@@ -202,19 +189,14 @@ export const useComponetsStore = create<EditorStore>()(
   // 3. 最外层包裹 `temporal`，为整个 store 增加撤销/重做能力
   temporal(
     // 2. 包裹 `persist`，将状态持久化到 localStorage
-    persist(
-      immer(creator), 
-      { name: "lowcode-store" }
-    ),
-    { 
+    persist(immer(creator), { name: "lowcode-store" }),
+    {
       // 仅追踪对核心 `components` 树的修改，避免 UI 状态污染历史栈
-      partialize: (state) => ({ components: state.components })
+      partialize: (state) => ({ components: state.components }),
     }
   )
 );
 ```
-
-
 
 ### 自动化物料系统
 
@@ -261,8 +243,6 @@ export const materials: ComponentConfig[] = buildFromMergedList(
 );
 ```
 
-
-
 ### 解耦的拖放机制
 
 拖放逻辑采用“反向注册”模式。容器组件不再硬编码它能接受哪些子组件，而是由子组件在其 `meta.tsx` 中通过 `parentTypes` 属性“声明”自己能被哪些容器接受。这使得组件间的关系高度解耦，扩展性极强。
@@ -272,7 +252,7 @@ export const materials: ComponentConfig[] = buildFromMergedList(
 
 export function useMaterailDrop(containerId: number, containerName: string) {
   const { componentConfig } = useComponentConfigStore();
-  
+
   // 核心解耦逻辑：动态计算可接受的子组件类型列表
   const accept = Object.values(componentConfig)
     .filter((config) => config.parentTypes?.includes(containerName))
@@ -317,19 +297,17 @@ export function useMaterailDrop(containerId: number, containerName: string) {
   - [x] 实现撤销/重做
   - [x] 实现组件的复制 / 粘贴 / 删除
   - [x] 大纲树支持拖拽调整层级和顺序
-- **第二阶段：高级功能与生态建设** (进行中)
+- **第二阶段：高级功能与生态建设** (✅ 已完成)
   - [x] 编辑器专业功能增强（高级样式）
   - [x] 引入高级布局与业务组件（栅格、Tabs、图表）
 - **第三阶段：打通数据与逻辑** (规划中)
   - [ ] 引入全局状态与数据源管理
   - [ ] 实现强大的数据绑定与条件/列表渲染
-- **第四阶段：工程化与产物** (规划中)
-  - [ ] 页面 Schema 的导入/导出
+- **第四阶段：工程化与产物** (✅ 已完成)
+  - [x] 页面 Schema 的导入/导出
   - [x] 出码与独立发布
 
 更多细节请查看 [ROADMAP.md](https://github.com/xxMudCloudxx/lowcode-editor/blob/main/ROADMAP.md) 文件。
-
-
 
 ## 🏁 快速开始 (Getting Started)
 
@@ -341,23 +319,21 @@ export function useMaterailDrop(containerId: number, containerName: string) {
    git clone git@github.com:xxMudCloudxx/lowcode-editor.git
    cd lowcode-editor
    ```
-   
+
 2. **安装依赖**
 
    ```bash
    npm install
    # 或者 yarn install, pnpm install
    ```
-   
+
 3. **运行项目**
 
    ```bash
    npm run dev
    ```
-   
+
    项目将在本地启动，你可以通过浏览器访问对应的地址（如 `http://localhost:5173`）。
-
-
 
 ## 🤝 如何贡献 (How to Contribute)
 
@@ -366,14 +342,10 @@ export function useMaterailDrop(containerId: number, containerName: string) {
 - **物料开发**: 如果你想为项目贡献一个新的可拖拽组件，请务必阅读我们的 [物料组件开发规范](https://github.com/xxMudCloudxx/lowcode-editor/blob/main/src/editor/materials/README.md)，它会指导你如何遵循项目的设计模式来创建新的物料。
 - **提交问题**: 如果你发现了 Bug 或者有任何建议，欢迎通过 [Issues](https://github.com/xxMudCloudxx/lowcode-editor/issues) 提出。
 
-
-
 ## 🙏 致谢
 
-- **初始学习与启发**: 本项目在初始阶段深度参考并跟随了稀土掘金小册[《React 通关秘籍》](https://juejin.cn/book/7294082310658326565)中的实战章节。在此，特别感谢作者 **zxg_神说要有光** 提供的优质内容，为本项目的架构设计奠定了坚实的基础。
+- **初始学习与启发**: 本项目在初始阶段深度参考并跟随了稀土掘金小册[《React 通关秘籍》](https://juejin.cn/book/7294082310658326565)中的实战章节。在此，特别感谢作者 **zxg\_神说要有光** 提供的优质内容，为本项目的架构设计奠定了坚实的基础。
 - **开源社区**: 感谢 Vite、React、Zustand、Ant Design 以及所有本项目使用到的开源项目的贡献者们。
-
-
 
 ## 📜 许可证 (License)
 
@@ -403,13 +375,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-
-
-------
-
-
+---
 
 ⭐ 如果这个项目对你有帮助，请给个 Star 支持一下！
+
 <p align="center">
 <img src=https://img.shields.io/github/stars/xxMudCloudxx/lowcode-editor?style=social alt="GitHub stars">
 <img src=https://img.shields.io/github/forks/xxMudCloudxx/lowcode-editor?style=social alt="GitHub forks">
