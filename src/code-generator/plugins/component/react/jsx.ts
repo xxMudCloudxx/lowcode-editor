@@ -72,7 +72,7 @@ const jsxPlugin: IComponentPlugin = {
         // (这是一个简易版实现，只支持 this.setState({ xxx: yyy }))
         funcBody = funcBody.replace(
           /this\.setState\(\s*\{([^}]+)\}\s*\)/g,
-          (match, stateChanges) => {
+          (stateChanges) => {
             // stateChanges 是 " open_123: true "
             const [stateName, stateValue] = stateChanges.split(":");
             // e.g., set_open_123(true)
