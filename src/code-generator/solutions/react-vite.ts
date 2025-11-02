@@ -5,7 +5,7 @@
  * @description 定义了使用 React 和 Vite 技术栈生成代码的流水线 (Pipeline)。
  */
 
-import type { ISchema, IRNode } from "../types/ir";
+import type { ISchema, IRPage } from "../types/ir";
 import { SchemaParser } from "../parser/schema-parser";
 import { ProjectBuilder } from "../generator/project-builder";
 import jsxPlugin from "../plugins/component/react/jsx";
@@ -13,6 +13,7 @@ import { camelCase, upperFirst } from "lodash-es";
 import type { IComponentPlugin, IProjectPlugin } from "../types/plugin";
 import { projectPlugins } from "../plugins/project";
 import cssPlugin from "../plugins/component/style/css";
+import { runPreprocessors } from "../preprocessor";
 // 引入其他插件... (例如 CSS 插件, 路由插件等，将在后续阶段添加)
 
 /**
@@ -37,8 +38,10 @@ const reactViteSolution: ICodeGeneratorSolution = {
     const parser = new SchemaParser();
     const irProject = parser.parse(schema);
 
+    const transformedIrProject = runPreprocessors(irProject);
+
     // 2. 初始化 ProjectBuilder，传入 IR
-    const projectBuilder = new ProjectBuilder(irProject);
+    const projectBuilder = new ProjectBuilder(transformedIrProject);
 
     // 3. --- 定义插件流水线 ---
     // 阶段一：组件级别插件
@@ -53,23 +56,14 @@ const reactViteSolution: ICodeGeneratorSolution = {
     ];
 
     // 4. --- 执行组件插件流水线 (Pipeline) ---
-    irProject.pages.forEach((page) => {
+    transformedIrProject.pages.forEach((page: IRPage) => {
       // 为每个页面创建一个 ModuleBuilder
       const moduleBuilder = projectBuilder.createModuleBuilder();
 
-      // --- 遍历 IRNode 并应用 Component 级别的插件 ---
-      function traverseNode(irNode: IRNode) {
-        // 应用所有组件插件
-        componentPlugins.forEach((plugin) => {
-          plugin.run(irNode, moduleBuilder, projectBuilder);
-        });
-
-        // (注意：jsxPlugin 内部已处理递归，
-        // 如果其他插件 (如 cssPlugin) 需要不同方式遍历，需调整此逻辑)
-      }
-
-      // 从页面的根节点开始遍历
-      traverseNode(page.node);
+      // 应用所有组件插件
+      componentPlugins.forEach((plugin) => {
+        plugin.run(page, moduleBuilder, projectBuilder);
+      });
 
       // --- 生成当前页面的文件 ---
       const componentName = page.fileName;

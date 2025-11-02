@@ -117,6 +117,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
                 treeData={treeData}
                 onSelect={handleSelect}
                 defaultExpandAll
+                defaultExpandParent
                 selectedKeys={selectedFile ? [selectedFile.filePath] : []}
                 className="p-2"
               />

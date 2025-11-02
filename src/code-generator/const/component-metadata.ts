@@ -6,7 +6,12 @@
  */
 
 import type { ModuleBuilder } from "../generator/module-builder";
-import type { IRDependency, IRLiteral, IRPropValue } from "../types/ir";
+import type {
+  ICodeGenComponentMethod,
+  IRDependency,
+  IRLiteral,
+  IRPropValue,
+} from "../types/ir";
 
 /**
  * 组件元数据接口
@@ -18,6 +23,7 @@ export interface IComponentMetadata {
   dependency: IRDependency;
   /** 是否是容器组件 (未来可用于优化拖拽逻辑等) */
   isContainer?: boolean;
+  methods?: ICodeGenComponentMethod[];
   // 其他元数据，例如支持哪些子组件等，未来可扩展
 }
 
@@ -102,6 +108,23 @@ export const componentMetadataMap: Record<string, IComponentMetadata> = {
     componentName: "Modal",
     dependency: { package: "antd", version: "^5.0.0", destructuring: true },
     isContainer: true, // Modal 可以包含内容
+    methods: [
+      {
+        name: "open", // 对应 editor/materials/Feedback/Modal/meta.tsx
+        stateBinding: { prop: "open", value: true }, // Antd5 Modal 使用 'open' 属性
+      },
+      {
+        name: "close", // 对应 editor/materials/Feedback/Modal/meta.tsx
+        stateBinding: { prop: "open", value: false },
+        eventBinding: "onCancel", // 自动将 Modal 的 onCancel 属性绑定到 close 方法
+      },
+      {
+        // 增加 onOk 的自动绑定
+        name: "handleOk",
+        stateBinding: { prop: "open", value: false },
+        eventBinding: "onOk", // 自动将 Modal 的 onOk 属性绑定到此方法
+      },
+    ],
   },
   // --- 将根据 src/editor/materials/ 下的实际组件补充 ---
   Input: {
@@ -171,6 +194,19 @@ export const componentMetadataMap: Record<string, IComponentMetadata> = {
     componentName: "Tooltip",
     dependency: { package: "antd", version: "^5.0.0", destructuring: true },
     isContainer: true,
+    methods: [
+      {
+        name: "open",
+        stateBinding: { prop: "open", value: true },
+      },
+      {
+        name: "close",
+        stateBinding: { prop: "open", value: false },
+        // Tooltip 通常通过 onOpenChange 统一处理
+        eventBinding: "onOpenChange", // 注意：onOpenChange 参数是 (open: boolean)
+        // state-lifter 在处理 eventBinding 时需要适配这种情况
+      },
+    ],
   },
   Radio: {
     componentName: "Radio.Group",
@@ -207,6 +243,17 @@ export const componentMetadataMap: Record<string, IComponentMetadata> = {
     componentName: "Dropdown",
     dependency: { package: "antd", version: "^5.0.0", destructuring: true },
     isContainer: true,
+    methods: [
+      {
+        name: "open",
+        stateBinding: { prop: "open", value: true },
+      },
+      {
+        name: "close",
+        stateBinding: { prop: "open", value: false },
+        eventBinding: "onOpenChange", // onOpenChange 参数是 (open: boolean)
+      },
+    ],
   },
   Menu: {
     componentName: "Menu",

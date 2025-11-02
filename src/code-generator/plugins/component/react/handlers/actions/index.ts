@@ -1,13 +1,15 @@
 // src/code-generator/plugins/component/react/handlers/action/index.ts
 import type { IActionHandler } from "./type";
 import { showMessageActionHandler } from "./showMessage";
-import { componentMethodActionHandler } from "./componentMethod";
 import { defaultActionHandler } from "./default";
+import { goToLinkHander } from "./goToLink";
+import { callMethodHandler } from "./callMethod";
 
 // Action 处理器注册表
 const actionHandlers: Record<string, IActionHandler> = {
   showMessage: showMessageActionHandler,
-  componentMethod: componentMethodActionHandler,
+  goToLink: goToLinkHander,
+  callMethod: callMethodHandler,
   // ... 未来在这里添加新的 Action 处理器
   // --- 扩展点 ---
   // 当未来需要支持 navigateTo 时, 只需：

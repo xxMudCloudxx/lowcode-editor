@@ -5,7 +5,7 @@
  * @description 提取 irNode.styles 并将其转换为 CSS Modules 类。
  */
 
-import type { IRNode } from "../../../types/ir";
+import type { IRNode, IRPage } from "../../../types/ir";
 import type { ModuleBuilder } from "../../../generator/module-builder";
 import type { IComponentPlugin } from "../../../types/plugin";
 import { isEmpty } from "lodash-es";
@@ -77,11 +77,11 @@ const cssPlugin: IComponentPlugin = {
 
   /**
    * 执行 CSS 模块生成逻辑。
-   * @param irNode - 当前处理的 IR 节点 (通常是页面根节点)。
+   * @param page - 当前处理的 IR 页面。
    * @param moduleBuilder - 当前模块的构建器实例。
    */
-  run: (irNode: IRNode, moduleBuilder: ModuleBuilder) => {
-    traverseAndExtractStyles(irNode, moduleBuilder);
+  run: (page: IRPage, moduleBuilder: ModuleBuilder) => {
+    traverseAndExtractStyles(page.node, moduleBuilder);
   },
 };
 

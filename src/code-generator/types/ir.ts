@@ -147,10 +147,20 @@ export interface IRPage {
   fileName: string;
   /** 页面的根节点 */
   node: IRNode;
-  /** 页面级别的状态定义 (未来扩展) */
-  // state?: Record<string, IRLiteral | IRJSExpression>;
-  /** 页面级别的方法 (未来扩展) */
-  // methods?: Record<string, IRJSFunction>;
+
+  /**
+   * 页面级别的状态定义
+   * (由 preprocessor/state-lifter 注入)
+   * e.g., { "modal_visible_123": { type: "Literal", value: false } }
+   */
+  states?: Record<string, IRLiteral | IRJSExpression>;
+
+  /**
+   * 页面级别的方法定义
+   * (由 preprocessor/state-lifter 注入)
+   * e.g., { "openModal_123": { type: "JSFunction", value: "..." } }
+   */
+  methods?: Record<string, IRJSFunction>;
   /** 页面生命周期 (未来扩展) */
   // lifeCycles?: {
   //   componentDidMount?: IRJSFunction;
@@ -223,4 +233,33 @@ export interface IGeneratedFile {
     | "html"
     | "md"
     | "other";
+}
+// ---方法相关接口---
+/**
+ * 定义一个方法的“状态绑定”
+ * e.g., 'open' 方法会设置 'visible' 属性为 true
+ */
+export interface ICodeGenStateBinding {
+  /** 目标属性名 */
+  prop: string;
+  /** 期望设置的值 */
+  value: any;
+}
+
+/**
+ * 定义组件在“出码阶段”可被调用的方法元数据
+ */
+export interface ICodeGenComponentMethod {
+  /** 方法名 (e.g., 'open', 'close') */
+  name: string;
+
+  /**
+   * 这个方法是否绑定了某个状态的变更
+   */
+  stateBinding?: ICodeGenStateBinding;
+
+  /**
+   * (可选) 这个方法应该自动绑定到哪个事件上 (e.g., 'onCancel')
+   */
+  eventBinding?: string;
 }

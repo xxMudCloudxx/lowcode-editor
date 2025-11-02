@@ -9,6 +9,7 @@ import type {
   IRAction,
   IRLiteral,
   IRNode,
+  IRPage,
   IRPropValue,
 } from "../../../types/ir";
 import type { ModuleBuilder } from "../../../generator/module-builder";
@@ -42,42 +43,87 @@ const jsxPlugin: IComponentPlugin = {
   name: "react-jsx",
   /**
    * 执行 JSX 生成逻辑。
-   * @param irNode - 页面或组件的根 IRNode。
+   * @param page - 页面。
    * @param moduleBuilder - 当前模块的构建器实例。
    */
-  run: (irNode: IRNode, moduleBuilder: ModuleBuilder) => {
-    // 1. 检查传入的节点是否为页面根节点 ('Page')
-    //    (基于 react-vite.ts 的调用，这里传入的 irNode 始终是 page.node)
-    if (irNode.componentName === "Page" && irNode.children) {
-      // 2. 如果是 Page 节点, 我们不渲染 <Page> 标签, 而是渲染它的子节点列表
-      const childrenJsxStrings = irNode.children
-        .map((childNode) => generateJSX(childNode, moduleBuilder, 0)) // 告诉 generateJSX 子节点从缩进 0 开始
-        .join("\n"); // 用换行符连接所有子组件
+  run: (page: IRPage, moduleBuilder: ModuleBuilder) => {
+    // [!> 新增：处理页面状态 (States) <!]
+    if (page.states) {
+      // 确保导入 useState
+      moduleBuilder.addImport(
+        { package: "reat", destructuring: true },
+        "useState"
+      );
 
-      // 3. 将子节点的 JSX 列表（用 React Fragment 包裹）设置到 moduleBuilder
-      //    (generateJSX 内部已处理了第一层缩进, 这里不需要额外空格)
+      for (const [stateName, literal] of Object.entries(page.states)) {
+        const defaultValue = JSON.stringify(literal.value);
+        // e.g., const [open_123, setOpen_123] = useState(false);
+        const stateHook = `const [${stateName}, set_${stateName}] = useState(${defaultValue});`;
+        moduleBuilder.addState(stateHook);
+      }
+    }
+
+    // [!> 新增：处理页面方法 (Methods) <!]
+    if (page.methods) {
+      for (const [methodName, jsFunction] of Object.entries(page.methods)) {
+        let funcBody = jsFunction.value;
+
+        // [!> 转换 this.setState <!]
+        // (这是一个简易版实现，只支持 this.setState({ xxx: yyy }))
+        funcBody = funcBody.replace(
+          /this\.setState\(\s*\{([^}]+)\}\s*\)/g,
+          (match, stateChanges) => {
+            // stateChanges 是 " open_123: true "
+            const [stateName, stateValue] = stateChanges.split(":");
+            // e.g., set_open_123(true)
+            return `set_${stateName.trim()}(${stateValue.trim()});`;
+          }
+        );
+
+        // 移除 function() { ... }
+        funcBody = funcBody
+          .replace(/^function\s*\(\)\s*\{/, "")
+          .replace(/\s*\}$/, "");
+
+        // e.g., const open_123 = () => { set_open_123(true); };
+        const methodConst = `const ${methodName} = () => {\n  ${funcBody}\n};`;
+        moduleBuilder.addMethod(methodConst);
+      }
+    }
+
+    // [!> 逻辑修改：现在只处理 page.node <!]
+    const irNode = page.node;
+    if (irNode.componentName === "Page" && irNode.children) {
+      const childrenJsxStrings = irNode.children
+        .map((childNode) => generateJSX(childNode, moduleBuilder, 0, page)) // [!> 传递 page <!]
+        .join("\n");
       moduleBuilder.setJSX(
         `<>
 ${childrenJsxStrings}
 </>`
       );
-
-      // (可选的警告) 这种方法会丢弃 Page 根节点上定义的样式 (irNode.styles)
-      if (irNode.styles && Object.keys(irNode.styles).length > 0) {
-        console.warn(`[CodeGenerator] 警告: Page 根节点上的 'styles' 将被忽略。
-        请考虑将页面背景等样式在 "src/global.scss" 中定义，
-        或在 "src/App.tsx" 中为 <AppRouter /> 添加一个带样式的 wrapper div。`);
-      }
     } else {
-      // 4.  如果不是 Page 节点, 或者 Page 节点没有 children,
-      //    则执行原始的逻辑：渲染 irNode 自身
-      const jsxString = generateJSX(irNode, moduleBuilder, 0); //
+      const jsxString = generateJSX(irNode, moduleBuilder, 0, page); // [!> 传递 page <!]
       moduleBuilder.setJSX(jsxString);
     }
   },
 };
 
 export default jsxPlugin;
+
+/**
+ *新增辅助函数
+ * 转换 this.state.xxx 和 this.methods.xxx
+ */
+function transformExpression(value: string): string {
+  if (value.startsWith("this.state.")) {
+    return value.substring("this.state.".length);
+  }
+  if (value.startsWith("this.methods.")) {
+    return value.substring("this.methods.".length);
+  }
+  return value;
+}
 
 // --- 辅助函数：生成单个 Action 的调用代码 ---
 // (我们将复用这个函数)
@@ -165,7 +211,8 @@ function isIRActionArray(propValue: any): propValue is IRAction[] {
 function generateJSX(
   irNode: IRNode,
   moduleBuilder: ModuleBuilder,
-  indentLevel: number
+  indentLevel: number,
+  page: IRPage
 ): string {
   const indent = "  ".repeat(indentLevel + 2);
 
@@ -195,7 +242,8 @@ function generateJSX(
   const propsString = generatePropsString(
     restOfProps,
     moduleBuilder,
-    indentLevel + 1
+    indentLevel + 1,
+    page
   );
 
   // 6. 处理 Children
@@ -203,7 +251,7 @@ function generateJSX(
   if (irNode.children && irNode.children.length > 0) {
     // 6a. 优先处理真实的子节点 (irNode.children)
     childrenString = irNode.children
-      .map((child) => generateJSX(child, moduleBuilder, indentLevel + 1))
+      .map((child) => generateJSX(child, moduleBuilder, indentLevel + 1, page))
       .join("\n");
   } else if (childrenProp) {
     // 6b. 再处理来自 props 的 children (例如 Button 的 text, Slot)
@@ -224,13 +272,15 @@ function generateJSX(
         childrenString = generateJSX(
           childrenProp as IRNode,
           moduleBuilder,
-          indentLevel + 1
+          indentLevel + 1,
+          page
         );
       } else {
         // 6b-3. 子节点是 JSExpression, Variable 等
         const childValueString = generatePropValueString(
           childrenProp,
-          moduleBuilder
+          moduleBuilder,
+          page
         );
         if (childValueString !== undefined) {
           childrenString = `${indent}  {${childValueString}}`;
@@ -244,7 +294,7 @@ function generateJSX(
       // 6b-4. 子节点是 IRNode 数组 (JSSlot with multiple nodes)
       childrenString = childrenProp
         .map((child) =>
-          generateJSX(child as IRNode, moduleBuilder, indentLevel + 1)
+          generateJSX(child as IRNode, moduleBuilder, indentLevel + 1, page)
         )
         .join("\n");
     }
@@ -270,7 +320,8 @@ function generateJSX(
           // 它是 JSExpression, Variable, JSFunction, IRAction 等
           const classNameValue = generatePropValueString(
             classNamePropValue,
-            moduleBuilder
+            moduleBuilder,
+            page
           );
           if (classNameValue !== undefined) {
             classList.push(`\${${classNameValue}}`); // 动态变量
@@ -320,7 +371,8 @@ function generateJSX(
 function generatePropsString(
   props: Record<string, IRPropValue>,
   moduleBuilder: ModuleBuilder,
-  indentLevel: number
+  indentLevel: number,
+  page: IRPage
 ): string {
   const propStrings: string[] = [];
   const multiLineIndent = "  ".repeat(indentLevel + 1);
@@ -333,7 +385,11 @@ function generatePropsString(
     }
 
     const propValue = props[key];
-    const propStringValue = generatePropValueString(propValue, moduleBuilder);
+    const propStringValue = generatePropValueString(
+      propValue,
+      moduleBuilder,
+      page
+    );
 
     if (propStringValue !== undefined) {
       if (
@@ -377,11 +433,12 @@ function generatePropsString(
 
 /**
  * 将 IRPropValue 转换为 JSX 属性值所需的字符串。
- * @description (基本与你 的版本一致, 稍作清理和增强)
+ * @description (基本与我的版本一致, 稍作清理和增强)
  */
 function generatePropValueString(
   propValue: IRPropValue,
-  moduleBuilder: ModuleBuilder
+  moduleBuilder: ModuleBuilder,
+  page: IRPage
 ): string | undefined {
   // 1. IRAction[]
   if (isIRActionArray(propValue)) {
@@ -406,7 +463,7 @@ function generatePropValueString(
       ${propValue
         .map((node) =>
           // 注意：JSSlot 内部的 JSX 缩进需要单独处理，这里暂定一个基础缩进
-          generateJSX(node as IRNode, moduleBuilder, 1)
+          generateJSX(node as IRNode, moduleBuilder, 1, page)
         )
         .join(",\n")}
     ]`;
@@ -451,9 +508,9 @@ function generatePropValueString(
         return JSON.stringify(propValue.value);
 
       case "JSExpression":
-        return propValue.value;
+        return transformExpression(propValue.value);
       case "JSFunction":
-        return propValue.value;
+        return transformExpression(propValue.value);
       case "Variable":
         return propValue.name;
 
@@ -471,7 +528,7 @@ function generatePropValueString(
   if ("componentName" in propValue) {
     // 支持 JSSlot
     // 返回被括号包裹的 JSX 字符串
-    return `(${generateJSX(propValue as IRNode, moduleBuilder, 0)})`;
+    return `(${generateJSX(propValue as IRNode, moduleBuilder, 0, page)})`;
   }
 
   // --- 默认 Fallback ---

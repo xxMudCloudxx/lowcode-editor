@@ -5,7 +5,7 @@
  * @description 定义了不同类型的插件及其执行签名
  */
 
-import type { IGeneratedFile, IRNode } from "./ir";
+import type { IGeneratedFile, IRPage } from "./ir";
 import type { ModuleBuilder } from "../generator/module-builder";
 import type { ProjectBuilder } from "../generator/project-builder";
 
@@ -19,12 +19,12 @@ export interface IComponentPlugin {
   name: string;
   /**
    * 执行组件插件
-   * @param irNode - 当前处理的 IR 节点
+   * @param page -完整的 IRPage 上下文
    * @param moduleBuilder - 当前页面的模块构建器
    * @param projectBuilder - (可选) 整个项目的构建器，用于访问项目级信息
    */
   run: (
-    irNode: IRNode,
+    page: IRPage,
     moduleBuilder: ModuleBuilder,
     projectBuilder?: ProjectBuilder
   ) => void;
