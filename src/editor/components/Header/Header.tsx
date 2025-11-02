@@ -31,6 +31,7 @@ import {
   DesktopOutlined,
   TabletOutlined,
   MobileOutlined,
+  StarOutlined,
 } from "@ant-design/icons";
 
 const { Text, Title } = Typography;
@@ -44,6 +45,7 @@ import { exportSourceCode } from "../../../code-generator";
 import type { IGeneratedFile, ISchema } from "../../../code-generator/types/ir";
 import { useState } from "react";
 import { CodePreviewDrawer } from "../CodePreviewDrawer";
+import { useAiPageDesignerStore } from "../../stores/aiPageDesigner";
 
 /**
  * @description 快捷键指南的 Popover 内容
@@ -112,7 +114,8 @@ export function Header() {
     setCanvasPreset,
   } = useUIStore();
   const { undo, redo, clear, past, future } = useHistoryStore();
-
+  const { status, openModal } = useAiPageDesignerStore();
+  const isAiLoading = status === "loading";
   const handleReset = () => {
     resetComponents();
   };
@@ -316,6 +319,20 @@ export function Header() {
         <Space size="middle">
           {mode === "edit" && (
             <>
+              {/* AI 按钮 */}
+              <Tooltip title="AI 页面设计">
+                <Button
+                  icon={<StarOutlined />}
+                  shape="round"
+                  loading={isAiLoading}
+                  onClick={openModal}
+                  //  TODO：添加自定义 CSS 类来实现 "流体效果"
+                  className={isAiLoading ? "ai-loading-button" : ""}
+                >
+                  AI
+                </Button>
+              </Tooltip>
+
               {/* 重置按钮组 */}
               <div className="flex gap-2">
                 <Popconfirm

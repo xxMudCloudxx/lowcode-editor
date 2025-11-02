@@ -7,6 +7,7 @@ import { MaterialWrapper } from "./components/MaterialWrapper";
 import { Preview } from "./components/Preview";
 import { useShortcutKeys } from "./hooks/useShortcutKeys";
 import { useUIStore } from "./stores/uiStore";
+import { AiPageDesignerModal } from "./components/AiPageDesignerModal";
 
 export default function ReactPlayground() {
   const mode = useUIStore((s) => s.mode);
@@ -53,6 +54,7 @@ export default function ReactPlayground() {
           <Preview />
         </div>
       )}
+      <AiPageDesignerModal />
     </div>
   );
 }
