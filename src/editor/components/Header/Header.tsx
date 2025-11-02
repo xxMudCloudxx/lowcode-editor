@@ -6,17 +6,18 @@
  * @module Components/Header
  */
 
-import { Button, Space, Popconfirm, Typography, Popover } from "antd";
+import { Button, Space, Popconfirm, Typography, Popover, Tooltip } from "antd";
 
 const { Text, Title } = Typography;
 import { useComponentsStore, buildComponentTree } from "../../stores/components";
 import { useUIStore } from "../../stores/uiStore";
 import { useStore } from "zustand";
-import { QuestionCircleOutlined } from "@ant-design/icons";
+import { QuestionCircleOutlined, StarOutlined } from "@ant-design/icons";
 import { exportSourceCode } from "../../../code-generator";
 import type { IGeneratedFile, ISchema } from "../../../code-generator/types/ir";
 import { useState } from "react";
 import { CodePreviewDrawer } from "../CodePreviewDrawer";
+import { useAiPageDesignerStore } from "../../stores/aiPageDesigner";
 
 /**
  * @description 快捷键指南的 Popover 内容
@@ -64,6 +65,9 @@ export function Header() {
   const { undo, redo, clear, pastStates, futureStates } = useStore(
     useComponentsStore.temporal
   );
+
+  const { status, openModal } = useAiPageDesignerStore();
+  const isAiLoading = status === "loading";
 
   /**
    * @description 处理画布重置逻辑
@@ -159,6 +163,19 @@ export function Header() {
                   className="!border-gray-300 !h-9 !w-9 hover:!border-indigo-400 hover:!bg-indigo-50 !shadow-sm"
                 />
               </Popover>
+
+              <Tooltip title="AI 页面设计">
+                <Button
+                  icon={<StarOutlined />}
+                  shape="round"
+                  loading={isAiLoading}
+                  onClick={openModal}
+                  //  TODO：添加自定义 CSS 类来实现 "流体效果"
+                  className={isAiLoading ? "ai-loading-button" : ""}
+                >
+                  AI
+                </Button>
+              </Tooltip>
 
               {/* 撤销/重做按钮组 */}
               <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
