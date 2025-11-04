@@ -1,6 +1,7 @@
 /**
  * @file /server/index.ts
- * @description 🚀 零代码 AI 页面生成器后端 (LangChain.js v0.3+ 修正版 + 全面错误调试日志)
+ * @description 🚀 零代码 AI 页面生成器后端 (LangChain.js v0.3+ | 提示词文件化重构)
+ * @description 将所有提示词外化到 /server/prompts/ 目录中，实现逻辑与内容分离。
  */
 
 import express from "express";
@@ -13,6 +14,7 @@ import { JsonOutputParser } from "@langchain/core/output_parsers";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { Component } from "../src/editor/stores/components";
+import { PromptTemplate } from "@langchain/core/prompts";
 
 // --- 1. 环境与配置初始化 ---
 
@@ -23,34 +25,64 @@ const port = 3001;
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-// --- 2. 加载 AI 上下文文件 ---
+// --- 2. 加载 AI 上下文与提示词 ---
 
-function loadDynamicData(): {
+/**
+ * @function loadAiContext
+ * @description 同步加载 AI 运行所需的动态上下文文件和提示词模板。
+ * @returns {object} 包含加载内容的上下文对象。
+ * @throws {Error} 如果任何文件读取失败或内容为空，则抛出异常。
+ */
+function loadAiContext(): {
   materialsListJson: string;
   schemaExampleJson: string;
+  intentSystemPrompt: string;
+  schemaSystemPrompt: string;
 } {
   try {
-    const materialsPath = path.resolve("server/template/materials.json");
-    const schemaExamplePath = path.resolve(
-      "server/template/lowcode-schema.json"
-    );
+    const read = (p: string) =>
+      readFileSync(path.resolve(process.cwd(), p), "utf-8");
 
-    const materialsListJson = readFileSync(materialsPath, "utf-8");
-    const schemaExampleJson = readFileSync(schemaExamplePath, "utf-8");
+    // 加载动态数据
+    const materialsListJson = read("server/template/materials.json");
+    const schemaExampleJson = read("server/template/lowcode-schema.json");
 
-    if (!materialsListJson || !schemaExampleJson) {
-      throw new Error("上下文文件为空或无效。");
+    // 加载提示词文件
+    const intentSystemPrompt = read("server/prompts/intent_system.md");
+    const schemaRole = read("server/prompts/schema_role.md");
+    let schemaSystemTemplate = read("server/prompts/schema_system_template.md");
+
+    if (
+      !materialsListJson ||
+      !schemaExampleJson ||
+      !intentSystemPrompt ||
+      !schemaRole ||
+      !schemaSystemTemplate
+    ) {
+      throw new Error("上下文文件或提示词文件为空或无效。");
     }
 
-    console.log("[AI Server] ✅ 动态上下文加载成功 (物料库, Schema范例)");
-    return { materialsListJson, schemaExampleJson };
+    // 将动态内容注入到 Schema 系统提示词模板中
+    const schemaSystemPrompt = schemaSystemTemplate
+      .replace("{{ROLE_DEFINITION}}", schemaRole)
+      .replace("{{MATERIALS_LIST}}", materialsListJson)
+      .replace("{{SCHEMA_EXAMPLE}}", schemaExampleJson);
+
+    console.log("[AI Server] ✅ 动态上下文与提示词加载并注入成功。");
+    return {
+      materialsListJson, // (保留，也许其他地方会用)
+      schemaExampleJson, // (保留，也许其他地方会用)
+      intentSystemPrompt,
+      schemaSystemPrompt,
+    };
   } catch (error) {
-    console.error("❌ 加载动态上下文失败:", error);
+    console.error("❌ 加载 AI 上下文或提示词失败:", error);
     throw new Error("服务器配置错误：无法加载 AI 上下文文件。");
   }
 }
 
-const { materialsListJson, schemaExampleJson } = loadDynamicData();
+// 在服务启动时加载所有内容
+const { intentSystemPrompt, schemaSystemPrompt } = loadAiContext();
 
 // --- 3. 模型与解析器初始化 ---
 
@@ -76,14 +108,10 @@ const schemaParser = new JsonOutputParser<Component[]>();
 // --- 4. 阶段一：意图识别链 ---
 
 const intentChain = RunnableSequence.from([
+  // 1. 动态构建消息列表
   async (input: { text: string; image_data: string | null }) => {
-    const messages = [
-      new SystemMessage(`
-你是一个专业的前端 UI 设计师和低代码架构师。
-任务：分析用户提供的文本描述和（可选）UI 截图，输出一个结构化的中间意图 JSON。
-输出格式：{ "description": string, "layout": object, "components": array }
-规则：输出必须是纯 JSON，不含 Markdown、注释或代码块。
-`),
+    const messages: (SystemMessage | HumanMessage)[] = [
+      new SystemMessage(intentSystemPrompt), // ✅ 使用从文件加载的提示词
       new HumanMessage(
         `请根据以下内容生成“中间意图” JSON：\n\n"${input.text}"`
       ),
@@ -105,35 +133,26 @@ const intentChain = RunnableSequence.from([
     return messages;
   },
 
-  // --- 模型调用阶段 ---
+  // 2. 调用多模态模型
   async (messages) => {
     try {
-      console.log("🧠 调试信息: 正在调用阶段一模型");
-      console.log("🔑 OPENAI_BASE_URL =", baseUrl);
-      console.log(
-        "🔑 OPENAI_API_KEY (前5位) =",
-        process.env.OPENAI_API_KEY?.slice(0, 5) || "未定义"
-      );
-      console.log("🧾 消息数量 =", messages.length);
-
+      console.log("🧠 调试信息: 正在调用阶段一模型 (Vision)");
+      // ... (其他日志保持不变)
       const response = await visionModel.invoke(messages);
-      console.log("✅ 模型原始响应对象:", response);
-
       const content = response?.content ?? null;
-      if (!content) throw new Error("阶段一输出为空");
-
-      console.log("🧩 模型输出内容预览:", content.slice(0, 150));
-      return { content }; // ✅ 确保返回标准结构
+      if (!content) throw new Error("阶段一模型输出为空");
+      console.log("✅ 阶段一原始响应 (预览):", String(content).slice(0, 150));
+      return { content };
     } catch (err: any) {
       console.error("❌ 阶段一模型调用失败:", err.message || err);
       throw err;
     }
   },
 
+  // 3. 解析 JSON 输出
   async (aiMessage) => {
     try {
-      const parsed = await intentParser.invoke(aiMessage.content);
-      return parsed;
+      return await intentParser.invoke(aiMessage.content as string);
     } catch (err) {
       console.error("❌ 阶段一 JSON 解析失败: 模型输出非纯 JSON");
       console.error("🪶 原始输出:", aiMessage?.content);
@@ -144,46 +163,33 @@ const intentChain = RunnableSequence.from([
 
 // --- 5. 阶段二：Schema 生成链 ---
 
+/**
+ * @constant SCHEMA_HUMAN_TEMPLATE
+ * @description 阶段二（Schema 生成）的用户提示词模板。
+ */
+const SCHEMA_HUMAN_TEMPLATE = new PromptTemplate({
+  template: "【用户意图】\n{user_intent_json}\n\n请严格输出 Component[] JSON：",
+  inputVariables: ["user_intent_json"],
+});
+
 const schemaGenerationChain = RunnableSequence.from([
+  // 1. 构建消息列表
   async (input: { user_intent_json: string }) => {
-    const systemPrompt = `
-你是一个低代码平台 Schema 生成引擎。
-任务：根据“页面意图 JSON”和“物料库”生成 Component[] JSON。
-严格输出合法 JSON 数组，无解释、无代码块。
-
-interface Component {
-  id: number;
-  name: string;
-  desc: string;
-  props: any;
-  styles?: object;
-  parentId?: number;
-  children?: Component[];
-}
-
-【物料库】
-${materialsListJson}
-
-【黄金标准范例】
-${schemaExampleJson}
-`;
+    const humanMessage = await SCHEMA_HUMAN_TEMPLATE.format(input);
     return [
-      new SystemMessage(systemPrompt),
-      new HumanMessage(
-        `【用户意图】\n${input.user_intent_json}\n\n请严格输出 Component[] JSON：`
-      ),
+      new SystemMessage(schemaSystemPrompt), // ✅ 使用从文件加载并注入的提示词
+      new HumanMessage(humanMessage),
     ];
   },
 
+  // 2. 调用生成模型
   async (messages) => {
     try {
-      console.log("🧠 调试信息: 正在调用阶段二模型");
+      console.log("🧠 调试信息: 正在调用阶段二模型 (Generation)");
       const response = await generationModel.invoke(messages);
-      console.log("✅ 阶段二原始响应:", response);
-
       const content = response?.content ?? null;
       if (!content) throw new Error("阶段二输出为空");
-
+      console.log("✅ 阶段二原始响应 (预览):", String(content).slice(0, 150));
       return { content };
     } catch (err: any) {
       console.error("❌ 阶段二模型调用失败:", err.message || err);
@@ -191,10 +197,10 @@ ${schemaExampleJson}
     }
   },
 
+  // 3. 解析 JSON 输出
   async (aiMessage) => {
     try {
-      const parsed = await schemaParser.invoke(aiMessage.content);
-      return parsed;
+      return await schemaParser.invoke(aiMessage.content as string);
     } catch (err) {
       console.error("❌ 阶段二 JSON 解析失败: 模型输出非纯 JSON");
       console.error("🪶 原始输出:", aiMessage?.content);
@@ -230,7 +236,6 @@ app.post("/api/generate-page", async (req, res) => {
     };
 
     console.log("\n🚀 收到请求：", input.text.slice(0, 100));
-
     const finalSchema = await mainChain.invoke(input);
 
     console.log(
