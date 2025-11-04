@@ -1,0 +1,829 @@
+[
+  {
+    "id": 1,
+    "name": "Page",
+    "desc": "页面",
+    "props": {},
+    "styles": {
+      "backgroundColor": "#f5f7fa",
+      "padding": "24px"
+    },
+    "children": [
+      {
+        "id": 1001,
+        "name": "Container",
+        "desc": "容器",
+        "parentId": 1,
+        "props": {},
+        "styles": {
+          "maxWidth": "1500px",
+          "margin": "0 auto",
+          "padding": "24px",
+          "backgroundColor": "#ffffff",
+          "borderRadius": "12px",
+          "boxShadow": "0 6px 18px rgba(0,0,0,0.08)",
+          "display": "flex",
+          "flexDirection": "column",
+          "justifyContent": "center"
+        },
+        "children": [
+          {
+            "id": 1002,
+            "name": "Breadcrumb",
+            "desc": "面包屑",
+            "parentId": 1001,
+            "props": {
+              "items": [
+                {
+                  "title": "仪表盘"
+                },
+                {
+                  "title": "组件库"
+                },
+                {
+                  "title": "覆盖测试"
+                }
+              ]
+            },
+            "styles": {
+              "marginBottom": "16px"
+            }
+          },
+          {
+            "id": 1003,
+            "name": "PageHeader",
+            "desc": "页头",
+            "parentId": 1001,
+            "props": {
+              "title": "Ant Design 组件覆盖",
+              "subTitle": "用于验证出码的完整 Schema 示例"
+            },
+            "styles": {
+              "marginBottom": "20px"
+            }
+          },
+          {
+            "id": 1004,
+            "name": "Menu",
+            "desc": "导航菜单",
+            "parentId": 1001,
+            "props": {
+              "mode": "horizontal",
+              "items": [
+                {
+                  "key": "overview",
+                  "label": "概览"
+                },
+                {
+                  "key": "analysis",
+                  "label": "分析"
+                },
+                {
+                  "key": "settings",
+                  "label": "设置"
+                }
+              ]
+            },
+            "styles": {
+              "marginBottom": "20px",
+              "borderRadius": "8px",
+              "overflow": "hidden"
+            }
+          },
+          {
+            "id": 1005,
+            "name": "Space",
+            "desc": "间距",
+            "parentId": 1001,
+            "props": {
+              "align": "center",
+              "direction": "vertical",
+              "size": "middle"
+            },
+            "children": [
+              {
+                "id": 1006,
+                "name": "Grid",
+                "desc": "栅格-行",
+                "parentId": 1005,
+                "props": {
+                  "gutter": 24
+                },
+                "children": [
+                  {
+                    "id": 1007,
+                    "name": "GridColumn",
+                    "desc": "栅格-列",
+                    "parentId": 1006,
+                    "props": {
+                      "span": 16
+                    },
+                    "styles": {
+                      "display": "flex",
+                      "flexDirection": "column",
+                      "gap": "24px"
+                    },
+                    "children": [
+                      {
+                        "id": 1008,
+                        "name": "Card",
+                        "desc": "卡片",
+                        "parentId": 1007,
+                        "props": {
+                          "title": "项目概览",
+                          "bordered": true,
+                          "hoverable": true
+                        },
+                        "styles": {
+                          "borderRadius": "1px"
+                        },
+                        "children": [
+                          {
+                            "id": 1009,
+                            "name": "Space",
+                            "desc": "间距",
+                            "parentId": 1008,
+                            "props": {
+                              "direction": "vertical",
+                              "size": "middle"
+                            },
+                            "children": [
+                              {
+                                "id": 1010,
+                                "name": "Typography",
+                                "desc": "排版",
+                                "parentId": 1009,
+                                "props": {
+                                  "type": "Title",
+                                  "content": "低代码出码覆盖验证",
+                                  "level": 4
+                                }
+                              },
+                              {
+                                "id": 1011,
+                                "name": "Typography",
+                                "desc": "排版",
+                                "parentId": 1009,
+                                "props": {
+                                  "type": "Paragraph",
+                                  "content": "此区域展示按钮、提示、下拉等需要特殊处理的组件。"
+                                },
+                                "styles": {
+                                  "color": "#595959"
+                                }
+                              },
+                              {
+                                "id": 1012,
+                                "name": "Space",
+                                "desc": "间距",
+                                "parentId": 1009,
+                                "props": {
+                                  "direction": "horizontal",
+                                  "size": "middle"
+                                },
+                                "children": [
+                                  {
+                                    "id": 1013,
+                                    "name": "Button",
+                                    "desc": "按钮",
+                                    "parentId": 1012,
+                                    "props": {
+                                      "type": "primary",
+                                      "text": "创建任务",
+                                      "onClick": {
+                                        "actions": [
+                                          {
+                                            "type": "componentMethod",
+                                            "config": {
+                                              "componentId": 2000,
+                                              "method": "open",
+                                              "args": {}
+                                            }
+                                          },
+                                          {
+                                            "type": "showMessage",
+                                            "config": {
+                                              "type": "success",
+                                              "text": "aaa"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "id": 1014,
+                                    "name": "Tooltip",
+                                    "desc": "文字提示",
+                                    "parentId": 1012,
+                                    "props": {
+                                      "title": "刷新数据",
+                                      "placement": "top"
+                                    },
+                                    "children": [
+                                      {
+                                        "id": 1015,
+                                        "name": "Icon",
+                                        "desc": "图标",
+                                        "parentId": 1014,
+                                        "props": {
+                                          "icon": "ReloadOutlined",
+                                          "spin": false
+                                        },
+                                        "styles": {
+                                          "fontSize": "18px",
+                                          "color": "#1677ff"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "id": 1016,
+                                    "name": "Dropdown",
+                                    "desc": "下拉菜单",
+                                    "parentId": 1012,
+                                    "props": {
+                                      "buttonText": "更多操作",
+                                      "trigger": "click",
+                                      "menu": {
+                                        "items": [
+                                          {
+                                            "key": "refresh",
+                                            "label": "刷新"
+                                          },
+                                          {
+                                            "key": "duplicate",
+                                            "label": "复制"
+                                          },
+                                          {
+                                            "key": "archive",
+                                            "label": "归档"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "id": 1017,
+                        "name": "List",
+                        "desc": "列表",
+                        "parentId": 1007,
+                        "props": {
+                          "bordered": true,
+                          "header": "最近更新",
+                          "size": "default"
+                        },
+                        "children": [
+                          {
+                            "id": 1018,
+                            "name": "ListItem",
+                            "desc": "列表项",
+                            "parentId": 1017,
+                            "props": {},
+                            "styles": {
+                              "display": "flex",
+                              "justifyContent": "space-between"
+                            },
+                            "children": [
+                              {
+                                "id": 1019,
+                                "name": "Typography",
+                                "desc": "排版",
+                                "parentId": 1018,
+                                "props": {
+                                  "type": "Text",
+                                  "content": "设计规范更新",
+                                  "strong": true
+                                }
+                              },
+                              {
+                                "id": 1020,
+                                "name": "Typography",
+                                "desc": "排版",
+                                "parentId": 1018,
+                                "props": {
+                                  "type": "Text",
+                                  "content": "2025-08-08"
+                                },
+                                "styles": {
+                                  "color": "#8c8c8c"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": 1021,
+                            "name": "ListItem",
+                            "desc": "列表项",
+                            "parentId": 1017,
+                            "props": {},
+                            "styles": {
+                              "display": "flex",
+                              "justifyContent": "space-between"
+                            },
+                            "children": [
+                              {
+                                "id": 1022,
+                                "name": "Typography",
+                                "desc": "排版",
+                                "parentId": 1021,
+                                "props": {
+                                  "type": "Text",
+                                  "content": "后台任务执行"
+                                }
+                              },
+                              {
+                                "id": 1023,
+                                "name": "Typography",
+                                "desc": "排版",
+                                "parentId": 1021,
+                                "props": {
+                                  "type": "Text",
+                                  "content": "成功",
+                                  "strong": true
+                                },
+                                "styles": {
+                                  "color": "#52c41a"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "id": 1024,
+                        "name": "Table",
+                        "desc": "表格",
+                        "parentId": 1007,
+                        "props": {
+                          "bordered": true,
+                          "size": "middle",
+                          "url": "https://mock-api.example.com/list",
+                          "showHeader": true
+                        },
+                        "styles": {
+                          "backgroundColor": "#ffffff"
+                        },
+                        "children": [
+                          {
+                            "id": 1025,
+                            "name": "TableColumn",
+                            "desc": "表格列",
+                            "parentId": 1024,
+                            "props": {
+                              "title": "任务",
+                              "dataIndex": "task",
+                              "type": "text"
+                            }
+                          },
+                          {
+                            "id": 1026,
+                            "name": "TableColumn",
+                            "desc": "表格列",
+                            "parentId": 1024,
+                            "props": {
+                              "title": "负责人",
+                              "dataIndex": "owner",
+                              "type": "text"
+                            }
+                          },
+                          {
+                            "id": 1027,
+                            "name": "TableColumn",
+                            "desc": "表格列",
+                            "parentId": 1024,
+                            "props": {
+                              "title": "更新时间",
+                              "dataIndex": "updatedAt",
+                              "type": "date"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": 1028,
+                        "name": "Tabs",
+                        "desc": "标签页",
+                        "parentId": 1007,
+                        "props": {
+                          "type": "card",
+                          "tabPosition": "top",
+                          "defaultActiveKey": "overview"
+                        },
+                        "children": [
+                          {
+                            "id": 1029,
+                            "name": "TabPane",
+                            "desc": "标签页",
+                            "parentId": 1028,
+                            "props": {
+                              "tab": "概览"
+                            },
+                            "styles": {
+                              "padding": "16px"
+                            },
+                            "children": [
+                              {
+                                "id": 1030,
+                                "name": "Space",
+                                "desc": "间距",
+                                "parentId": 1029,
+                                "props": {
+                                  "direction": "vertical",
+                                  "size": "middle"
+                                },
+                                "children": [
+                                  {
+                                    "id": 1031,
+                                    "name": "Avatar",
+                                    "desc": "头像",
+                                    "parentId": 1030,
+                                    "props": {
+                                      "size": "large",
+                                      "icon": "UserOutlined"
+                                    }
+                                  },
+                                  {
+                                    "id": 1032,
+                                    "name": "Typography",
+                                    "desc": "排版",
+                                    "parentId": 1030,
+                                    "props": {
+                                      "type": "Paragraph",
+                                      "content": "通过头像和图片展示基础多媒体组件。"
+                                    }
+                                  },
+                                  {
+                                    "id": 1033,
+                                    "name": "Image",
+                                    "desc": "图片",
+                                    "parentId": 1030,
+                                    "props": {
+                                      "width": 240,
+                                      "src": "https://images.unsplash.it/photo-1582719478250-c89cae4dc85b",
+                                      "preview": true
+                                    },
+                                    "styles": {
+                                      "borderRadius": "8px"
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "id": 1034,
+                            "name": "TabPane",
+                            "desc": "标签页",
+                            "parentId": 1028,
+                            "props": {
+                              "tab": "备注"
+                            },
+                            "styles": {
+                              "padding": "16px"
+                            },
+                            "children": [
+                              {
+                                "id": 1035,
+                                "name": "Typography",
+                                "desc": "排版",
+                                "parentId": 1034,
+                                "props": {
+                                  "type": "Paragraph",
+                                  "content": "可以在此处放置更多说明或链接。"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": 1036,
+                    "name": "GridColumn",
+                    "desc": "栅格-列",
+                    "parentId": 1006,
+                    "props": {
+                      "span": 8
+                    },
+                    "styles": {
+                      "display": "flex",
+                      "flexDirection": "column",
+                      "gap": "24px"
+                    },
+                    "children": [
+                      {
+                        "id": 1037,
+                        "name": "Form",
+                        "desc": "表单",
+                        "parentId": 1036,
+                        "props": {
+                          "layout": "vertical",
+                          "colon": false
+                        },
+                        "styles": {
+                          "padding": "20px",
+                          "borderRadius": "10px",
+                          "border": "1px solid #f0f0f0"
+                        },
+                        "children": [
+                          {
+                            "id": 1038,
+                            "name": "FormItem",
+                            "desc": "表单项",
+                            "parentId": 1037,
+                            "props": {
+                              "name": "userName",
+                              "label": "姓名"
+                            },
+                            "children": [
+                              {
+                                "id": 1039,
+                                "name": "Input",
+                                "desc": "输入框",
+                                "parentId": 1038,
+                                "props": {
+                                  "placeholder": "请输入姓名"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": 1040,
+                            "name": "FormItem",
+                            "desc": "表单项",
+                            "parentId": 1037,
+                            "props": {
+                              "name": "age",
+                              "label": "年龄"
+                            },
+                            "children": [
+                              {
+                                "id": 1041,
+                                "name": "InputNumber",
+                                "desc": "数字输入框",
+                                "parentId": 1040,
+                                "props": {
+                                  "min": 18,
+                                  "max": 75,
+                                  "placeholder": "请输入年龄"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": 1042,
+                            "name": "FormItem",
+                            "desc": "表单项",
+                            "parentId": 1037,
+                            "props": {
+                              "name": "role",
+                              "label": "角色"
+                            },
+                            "children": [
+                              {
+                                "id": 1043,
+                                "name": "Select",
+                                "desc": "选择器",
+                                "parentId": 1042,
+                                "props": {
+                                  "placeholder": "请选择角色",
+                                  "options": [
+                                    {
+                                      "label": "管理员",
+                                      "value": "admin"
+                                    },
+                                    {
+                                      "label": "编辑者",
+                                      "value": "editor"
+                                    },
+                                    {
+                                      "label": "访客",
+                                      "value": "viewer"
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": 1044,
+                            "name": "FormItem",
+                            "desc": "表单项",
+                            "parentId": 1037,
+                            "props": {
+                              "name": "status",
+                              "label": "状态"
+                            },
+                            "children": [
+                              {
+                                "id": 1045,
+                                "name": "Radio",
+                                "desc": "单选框",
+                                "parentId": 1044,
+                                "props": {
+                                  "optionType": "button",
+                                  "buttonStyle": "solid",
+                                  "options": [
+                                    {
+                                      "label": "启用",
+                                      "value": "enabled"
+                                    },
+                                    {
+                                      "label": "暂停",
+                                      "value": "paused"
+                                    },
+                                    {
+                                      "label": "停用",
+                                      "value": "disabled"
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": 1046,
+                            "name": "FormItem",
+                            "desc": "表单项",
+                            "parentId": 1037,
+                            "props": {
+                              "name": "notify",
+                              "label": "通知",
+                              "valuePropName": "checked"
+                            },
+                            "children": [
+                              {
+                                "id": 1047,
+                                "name": "Switch",
+                                "desc": "开关",
+                                "parentId": 1046,
+                                "props": {
+                                  "defaultChecked": true,
+                                  "checkedChildren": "开",
+                                  "unCheckedChildren": "关"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": 1048,
+                            "name": "FormItem",
+                            "desc": "表单项",
+                            "parentId": 1037,
+                            "props": {
+                              "name": "score",
+                              "label": "评分"
+                            },
+                            "children": [
+                              {
+                                "id": 1049,
+                                "name": "Slider",
+                                "desc": "滑动输入",
+                                "parentId": 1048,
+                                "props": {
+                                  "min": 0,
+                                  "max": 100,
+                                  "step": 5,
+                                  "range": true
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": 1050,
+                            "name": "FormItem",
+                            "desc": "表单项",
+                            "parentId": 1037,
+                            "props": {
+                              "name": "attachments",
+                              "label": "附件"
+                            },
+                            "children": [
+                              {
+                                "id": 1051,
+                                "name": "Upload",
+                                "desc": "上传",
+                                "parentId": 1050,
+                                "props": {
+                                  "listType": "picture-card",
+                                  "action": "https://www.mocky.io/v2/5cc8019d300000980a055e76"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": 1052,
+                            "name": "FormItem",
+                            "desc": "表单项",
+                            "parentId": 1037,
+                            "props": {
+                              "name": "submit",
+                              "label": ""
+                            },
+                            "children": [
+                              {
+                                "id": 1053,
+                                "name": "Button",
+                                "desc": "按钮",
+                                "parentId": 1052,
+                                "props": {
+                                  "type": "primary",
+                                  "text": "提交"
+                                },
+                                "styles": {
+                                  "width": "100%"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "styles": {
+                  "width": "1200px",
+                  "display": "flex",
+                  "justifyContent": "center",
+                  "alignItems": "center"
+                }
+              },
+              {
+                "id": 1054,
+                "name": "Steps",
+                "desc": "步骤条",
+                "parentId": 1005,
+                "props": {
+                  "current": 1,
+                  "items": [
+                    {
+                      "title": "准备",
+                      "description": "确认需求"
+                    },
+                    {
+                      "title": "开发",
+                      "description": "实现功能"
+                    },
+                    {
+                      "title": "发布",
+                      "description": "部署上线"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": 1055,
+                "name": "Pagination",
+                "desc": "分页",
+                "parentId": 1005,
+                "props": {
+                  "defaultCurrent": 1,
+                  "total": 120,
+                  "pageSize": 10,
+                  "showSizeChanger": true
+                },
+                "styles": {
+                  "alignSelf": "flex-end"
+                }
+              }
+            ],
+            "styles": {
+              "width": "100%"
+            }
+          }
+        ]
+      },
+      {
+        "id": 2000,
+        "name": "Modal",
+        "desc": "弹窗",
+        "parentId": 1,
+        "props": {
+          "title": "操作确认",
+          "visibleInEditor": true,
+          "open": false
+        },
+        "children": [
+          {
+            "id": 2001,
+            "name": "Typography",
+            "desc": "排版",
+            "parentId": 2000,
+            "props": {
+              "type": "Paragraph",
+              "content": "这里是弹窗内容区域，可用于验证 Modal 的 props 处理逻辑。"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

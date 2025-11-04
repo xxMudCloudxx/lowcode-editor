@@ -21,4 +21,14 @@ export default defineConfig({
     // 如果需要，可以配置 UI
     ui: true,
   },
+  server: {
+    // Vite 开发服务器代理
+    proxy: {
+      // 将所有 /api 开头的请求 转发到 http://localhost:3001
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
+  },
 });
