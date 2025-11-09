@@ -263,9 +263,13 @@ function generateJSX(
       // 使用 'type' in ... 来区分 IRLiteral 和 IRNode
       if ("type" in childrenProp && childrenProp.type === "Literal") {
         // 6b-1. 子节点是字面量
-        const childValue = (childrenProp as IRLiteral).value;
-        if (typeof childValue === "string" || typeof childValue === "number") {
-          childrenString = `${indent}  ${JSON.stringify(childValue)}`;
+        const childValueString = generatePropValueString(
+          childrenProp,
+          moduleBuilder,
+          page
+        );
+        if (childValueString !== undefined) {
+          childrenString = `${indent}  {${childValueString}}`;
         }
       } else if ("componentName" in childrenProp) {
         // 6b-2. 子节点是单个 IRNode (JSSlot)
