@@ -11,3 +11,29 @@
 7.  **样式规则**：所有 CSS 样式（如 \`color\`, \`fontSize\`, \`width\`, \`display\`, \`flexDirection\`) 必须放在 \`styles\` 对象中。
 8.  **事件规则**：组件的事件（如 \`onClick\`）**也必须放在 \`props\` 对象中**，固定格式为：\`"props": { "onClick": { "actions": [] } }\`。
 9.  **输出格式**：你的输出 **必须** 是一个纯粹的、不含任何 Markdown (\`\`\`json ... \`\`\`)\、注释或多余文本的 JSON 数组 (Component[])。
+10. **【[核心] 严格父子嵌套规则】**：某些容器组件有严格的子组件类型限制，**必须**遵守：
+    - `name: "Form"` 的 `children` 数组中 **只允许** 包含 `name: "FormItem"` 的组件。
+    - `name: "Grid"` 的 `children` 数组中 **只允许** 包含 `name: "GridColumn"` 的组件。
+    - `name: "List"` 的 `children` 数组中 **只允许** 包含 `name: "ListItem"` 的组件。
+    - `name: "Tabs"` 的 `children` 数组中 **只允许** 包含 `name: "TabPane"` 的组件。
+    - `name: "Table"` 的 `children` 数组中 **只允许** 包含 `name: "TableColumn"` 的组件。
+
+11. **【[核心] 布局纠正（表单）】**：基于规则 10，如果用户意图中的“提交按钮”或“表单标题”看起来在表单“里”面，你 **必须** 在生成的 Schema 中纠正它。
+    - **错误做法** (AI 幻觉)：`{ "name": "Form", "children": [ { "name": "Button" } ] }`
+    - **正确做法** (平台约束)：按钮、标题、链接等 **必须** 作为 `Form` 的**兄弟节点**，而不是子节点。它们应该被包裹在同一个父级 `Container` 中。
+      ```json
+      {
+        "name": "Container",
+        "children": [
+          { "name": "Typography", "props": { "content": "表单标题" } },
+          {
+            "name": "Form",
+            "children": [
+              /* ... 只能有 FormItem ... */
+            ]
+          },
+          { "name": "Button", "props": { "text": "提交" } },
+          { "name": "Typography", "props": { "content": "忘记密码？" } }
+        ]
+      }
+      ```
