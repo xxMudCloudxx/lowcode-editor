@@ -5,13 +5,7 @@
  * @description 负责将 IRNode 转换为 React TSX 代码字符串。
  */
 
-import type {
-  IRAction,
-  IRLiteral,
-  IRNode,
-  IRPage,
-  IRPropValue,
-} from "../../../types/ir";
+import type { IRAction, IRNode, IRPage, IRPropValue } from "../../../types/ir";
 import type { ModuleBuilder } from "../../../generator/module-builder";
 import { camelCase, upperFirst, uniqueId } from "lodash-es";
 import { getActionHandler } from "./handlers/actions";
