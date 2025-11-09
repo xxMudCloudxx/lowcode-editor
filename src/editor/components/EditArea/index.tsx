@@ -121,7 +121,7 @@ export function EditArea() {
 
   return (
     <div
-      className="h-full edit-area overflow-y-auto relative p-6 overflow-x-auto w-full"
+      className="h-full edit-area overflow-y-auto relative p-6 overflow-x-auto w-full @container"
       onMouseOver={handleMouseOver}
       onMouseLeave={() => {
         // 鼠标移出整个画布区域时，清空 hover 状态

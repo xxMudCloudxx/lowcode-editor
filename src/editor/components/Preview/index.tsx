@@ -126,4 +126,3 @@ export function Preview() {
 
   return <div>{rootId && <RenderNode id={rootId} />}</div>;
 }
-

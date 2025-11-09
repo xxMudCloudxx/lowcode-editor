@@ -39,7 +39,7 @@ export function AiPageDesignerModal() {
     setPrompt,
     startGeneration,
     reset,
-    applyAndClose,
+    //
   } = useAiPageDesignerStore();
 
   // 2. 从 useComponetsStore 获取 setComponents action，用于“应用” schema
@@ -54,12 +54,18 @@ export function AiPageDesignerModal() {
     startGeneration(prompt, imageUrl);
   };
 
+  /**
+   * @function handleApply
+   * @description [逻辑修改] 应用 Schema，然后重置(reset)回 idle 状态，而不是关闭模态框。
+   * @description 这允许用户在应用后继续迭代修改。
+   */
   const handleApply = () => {
     if (generatedSchema) {
       // 关键：将 AI 生成的 Schema 注入到主画布 store
       setComponents(generatedSchema);
       message.success("AI 页面已应用！");
-      applyAndClose(); // 关闭模态框并重置 AI 状态
+      //
+      reset();
     }
   };
 
@@ -84,13 +90,14 @@ export function AiPageDesignerModal() {
           <Result
             status="success"
             title="页面生成成功！"
-            subTitle="您可以将生成的页面应用到画布，或选择重新生成。"
+            subTitle="您可以将生成的页面应用到画布，或返回修改。"
             extra={[
               <Button type="primary" key="apply" onClick={handleApply}>
                 应用到画布
               </Button>,
+              //
               <Button key="regenerate" onClick={reset}>
-                不满意，重新生成
+                返回修改
               </Button>,
             ]}
           />
@@ -172,7 +179,6 @@ export function AiPageDesignerModal() {
       onCancel={closeModal}
       footer={renderFooter()}
       width={status === "idle" ? 600 : 520}
-      // 关键：我们不使用 destroyOnHidden，
       // 这样即使用户关闭模态框，组件状态（和内部的 Spin）依然保留
       destroyOnHidden={false}
       centered

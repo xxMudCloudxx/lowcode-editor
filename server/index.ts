@@ -19,6 +19,7 @@ import { PromptTemplate } from "@langchain/core/prompts";
 // --- 1. 环境与配置初始化 ---
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+const API_TIMEOUT_MS = 30000; // 增加一个 30 秒的超时时间
 
 const app = express();
 const port = 3001;
@@ -68,7 +69,6 @@ function loadAiContext(): {
       .replace("{{MATERIALS_LIST}}", materialsListJson)
       .replace("{{SCHEMA_EXAMPLE}}", schemaExampleJson);
 
-    console.log("[AI Server] ✅ 动态上下文与提示词加载并注入成功。");
     return {
       materialsListJson, // (保留，也许其他地方会用)
       schemaExampleJson, // (保留，也许其他地方会用)
@@ -81,8 +81,9 @@ function loadAiContext(): {
   }
 }
 
+// TODO: 由于开发环境中提示词会频繁修改，这里先提示词的获取移到函数调用的内部，实现热加载
 // 在服务启动时加载所有内容
-const { intentSystemPrompt, schemaSystemPrompt } = loadAiContext();
+// const { intentSystemPrompt, schemaSystemPrompt } = loadAiContext();
 
 // --- 3. 模型与解析器初始化 ---
 
@@ -92,14 +93,14 @@ const visionModel = new ChatOpenAI({
   model: "gpt-4o-mini",
   temperature: 0.2,
   apiKey: process.env.OPENAI_API_KEY,
-  configuration: { baseURL: baseUrl },
+  configuration: { baseURL: baseUrl, timeout: API_TIMEOUT_MS },
 });
 
 const generationModel = new ChatOpenAI({
   model: "gpt-4o-mini",
   temperature: 0,
   apiKey: process.env.OPENAI_API_KEY,
-  configuration: { baseURL: baseUrl },
+  configuration: { baseURL: baseUrl, timeout: API_TIMEOUT_MS },
 });
 
 const intentParser = new JsonOutputParser();
@@ -110,6 +111,7 @@ const schemaParser = new JsonOutputParser<Component[]>();
 const intentChain = RunnableSequence.from([
   // 1. 动态构建消息列表
   async (input: { text: string; image_data: string | null }) => {
+    const { intentSystemPrompt } = loadAiContext();
     const messages: (SystemMessage | HumanMessage)[] = [
       new SystemMessage(intentSystemPrompt), // ✅ 使用从文件加载的提示词
       new HumanMessage(
@@ -175,6 +177,7 @@ const SCHEMA_HUMAN_TEMPLATE = new PromptTemplate({
 const schemaGenerationChain = RunnableSequence.from([
   // 1. 构建消息列表
   async (input: { user_intent_json: string }) => {
+    const { schemaSystemPrompt } = loadAiContext();
     const humanMessage = await SCHEMA_HUMAN_TEMPLATE.format(input);
     return [
       new SystemMessage(schemaSystemPrompt), // ✅ 使用从文件加载并注入的提示词
