@@ -1,8 +1,13 @@
 // src/editor/hooks/useComponentStyleManager.ts
+
 import { useState, useEffect, useMemo } from "react";
 import type { CSSProperties } from "react";
 import { debounce } from "lodash-es";
-import { useComponetsStore } from "../stores/components";
+import {
+  useComponetsStore,
+  getComponentById,
+  type Component,
+} from "../stores/components";
 import {
   convertStyleObjectToCssString,
   parseCssStringToObject,
@@ -12,7 +17,17 @@ import {
  * 负责管理组件样式状态和更新逻辑的 Hook
  */
 export function useComponentStyleManager(form: any) {
-  const { curComponent, updateComponentStyles } = useComponetsStore();
+  const { components, curComponentId, updateComponentStyles } =
+    useComponetsStore();
+
+  // 在 UI 层按需派生当前选中组件，避免在 store 中冗余存储快照
+  const curComponent = useMemo<Component | null>(
+    () =>
+      curComponentId != null
+        ? getComponentById(curComponentId, components)
+        : null,
+    [curComponentId, components]
+  );
 
   // State: 存储 CSS 编辑器中的文本内容
   const [css, setCss] = useState<string>(".comp{\n\n}");
@@ -27,7 +42,7 @@ export function useComponentStyleManager(form: any) {
       form.resetFields();
       setCss(".comp{\n\n}");
     }
-  }, [curComponent?.id, curComponent?.styles, form]); // 使用 curComponent.id 确保组件切换时触发
+  }, [curComponent?.id, curComponent?.styles, form]);
 
   // 表单驱动的样式更新
   const handleFormValueChange = (changedValues: CSSProperties) => {
@@ -61,3 +76,4 @@ export function useComponentStyleManager(form: any) {
     handleEditorChange,
   };
 }
+

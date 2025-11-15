@@ -4,7 +4,7 @@
  * 使用 Zustand 管理编辑器画布中的所有组件实例状态。
  * 这个 store 是整个应用的核心数据中心，负责：
  * - 存储画布上所有组件的树状结构 (components)
- * - 管理当前选中的组件 (curComponentId, curComponent)
+ * - 管理当前选中的组件 (curComponentId)
  * - 控制编辑/预览模式 (mode)
  * - 提供对组件进行 CRUD (增删改查) 和移动、复制/粘贴操作的 actions
  * - 通过组合 `temporal` (时间旅行)、`persist` (持久化) 和 `immer` (不可变更新) 三个中间件，实现了撤销/重做、状态本地存储和安全的 state 更新。
@@ -40,7 +40,6 @@ interface State {
   components: Component[]; // 画布上所有组件的根节点列表，通常只有一个 Page 组件
   mode: "edit" | "preview"; // 编辑器当前模式
   curComponentId?: number | null; // 当前选中组件的 ID
-  curComponent: Component | null; // 当前选中组件的完整对象，为方便访问而冗余存储，是 components 中对应组件的一份快照
   clipboard: Component | null; // 剪切板状态，用于存储被复制的组件信息
 }
 
@@ -90,7 +89,6 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
       desc: "页面",
     },
   ],
-  curComponent: null,
   curComponentId: null,
   mode: "edit",
   clipboard: null,
@@ -104,11 +102,6 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
   setComponents: (components) => {
     set((state) => {
       state.components = components;
-
-      // 关键：在组件树变化后（如大纲树拖拽排序），需要同步更新 curComponent 的引用，
-      // 确保右侧面板等依赖 curComponent 的地方能拿到最新的数据。
-      if (state.curComponentId)
-        state.curComponent = getComponentById(state.curComponentId, components);
     });
   },
 
@@ -142,11 +135,6 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
       if (!disComponent.children) disComponent.children = [];
       sourComponent.parentId = disId;
       disComponent.children.push(sourComponent);
-
-      // 关键: 如果移动的是当前选中的组件，需要同步更新 curComponent 的引用
-      if (state.curComponentId === sourId) {
-        state.curComponent = sourComponent;
-      }
     });
   },
 
@@ -171,11 +159,6 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
       component.styles = replace
         ? { ...styles }
         : { ...component.styles, ...styles };
-
-      // 关键: 保持 curComponent (数据副本) 与 components 的同步
-      if (state.curComponent?.id === ComponentId) {
-        state.curComponent = component;
-      }
     });
   },
 
@@ -190,8 +173,6 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
     useComponetsStore.temporal.getState().pause();
     set((state) => {
       state.curComponentId = comId;
-      // 关键: 更新 ID 的同时，更新 curComponent 这个数据副本，以供UI消费
-      state.curComponent = getComponentById(comId, state.components);
     });
     useComponetsStore.temporal.getState().resume();
   },
@@ -241,7 +222,6 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
       // 关键: 如果删除的是当前选中的组件，需要同步清空选中状态
       if (state.curComponentId === componentId) {
         state.curComponentId = null;
-        state.curComponent = null;
       }
     });
   },
@@ -264,9 +244,7 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
         component.props = { ...component.props, ...props };
       }
 
-      if (state.curComponent?.id === componentId) {
-        state.curComponent = component;
-      }
+      // 如果更新的是当前选中组件的 props，curComponent 将在 UI 层通过派生逻辑自动同步
     });
   },
 
@@ -284,7 +262,6 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
           desc: "页面",
         },
       ];
-      state.curComponent = null;
       state.curComponentId = null;
       state.clipboard = null;
     });

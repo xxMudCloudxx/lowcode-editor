@@ -1,8 +1,12 @@
 // src/editor/components/Setting/ComponentAttr/index.tsx
 
 import { Form, Input } from "antd";
-import { useComponetsStore } from "../../../stores/components";
 import { useMemo } from "react";
+import {
+  useComponetsStore,
+  getComponentById,
+  type Component,
+} from "../../../stores/components";
 import { useComponentConfigStore } from "../../../stores/component-config";
 import { getValuePropNameFor } from "../../../utils/formUtils";
 import { FormElementRenderer } from "./FormElementRenderer";
@@ -10,10 +14,19 @@ import { useComponentAttrForm } from "../../../hooks/useComponentAttrForm";
 import FormItem from "antd/es/form/FormItem";
 
 export function ComponentAttr() {
-  const { curComponent } = useComponetsStore();
+  const { curComponentId, components } = useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
 
-  // 调用 Hook，获取表单实例和事件处理器
+  // 在 UI 层按需派生当前选中组件
+  const curComponent = useMemo<Component | null>(
+    () =>
+      curComponentId != null
+        ? getComponentById(curComponentId, components)
+        : null,
+    [curComponentId, components]
+  );
+
+  // 调用 Hook，获取表单实例和事件处理逻辑
   const { form, handleValuesChange } = useComponentAttrForm(curComponent);
 
   const meta = useMemo(
@@ -49,7 +62,7 @@ export function ComponentAttr() {
             label={setter.label}
             valuePropName={valuePropName}
           >
-            {/* 5. 调用独立的渲染器组件 */}
+            {/* 调用独立的渲染器组件 */}
             <FormElementRenderer setting={setter} />
           </FormItem>
         );
@@ -57,3 +70,4 @@ export function ComponentAttr() {
     </Form>
   );
 }
+

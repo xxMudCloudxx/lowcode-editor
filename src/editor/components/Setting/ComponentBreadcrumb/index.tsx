@@ -34,7 +34,17 @@ const BreadcrumbItem = ({
 };
 
 export function ComponentBreadcrumb() {
-  const { curComponent, components, setCurComponentId } = useComponetsStore();
+  const { components, curComponentId, setCurComponentId } =
+    useComponetsStore();
+
+  // 在 UI 层派生当前选中组件
+  const curComponent = useMemo(
+    () =>
+      curComponentId != null
+        ? getComponentById(curComponentId, components)
+        : null,
+    [curComponentId, components]
+  );
 
   const breadcrumbItems = useMemo(() => {
     const items: Component[] = [];

@@ -9,23 +9,36 @@
 
 import { useEffect, useMemo } from "react";
 import { message } from "antd";
-import { useComponetsStore } from "../stores/components";
+import {
+  useComponetsStore,
+  getComponentById,
+  type Component,
+} from "../stores/components";
 import { useStore } from "zustand";
 import { debounce } from "lodash-es";
 
 /**
- * @description 一个独立的 Hook，用于为编辑器提供全局快捷键功能。
- * 它不接收任何 props，在 `ReactPlayground` 组件中被调用一次即可生效。
+ * @description 为编辑器提供全局快捷键功能的 Hook。
+ * 在顶层组件中调用一次即可生效。
  */
 export function useShortcutKeys() {
   const {
     curComponentId,
-    curComponent,
+    components,
     copyComponents,
     pasteComponents,
     deleteComponent,
-    setCurComponentId, // 新增，用于删除后清空选中
+    setCurComponentId,
   } = useComponetsStore();
+
+  // 在 UI 层按需派生当前选中组件，避免在 store 中冗余存储快照
+  const curComponent = useMemo<Component | null>(
+    () =>
+      curComponentId != null
+        ? getComponentById(curComponentId, components)
+        : null,
+    [curComponentId, components]
+  );
 
   const { undo, redo, pastStates, futureStates } = useStore(
     useComponetsStore.temporal
@@ -39,8 +52,7 @@ export function useShortcutKeys() {
     "Table",
   ]);
 
-  // 使用 lodash 的 debounce 创建一个防抖版的 message 函数，
-  // 避免在高频操作（如快速撤销）时消息提示过于频繁，提升用户体验。
+  // 使用 lodash 的 debounce 创建一个防抖版 message 函数
   const debouncedMessage = useMemo(
     () =>
       debounce((text: string) => {
@@ -51,11 +63,10 @@ export function useShortcutKeys() {
 
   useEffect(() => {
     /**
-     * @description 全局键盘事件处理器。
-     * @param {KeyboardEvent} e - 键盘事件对象。
+     * @description 全局键盘事件处理器
      */
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 关键校验：防止在输入框、文本域或任何可编辑元素中触发快捷键。
+      // 防止在输入框、文本域或任何可编辑元素中触发快捷键
       const activeElement = document.activeElement;
       if (
         activeElement?.tagName === "INPUT" ||
@@ -65,16 +76,14 @@ export function useShortcutKeys() {
         return;
       }
 
-      // 判断是否按下了 Cmd (Mac) 或 Ctrl (Windows)
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
       const isShift = e.shiftKey;
 
-      // 使用 toLowerCase() 确保大小写不敏感
       switch (e.key.toLowerCase()) {
         // 复制：Cmd/Ctrl + C
         case "c":
           if (isCmdOrCtrl && curComponentId) {
-            e.preventDefault(); // 阻止浏览器默认的复制行为
+            e.preventDefault();
             copyComponents(curComponentId);
             debouncedMessage("复制成功");
           }
@@ -121,7 +130,7 @@ export function useShortcutKeys() {
             // 根组件 Page(id=1) 不允许删除
             e.preventDefault();
             deleteComponent(curComponentId);
-            setCurComponentId(null); // 删除后清空选中状态
+            setCurComponentId(null);
             debouncedMessage("删除成功");
           }
           break;
@@ -133,12 +142,9 @@ export function useShortcutKeys() {
 
     window.addEventListener("keydown", handleKeyDown);
 
-    // useEffect 的清理函数：组件卸载时移除事件监听器，防止内存泄漏。
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-    // 依赖项数组包含了所有在 effect 内部使用的外部变量，
-    // 确保每次这些变量更新时，事件处理器都能拿到最新的值。
   }, [
     curComponent,
     curComponentId,
@@ -151,6 +157,7 @@ export function useShortcutKeys() {
     pastStates,
     futureStates,
     debouncedMessage,
-    ContainerList, // 虽然它是不变的，但作为最佳实践也应列入
+    ContainerList,
   ]);
 }
+

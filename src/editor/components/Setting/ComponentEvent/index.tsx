@@ -7,8 +7,12 @@
  * @module Components/Setting/ComponentEvent
  */
 import { Collapse, Input, type CollapseProps } from "antd";
-import { useState } from "react";
-import { useComponetsStore } from "../../../stores/components";
+import { useState, useMemo } from "react";
+import {
+  useComponetsStore,
+  getComponentById,
+  type Component,
+} from "../../../stores/components";
 import { useComponentConfigStore } from "../../../stores/component-config";
 
 // 引入子组件和模态框
@@ -22,9 +26,19 @@ import { ArrowIcon } from "../../common/ArrowIcon";
 
 export function ComponentEvent() {
   // --- 状态和数据获取 ---
-  const { curComponent, updateComponentProps } = useComponetsStore();
+  const { curComponentId, components, updateComponentProps } =
+    useComponetsStore();
   const { componentConfig } = useComponentConfigStore();
   const [searchKeyword, setSearchKeyword] = useState("");
+
+  // 在 UI 层按需派生当前选中组件
+  const curComponent = useMemo<Component | null>(
+    () =>
+      curComponentId != null
+        ? getComponentById(curComponentId, components)
+        : null,
+    [curComponentId, components]
+  );
 
   // 如果没有选中任何组件，则不渲染任何内容
   if (!curComponent) {

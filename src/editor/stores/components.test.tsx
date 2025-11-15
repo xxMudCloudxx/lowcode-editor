@@ -304,10 +304,6 @@ describe("useComponetsStore 核心 actions", () => {
     let container = getComponentById(303, state.components);
 
     expect(container?.styles).toEqual({ width: 100, height: 200 });
-    expect(useComponetsStore.getState().curComponent?.styles).toEqual({
-      width: 100,
-      height: 200,
-    });
 
     act(() => {
       useComponetsStore
@@ -319,9 +315,6 @@ describe("useComponetsStore 核心 actions", () => {
     container = getComponentById(303, state.components);
 
     expect(container?.styles).toEqual({ width: 320 });
-    expect(useComponetsStore.getState().curComponent?.styles).toEqual({
-      width: 320,
-    });
   });
 
   it("setCurComponentId: 应该能正确设置和清除当前选中的组件", () => {
@@ -337,7 +330,10 @@ describe("useComponetsStore 核心 actions", () => {
 
     let state = useComponetsStore.getState();
     expect(state.curComponentId).toBe(1);
-    expect(state.curComponent?.name).toBe("Page");
+    const selected = state.curComponentId
+      ? getComponentById(state.curComponentId, state.components)
+      : null;
+    expect(selected?.name).toBe("Page");
     expect(pauseSpy).toHaveBeenCalled();
     expect(resumeSpy).toHaveBeenCalled();
 
@@ -348,7 +344,10 @@ describe("useComponetsStore 核心 actions", () => {
 
     state = useComponetsStore.getState();
     expect(state.curComponentId).toBeNull();
-    expect(state.curComponent).toBeNull();
+    const selectedAfterClear = state.curComponentId
+      ? getComponentById(state.curComponentId, state.components)
+      : null;
+    expect(selectedAfterClear).toBeNull();
   });
 
   it("setMode: 能够在编辑和预览模式之间切换", () => {
