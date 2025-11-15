@@ -32,7 +32,7 @@ const ContainerList: Set<string> = new Set([
  * 大纲树组件，展示当前组件树结构，并支持通过拖拽调整层级。
  */
 export function Outline() {
-  const { components, rootId, setComponents } = useComponentsStore();
+  const { components, rootId, moveComponentInOutline } = useComponentsStore();
   const { setCurComponentId } = useUIStore();
 
   const treeData = useMemo(
@@ -46,8 +46,8 @@ export function Outline() {
    */
   const onDrop: TreeProps["onDrop"] = (info) => {
     const { dragNode, node, dropToGap } = info;
-    const dropKey = node.key;
-    const dragKey = dragNode.key;
+    const dropKey = node.key as number;
+    const dragKey = dragNode.key as number;
 
     // node.pos 是类似 '0-1-0' 的字符串，表示节点在树中的路径
     const dropPos = node.pos.split("-");
@@ -55,65 +55,7 @@ export function Outline() {
     const dropPosition =
       info.dropPosition - Number(dropPos[dropPos.length - 1]);
 
-    // 使用深拷贝来操作，避免直接修改原始 state
-    const data: ComponentTree[] = structuredClone(treeData);
-
-    // 1. 找到并移除被拖拽的节点
-    let dragObj: ComponentTree | undefined;
-
-    const loop = (
-      list: ComponentTree[],
-      key: Key,
-      callback: (node: ComponentTree, i: number, data: ComponentTree[]) => void
-    ) => {
-      for (let i = 0; i < list.length; i += 1) {
-        if (list[i].id === key) {
-          return callback(list[i], i, list);
-        }
-        if (list[i].children) {
-          loop(list[i].children!, key, callback);
-        }
-      }
-    };
-
-    loop(data, dragKey, (item, index, arr) => {
-      arr.splice(index, 1);
-      dragObj = item;
-    });
-
-    if (!dragObj) {
-      return;
-    }
-
-    // 2. 将被拖拽的节点插入到新的位置
-    if (!dropToGap) {
-      // Case 1: 拖拽到某个节点上（成为该节点的子节点）
-      loop(data, dropKey, (item) => {
-        item.children = item.children || [];
-        item.children.unshift(dragObj!);
-      });
-    } else {
-      // Case 2: 拖拽到两个节点之间的间隙（同级前后）
-      let ar: ComponentTree[] = [];
-      let i = 0;
-      loop(data, dropKey, (_item, index, arr) => {
-        ar = arr;
-        i = index;
-      });
-      if (dropPosition === -1) {
-        // 插入到目标节点的前面
-        ar.splice(i, 0, dragObj!);
-      } else {
-        // 插入到目标节点的后面
-        ar.splice(i + 1, 0, dragObj!);
-      }
-    }
-
-    // 3. 全量更新所有节点的 parentId
-    updateParentIds(data);
-
-    // 4. 调用 store action，用新的树结构替换旧的
-    setComponents(data);
+    moveComponentInOutline(dragKey, dropKey, dropToGap, dropPosition);
   };
 
   const allowDrop: TreeProps["allowDrop"] = ({ dropNode, dropPosition }) => {
@@ -134,7 +76,7 @@ export function Outline() {
   };
 
   return (
-    <div className="w-[100%] custom-scrollbar overflow-y-auto absolute overscroll-y-contain pr-6 h-[100%] pb-20">
+    <div className="w-full custom-scrollbar overflow-y-auto absolute overscroll-y-contain pr-6 h-[100%] pb-20">
       <Tree
         fieldNames={{ title: "desc", key: "id" }}
         treeData={treeData as any}
@@ -155,4 +97,3 @@ export function Outline() {
     </div>
   );
 }
-

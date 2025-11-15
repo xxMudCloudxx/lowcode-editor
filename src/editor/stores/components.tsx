@@ -94,6 +94,16 @@ interface Action {
    * 入参仍然是树状结构，内部会自动范式化为 Map
    */
   setComponents: (tree: ComponentTree[]) => void;
+
+  /**
+   * 为Outline定制的移动逻辑，避免越权
+   */
+  moveComponentInOutline: (
+    dragKey: number,
+    dropKey: number,
+    dropToGap: boolean,
+    dropPosition: number // 这是你计算后的 -1 或 1
+  ) => void;
 }
 
 // 组合后的 Store 类型
@@ -287,6 +297,60 @@ const creator: StateCreator<ComponentsStore, [["zustand/immer", never]]> = (
       if (!disComponent.children) disComponent.children = [];
       disComponent.children.push(sourId);
       sourComponent.parentId = disId; // 更新 parentId
+    });
+  },
+
+  /**
+   * @description 在大纲树（Outline）中移动一个组件，以响应拖放操作。
+   *
+   * 此方法会修改状态（state），将一个组件（由 `dragKey` 标识）从其当前的父节点
+   * 移除，并根据拖放的位置将其插入到新的父节点或位置。
+   * @param {string} dragKey - 正在被拖拽的组件的 ID。
+   * @param {string} dropKey - 拖放目标的 ID。这是组件被放置在其上或其旁边的节点。
+   * @param {boolean} dropToGap - 指示组件是（true）否被拖放到两个节点之间的“间隙”中，
+   * 还是（false）直接拖放到了另一个节点上。
+   * @param {number} dropPosition - 当 `dropToGap` 为 `true` 时，此参数生效，
+   * 用于确定相对于 `dropKey` 的确切位置。
+   * - `-1` 表示放置在 `dropKey` 节点 *之前*。
+   * - `1` （或非-1的其他值）表示放置在 `dropKey` 节点 *之后*。
+   */
+  moveComponentInOutline: (dragKey, dropKey, dropToGap, dropPosition) => {
+    set((state) => {
+      // 1. O(1) 查找
+      const sourNode = state.components[dragKey];
+      const targetNode = state.components[dropKey];
+      if (!sourNode || !targetNode) return;
+
+      // 2. 从旧父节点 O(k) 移除
+      const oldParent = state.components[sourNode.parentId!];
+      if (oldParent?.children) {
+        oldParent.children = oldParent.children.filter((id) => id !== dragKey);
+      }
+
+      // 3. 根据你的 onDrop 逻辑，在 Map 上直接操作
+      if (!dropToGap) {
+        // Case 1: 拖拽到某个节点上 (成为子节点)
+        const newParent = state.components[dropKey];
+        if (!newParent.children) newParent.children = [];
+        newParent.children.unshift(dragKey); // 插入到最前面
+        sourNode.parentId = dropKey;
+      } else {
+        // Case 2: 拖拽到间隙 (同级)
+        const newParent = state.components[targetNode.parentId!];
+        if (!newParent?.children) return; // 理论上不会发生
+
+        const targetIndex = newParent.children.indexOf(dropKey);
+        if (targetIndex === -1) return;
+
+        if (dropPosition === -1) {
+          // 插入到目标节点的前面
+          newParent.children.splice(targetIndex, 0, dragKey);
+        } else {
+          // 插入到目标节点的后面
+          newParent.children.splice(targetIndex + 1, 0, dragKey);
+        }
+        sourNode.parentId = newParent.id;
+      }
     });
   },
 });
