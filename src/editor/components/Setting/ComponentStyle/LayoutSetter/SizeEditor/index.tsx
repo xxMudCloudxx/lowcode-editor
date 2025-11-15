@@ -12,7 +12,7 @@ import PairedInputEditor from "../../../../common/PariedInputEditor";
 interface SizeEditorProps {
   value?: CSSProperties;
   onChange?: (css: CSSProperties) => void;
-  curComponentId: Number;
+  curComponentId: number;
 }
 
 const SizeEditor = (props: SizeEditorProps) => {

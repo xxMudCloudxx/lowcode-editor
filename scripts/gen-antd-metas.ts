@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+ 
 // scripts/gen-antd-metas.ts
 import * as fs from "fs";
 import * as path from "path";

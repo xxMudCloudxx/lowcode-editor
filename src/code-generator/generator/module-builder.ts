@@ -62,7 +62,7 @@ export class ModuleBuilder {
     const source = dep.package;
 
     // 优先使用 dep.exportName (例如 'Row')，否则使用 componentName (例如 'Button')
-    let importName = dep.exportName || componentName;
+    const importName = dep.exportName || componentName;
     // 使用 importName@source 作为唯一标识，避免重复添加相同的导入
     const key = `${importName}@${source}`;
 

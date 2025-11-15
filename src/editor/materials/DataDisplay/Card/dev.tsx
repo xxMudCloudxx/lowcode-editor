@@ -16,7 +16,7 @@ const CardDev = ({
 }: CommonComponentProps) => {
   const { isOver, drop } = useMaterailDrop(id, name);
   const divRef = useRef<HTMLDivElement>(null);
-  const [_, drag] = useDrag({
+  const [, drag] = useDrag({
     type: name,
     item: { type: name, dragType: "move", id },
   });

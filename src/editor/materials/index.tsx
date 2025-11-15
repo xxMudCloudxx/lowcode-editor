@@ -104,7 +104,7 @@ function buildGeneratedList(): ComponentConfig[] {
     const prodImporter = prodKey ? prodComponents[prodKey] : undefined;
 
     if (!devImporter || !prodImporter) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         `[materials] 跳过自动生成的组件 "${meta.name}"：未找到匹配的${
           !devImporter ? ` dev.tsx` : ""

@@ -6,7 +6,7 @@ import type { Component } from "../interface";
 
 // 这个Hook封装了所有关于Action的CRUD操作和模态框状态
 export function useActionManager(
-  curComponent: Component,
+  curComponent: Component | null,
   updateComponentProps: (id: number, props: any) => void
 ) {
   const [modalState, setModalState] = useState<{
@@ -17,6 +17,7 @@ export function useActionManager(
   }>({
     isOpen: false,
   });
+  if (curComponent === null) return null;
 
   const openForCreate = (event: ComponentEvent) => {
     setModalState({

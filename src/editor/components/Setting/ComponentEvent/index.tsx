@@ -8,7 +8,10 @@
  */
 import { Collapse, Input, type CollapseProps } from "antd";
 import { useState, useMemo } from "react";
-import { useComponentsStore, getComponentById } from "../../../stores/components";
+import {
+  useComponentsStore,
+  getComponentById,
+} from "../../../stores/components";
 import { useUIStore } from "../../../stores/uiStore";
 import type { Component } from "../../../interface";
 import { useComponentConfigStore } from "../../../stores/component-config";
@@ -37,12 +40,6 @@ export function ComponentEvent() {
         : null,
     [curComponentId, components]
   );
-
-  // 如果没有选中任何组件，则不渲染任何内容
-  if (!curComponent) {
-    return null;
-  }
-
   // useActionManager Hook 负责所有动作的增删改查(CRUD)以及模态框状态管理
   const actionManager = useActionManager(curComponent, updateComponentProps);
 
@@ -50,7 +47,12 @@ export function ComponentEvent() {
   const allEvents = curComponent
     ? componentConfig[curComponent.name]?.events
     : [];
+
   const filteredEvents = useEventSearch(allEvents, searchKeyword);
+  // 如果没有选中任何组件，则不渲染任何内容
+  if (!curComponent) {
+    return null;
+  }
 
   // 数据转换：将事件数据映射为 Collapse 组件需要的 items 格式 ---
   // 这里的逻辑非常清晰：遍历筛选后的事件，然后调用 EventItem 组件来生成配置对象

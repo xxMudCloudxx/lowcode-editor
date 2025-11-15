@@ -1,24 +1,11 @@
 import { Tree } from "antd";
 import type { TreeProps } from "antd/es/tree";
-import { type Key, useMemo } from "react";
+import { useMemo } from "react";
 import {
   useComponentsStore,
   buildComponentTree,
 } from "../../../stores/components";
 import { useUIStore } from "../../../stores/uiStore";
-import type { ComponentTree } from "../../../interface";
-
-/**
- * 递归辅助函数：在拖拽操作后，重新计算并修正所有节点的 parentId。
- */
-const updateParentIds = (nodes: ComponentTree[], parentId?: number) => {
-  nodes.forEach((node) => {
-    node.parentId = parentId;
-    if (node.children && node.children.length > 0) {
-      updateParentIds(node.children, node.id as number);
-    }
-  });
-};
 
 // 容器组件列表，用于判断是否允许将组件拖拽为其子节点
 const ContainerList: Set<string> = new Set([
@@ -76,7 +63,7 @@ export function Outline() {
   };
 
   return (
-    <div className="w-full custom-scrollbar overflow-y-auto absolute overscroll-y-contain pr-6 h-[100%] pb-20">
+    <div className="w-full custom-scrollbar overflow-y-auto absolute overscroll-y-contain pr-6 h-full pb-20">
       <Tree
         fieldNames={{ title: "desc", key: "id" }}
         treeData={treeData as any}

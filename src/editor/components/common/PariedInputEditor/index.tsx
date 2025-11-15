@@ -31,7 +31,7 @@ interface PairedInputEditorProps {
   prop2: PairedProperty;
   // 通用单位
   unit?: string;
-  unStyle?: Boolean;
+  unStyle?: boolean;
 }
 
 const PairedInputEditor = ({
