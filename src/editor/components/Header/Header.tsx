@@ -9,7 +9,8 @@
 import { Button, Space, Popconfirm, Typography, Popover } from "antd";
 
 const { Text, Title } = Typography;
-import { useComponetsStore } from "../../stores/components";
+import { useComponentsStore, buildComponentTree } from "../../stores/components";
+import { useUIStore } from "../../stores/uiStore";
 import { useStore } from "zustand";
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { exportSourceCode } from "../../../code-generator";
@@ -18,7 +19,7 @@ import { useState } from "react";
 import { CodePreviewDrawer } from "../CodePreviewDrawer";
 
 /**
- * @description 快捷键指南的 Popover 内容。
+ * @description 快捷键指南的 Popover 内容
  */
 const shortcutsContent = (
   <div style={{ width: "260px" }}>
@@ -48,46 +49,50 @@ const shortcutsContent = (
 /**
  * @description
  * 页头组件，包含标题和模式切换按钮。
- * 通过 Zustand store (`useComponetsStore`) 来获取和控制当前的编辑器模式，
- * 并通过 `useStore(useComponetsStore.temporal)` 来访问 zundo 中间件提供的撤销/重做状态和方法。
+ * - 使用 UI Store (`useUIStore`) 管理编辑/预览模式与当前选中组件
+ * - 使用 Components Store (`useComponentsStore`) 管理画布数据与撤销/重做历史
  */
 export function Header() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<IGeneratedFile[]>([]);
 
-  const { mode, setMode, setCurComponentId, resetComponents } =
-    useComponetsStore();
+  const { resetComponents } = useComponentsStore();
+  const { mode, setMode, setCurComponentId } = useUIStore();
 
   // 从 temporal store 中获取撤销/重做相关 state 和 actions
   const { undo, redo, clear, pastStates, futureStates } = useStore(
-    useComponetsStore.temporal
+    useComponentsStore.temporal
   );
 
   /**
-   * @description 处理画布重置逻辑。
-   * 它会调用 store action 来清空画布上的所有组件。
-   * 注意：此处的 "重置" 仅重置画布内容，不影响撤销/重做的历史记录。
+   * @description 处理画布重置逻辑
+   * 它会调用 store action 来清空画布上的所有组件
+   * 注意：此处的 "重置" 仅重置画布内容，不影响撤销/重做的历史记录
    */
   const handleReset = () => {
     resetComponents();
   };
 
-  // 3. 添加导出源码的处理函数
+  /**
+   * @description 导出源码预览
+   */
   const handleOpenCodePreview = async () => {
     setIsExporting(true);
-    const { components } = useComponetsStore.getState();
+    const { components, rootId } = useComponentsStore.getState();
 
-    if (!components || components.length === 0) {
+    const schema = buildComponentTree(components, rootId);
+
+    if (!schema || schema.length === 0) {
       console.error("Schema 为空，无法导出");
       setIsExporting(false);
       return;
     }
 
     try {
-      // 4. 调用 exportSourceCode 并指定 publisher: 'none'
-      const result = await exportSourceCode(components as ISchema, {
-        publisher: "none", // 关键！我们只想要文件，不要 blob
+      // 调用 exportSourceCode 并指定 publisher: 'none'
+      const result = await exportSourceCode(schema as ISchema, {
+        publisher: "none",
       });
 
       if (result.success && result.files) {
@@ -98,7 +103,7 @@ export function Header() {
         alert(`出码失败: ${result.message}`);
       }
     } catch (error) {
-      console.error("执行 exportSourceCode 时发生异常:", error);
+      console.error("执行 exportSourceCode 时发生异常", error);
       alert(`出码异常: ${error}`);
     } finally {
       setIsExporting(false);
@@ -210,7 +215,7 @@ export function Header() {
                 </Popconfirm>
               </div>
 
-              {/* 4. 出码按钮 */}
+              {/* 出码按钮 */}
               <Button onClick={handleOpenCodePreview} loading={isExporting}>
                 {isExporting ? "生成中..." : "出码预览"}
               </Button>
@@ -236,7 +241,7 @@ export function Header() {
             </>
           )}
 
-          {/* 当处于"预览"模式时，只显示"退出预览"按钮 */}
+          {/* 预览模式下仅显示“退出预览”按钮 */}
           {mode === "preview" && (
             <Button
               onClick={() => {
@@ -254,3 +259,4 @@ export function Header() {
     </div>
   );
 }
+

@@ -1,9 +1,8 @@
 /**
  * @file /src/editor/components/EditArea/HoverMask/index.tsx
  * @description
- * 一个用于在编辑器画布中高亮“悬浮”组件的遮罩层。
- * 它会根据目标组件的位置和大小动态定位，并使用 React Portal 将自身渲染到顶层 DOM，
- * 以避免被父组件的 CSS `overflow` 或 `z-index` 限制。
+ * 在编辑器画布中高亮“悬浮”组件的遮罩层。
+ * 通过 React Portal 渲染，避免被父组件的 overflow / z-index 限制。
  * @module Components/EditArea/HoverMask
  */
 
@@ -11,11 +10,11 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   getComponentById,
-  useComponetsStore,
+  useComponentsStore,
 } from "../../../stores/components";
 
 interface HoverMaskProps {
-  portalWrapperClassName: string; // Portal 的目标容器 DOM 节点的类名
+  portalWrapperClassName: string; // Portal 目标 DOM 节点的类名
   containerClassName: string; // 画布容器的类名，用于计算相对位置
   componentId: number; // 要高亮的目标组件 ID
 }
@@ -33,7 +32,7 @@ function HoverMask({
     labelTop: 0,
     labelLeft: 0,
   });
-  const { components } = useComponetsStore();
+  const { components } = useComponentsStore();
 
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
@@ -42,15 +41,11 @@ function HoverMask({
     setPortalEl(el);
   }, [portalWrapperClassName]);
 
-  // 当目标组件 ID 变化时，重新计算位置
+  // 当目标组件 ID 或组件树发生变化时，重新计算位置
   useEffect(() => {
     updatePosition();
-  }, [componentId]);
-
-  // 当整个组件树发生变化时，也可能需要更新位置（例如组件被移动或删除）
-  useEffect(() => {
-    updatePosition();
-  }, [components]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [componentId, components]);
 
   /**
    * @description 核心函数：计算并更新遮罩层的位置和大小。
@@ -92,7 +87,7 @@ function HoverMask({
   // 获取当前组件的元数据，用于显示描述信息
   const curComponent = useMemo(() => {
     return getComponentById(componentId, components);
-  }, [componentId]);
+  }, [componentId, components]);
 
   // 如果目标节点不存在，不渲染任何东西
   if (!portalEl) return null;
@@ -100,7 +95,7 @@ function HoverMask({
   // 使用 React Portal 将遮罩层渲染到指定的 portalWrapper 节点中
   return createPortal(
     <>
-      {/* 遮罩层本身 */}
+      {/* 遮罩层本体 */}
       <div
         style={{
           position: "absolute",
@@ -108,7 +103,7 @@ function HoverMask({
           top: position.top,
           backgroundColor: "rgba(0, 0, 255, 0.05)",
           border: "1px dashed blue",
-          pointerEvents: "none", // 允许鼠标事件穿透遮罩层
+          pointerEvents: "none",
           width: position.width,
           height: position.height,
           zIndex: 12,

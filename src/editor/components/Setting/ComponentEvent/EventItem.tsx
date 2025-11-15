@@ -2,19 +2,16 @@
  * @file /src/editor/components/Setting/ComponentEvent/EventItem.tsx
  * @description
  * 负责渲染事件设置中的单个可折叠项。
- * 它接收事件数据和相关的动作列表，并生成UI以及处理用户交互的回调。
+ * 它接收事件数据和相关的动作列表，并生成 UI 以及处理用户交互的回调。
  * @module Components/Setting/ComponentEvent/EventItem
  */
 import { Button } from "antd";
 import { ActionCard } from "./ActionCard";
-import {
-  getComponentById,
-  useComponetsStore,
-} from "../../../stores/components";
+import { getComponentById, useComponentsStore } from "../../../stores/components";
 import type { ComponentEvent } from "../../../stores/component-config";
 import type { ActionConfig } from "./ActionModal";
 
-// 定义组件接收的属性（Props）
+// 组件接收的属性（Props）
 interface EventItemProps {
   event: ComponentEvent;
   actions: ActionConfig[];
@@ -35,10 +32,10 @@ export function EventItem({
   onEditAction,
   onDeleteAction,
 }: EventItemProps) {
-  // 从 Zustand Store 中获取所有组件列表，用于查找组件名称
-  const { components } = useComponetsStore.getState();
+  // 从 Components Store 中获取所有组件列表，用于查找组件名称
+  const { components } = useComponentsStore.getState();
 
-  // --- 1. 构建面板的头部 (Label) ---
+  // --- 1. 构建面板的头部(Label) ---
   const label = (
     <div className="flex items-center justify-between min-h-[40px]">
       <div className="flex items-center">
@@ -61,20 +58,20 @@ export function EventItem({
     </div>
   );
 
-  // --- 2. 构建面板的内容区域 (Children) ---
+  // --- 2. 构建面板的内容区(Children) ---
   const children = (
     <div className="pt-0">
       {actions.length === 0 ? (
         // 如果没有动作，显示提示信息
         <div className="text-center py-8 text-gray-400">
-          <div className="text-2xl mb-2">⚡</div>
+          <div className="text-2xl mb-2">🧩</div>
           <div className="text-sm">暂无动作配置</div>
           <div className="text-xs mt-1">点击上方按钮添加动作</div>
         </div>
       ) : (
         // 如果有动作，遍历并渲染每一个动作卡片
         actions.map((item, index) => {
-          // 将 onEdit 和 onDelete 回调函数包装成通用属性
+          // 将 onEdit / onDelete 回调函数包装成通用属性
           const commonProps = {
             onEdit: () => onEditAction(item, index),
             onDelete: () => onDeleteAction(index),
@@ -113,7 +110,7 @@ export function EventItem({
               {item.type === "customJs" ? (
                 <ActionCard title="自定义 JS" {...commonProps}>
                   <div className="text-xs text-gray-500">
-                    执行自定义JavaScript代码
+                    执行自定义 JavaScript 代码
                   </div>
                 </ActionCard>
               ) : null}
@@ -125,8 +122,10 @@ export function EventItem({
                       <span className="text-xs text-gray-500 mr-2">组件:</span>
                       <span className="text-sm font-medium">
                         {
-                          getComponentById(item.config.componentId, components)
-                            ?.desc
+                          getComponentById(
+                            item.config.componentId,
+                            components
+                          )?.desc
                         }
                       </span>
                     </div>
@@ -155,7 +154,8 @@ export function EventItem({
   // --- 3. 返回符合 antd Collapse `items` 格式的对象 ---
   return {
     key: event.name,
-    label: label,
-    children: children,
+    label,
+    children,
   };
 }
+

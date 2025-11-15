@@ -6,7 +6,7 @@
  * @module Components/Setting/ComponentStyle/FrontSetter
  */
 import { type CSSProperties } from "react";
-import type { Component } from "../../../../stores/components";
+import type { Component } from "../../../../interface";
 import { Form } from "antd";
 import FormItem from "antd/es/form/FormItem";
 import PairedInputEditor from "../../../common/PariedInputEditor";

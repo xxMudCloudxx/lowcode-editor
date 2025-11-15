@@ -1,37 +1,43 @@
 /**
  * @file /src/editor/hooks/useShortcutKeys.ts
  * @description
- * 一个用于集中管理和处理编辑器全局快捷键的自定义 Hook。
- * 它封装了 `keydown` 事件的监听、快捷键组合的判断（如 Cmd/Ctrl + C），
- * 以及触发对应的 Zustand store actions（如复制、粘贴、撤销、重做、删除）。
+ * 集中管理和处理编辑器全局快捷键的自定义 Hook。
+ * 封装了 `keydown` 事件监听、快捷键组合判断（如 Cmd/Ctrl + C）
+ * 以及触发对应的 Zustand store actions（复制、粘贴、撤销、重做、删除）。
  * @module Hooks/useShortcutKeys
  */
 
 import { useEffect, useMemo } from "react";
 import { message } from "antd";
-import {
-  useComponetsStore,
-  getComponentById,
-  type Component,
-} from "../stores/components";
+import { useComponentsStore, getComponentById } from "../stores/components";
+import { useUIStore } from "../stores/uiStore";
+import type { Component, ComponentTree } from "../interface";
 import { useStore } from "zustand";
 import { debounce } from "lodash-es";
 
+// 容器组件列表，用于智能粘贴时判断粘贴目标
+const ContainerList: Set<string> = new Set([
+  "Container",
+  "Page",
+  "Modal",
+  "Table",
+]);
+
 /**
- * @description 为编辑器提供全局快捷键功能的 Hook。
+ * 为编辑器提供全局快捷键功能的 Hook。
  * 在顶层组件中调用一次即可生效。
  */
 export function useShortcutKeys() {
-  const {
-    curComponentId,
-    components,
-    copyComponents,
-    pasteComponents,
-    deleteComponent,
-    setCurComponentId,
-  } = useComponetsStore();
+  const { components, pasteComponents, deleteComponent } = useComponentsStore();
 
-  // 在 UI 层按需派生当前选中组件，避免在 store 中冗余存储快照
+  // temporal store 中的撤销 / 重做能力
+  const { undo, redo, pastStates, futureStates } = useStore(
+    useComponentsStore.temporal
+  );
+
+  const { curComponentId, setCurComponentId, setClipboard } = useUIStore();
+
+  // UI 层按需派生当前选中组件，避免在 store 中冗余存储快照
   const curComponent = useMemo<Component | null>(
     () =>
       curComponentId != null
@@ -40,19 +46,7 @@ export function useShortcutKeys() {
     [curComponentId, components]
   );
 
-  const { undo, redo, pastStates, futureStates } = useStore(
-    useComponetsStore.temporal
-  );
-
-  // 容器组件列表，用于智能粘贴，判断粘贴目标
-  const ContainerList: Set<string> = new Set([
-    "Container",
-    "Page",
-    "Modal",
-    "Table",
-  ]);
-
-  // 使用 lodash 的 debounce 创建一个防抖版 message 函数
+  // 使用 debounce 创建一个防抖版 message 函数
   const debouncedMessage = useMemo(
     () =>
       debounce((text: string) => {
@@ -63,7 +57,7 @@ export function useShortcutKeys() {
 
   useEffect(() => {
     /**
-     * @description 全局键盘事件处理器
+     * 全局键盘事件处理器
      */
     const handleKeyDown = (e: KeyboardEvent) => {
       // 防止在输入框、文本域或任何可编辑元素中触发快捷键
@@ -84,8 +78,12 @@ export function useShortcutKeys() {
         case "c":
           if (isCmdOrCtrl && curComponentId) {
             e.preventDefault();
-            copyComponents(curComponentId);
-            debouncedMessage("复制成功");
+
+            const tree = buildClipboardTree(curComponentId, components);
+            if (tree) {
+              setClipboard(tree);
+              debouncedMessage("复制成功");
+            }
           }
           break;
 
@@ -146,18 +144,48 @@ export function useShortcutKeys() {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [
+    components,
     curComponent,
     curComponentId,
-    copyComponents,
     pasteComponents,
     deleteComponent,
     setCurComponentId,
+    setClipboard,
     undo,
     redo,
     pastStates,
     futureStates,
     debouncedMessage,
-    ContainerList,
   ]);
+}
+
+/**
+ * @description
+ * 从范式化的 components Map 中构建以指定组件为根节点的树状结构，
+ * 用于剪切板（clipboard）存储。
+ */
+function buildClipboardTree(
+  id: number,
+  components: Record<number, Component>
+): ComponentTree | null {
+  const node = components[id];
+  if (!node) return null;
+
+  const children =
+    node.children && node.children.length > 0
+      ? (node.children
+          .map((childId) => buildClipboardTree(childId, components))
+          .filter(Boolean) as ComponentTree[])
+      : undefined;
+
+  return {
+    id: node.id,
+    name: node.name,
+    props: node.props,
+    desc: node.desc,
+    parentId: node.parentId,
+    children,
+    styles: node.styles,
+  };
 }
 

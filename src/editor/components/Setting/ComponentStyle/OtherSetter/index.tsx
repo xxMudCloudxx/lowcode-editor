@@ -15,7 +15,7 @@ import {
   type FormInstance,
 } from "antd";
 import type { CSSProperties } from "react";
-import type { Component } from "../../../../stores/components";
+import type { Component } from "../../../../interface";
 import type {
   ComponentConfig,
   ComponentSetter,

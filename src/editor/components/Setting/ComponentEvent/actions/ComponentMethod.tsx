@@ -2,7 +2,8 @@ import { useEffect, useMemo } from "react";
 import { useComponentConfigStore } from "../../../../stores/component-config";
 import {
   getComponentById,
-  useComponetsStore,
+  useComponentsStore,
+  buildComponentTree,
 } from "../../../../stores/components";
 import { Form, Input, Select, TreeSelect } from "antd";
 
@@ -22,9 +23,14 @@ export interface ComponentMethodProps {
 
 export function ComponentMethod(props: ComponentMethodProps) {
   const { value, onChange } = props;
-  const { components } = useComponetsStore();
+  const { components, rootId } = useComponentsStore();
   const { componentConfig } = useComponentConfigStore();
   const [form] = Form.useForm();
+
+  const treeData = useMemo(
+    () => buildComponentTree(components, rootId),
+    [components, rootId]
+  );
 
   const selectedComponent = useMemo(() => {
     return value?.componentId
@@ -69,16 +75,16 @@ export function ComponentMethod(props: ComponentMethodProps) {
         layout="vertical"
         className="space-y-4"
       >
-        <Form.Item 
-          name="componentId" 
+        <Form.Item
+          name="componentId"
           label={<span className="text-sm font-medium text-gray-700">目标组件</span>}
           className="mb-4"
         >
-          <TreeSelect
+            <TreeSelect
             className="w-full"
             size="large"
             placeholder="请选择要调用方法的组件"
-            treeData={components}
+            treeData={treeData}
             fieldNames={{ label: "desc", value: "id" }}
             showSearch
             treeNodeFilterProp="desc"

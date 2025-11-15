@@ -28,7 +28,8 @@ import {
   fireEvent,
   waitFor,
 } from "@testing-library/react";
-import { useComponetsStore, getComponentById } from "./components";
+import { useComponentsStore } from "./components";
+import { useUIStore } from "./uiStore";
 import { Preview } from "../components/Preview";
 import { useComponentConfigStore } from "./component-config";
 import { message } from "antd";
@@ -69,299 +70,206 @@ beforeAll(() => {
 // 在每个测试用例开始前，重置 store 状态
 beforeEach(() => {
   act(() => {
-    // 调用 resetComponents 来确保每个测试都在一个干净的环境中运行
-    useComponetsStore.getState().resetComponents();
-    // 同时，重置 temporal (撤销/重做) 状态
-    useComponetsStore.temporal.getState().clear();
+    useComponentsStore.getState().resetComponents();
+    useComponentsStore.temporal.getState().clear();
+    useUIStore.getState().setCurComponentId(null);
+    useUIStore.getState().setMode("edit");
+    useUIStore.getState().setClipboard(null);
   });
 });
 
-describe("useComponetsStore 核心 actions", () => {
+describe("useComponentsStore 核心 actions", () => {
   it("addComponent: 应该能向指定的父节点添加一个新组件", () => {
-    const initialState = useComponetsStore.getState();
-    const pageId = initialState.components[0].id; // 初始 Page 组件的 ID
+    const initialState = useComponentsStore.getState();
+    const pageId = initialState.rootId;
 
     act(() => {
-      useComponetsStore.getState().addComponent(
+      useComponentsStore.getState().addComponent(
         {
           id: 123,
           name: "Button",
-          desc: "测试按钮", // 补充 desc 属性
-          props: { text: "初始文本" }, // 补充 props 属性
+          desc: "测试按钮",
+          props: { text: "初始文本" },
         },
         pageId
       );
     });
 
-    const state = useComponetsStore.getState();
-    const page = state.components.find((c) => c.id === pageId);
+    const state = useComponentsStore.getState();
+    const page = state.components[pageId];
 
-    expect(page?.children).toBeDefined();
-    expect(page?.children).toHaveLength(1);
+    expect(page.children).toBeDefined();
+    expect(page.children).toHaveLength(1);
 
-    const newButton = page?.children?.[0];
-    expect(newButton?.name).toBe("Button");
-    expect(newButton?.parentId).toBe(pageId);
-    expect(newButton?.props.text).toBe("初始文本");
+    const childId = page.children![0];
+    const newButton = state.components[childId];
+    expect(newButton.name).toBe("Button");
+    expect(newButton.parentId).toBe(pageId);
+    expect(newButton.props.text).toBe("初始文本");
   });
 
   it("deleteComponent: 应该能删除一个组件，如果它有子组件也应一并删除", () => {
     // 准备状态：Page > Container > Button
     act(() => {
-      useComponetsStore
+      useComponentsStore
         .getState()
         .addComponent(
-          { id: 2, name: "Container", desc: "容器", props: {}, children: [] },
+          { id: 2, name: "Container", desc: "容器", props: {} },
           1
         );
-      useComponetsStore
+      useComponentsStore
         .getState()
         .addComponent({ id: 3, name: "Button", desc: "按钮", props: {} }, 2);
     });
 
-    // 执行删除
     act(() => {
-      useComponetsStore.getState().deleteComponent(2); // 删除 ID 为 2 的容器
+      useComponentsStore.getState().deleteComponent(2);
     });
 
-    const state = useComponetsStore.getState();
-    // 断言 Page 下已经没有子组件
-    expect(state.components[0].children).toHaveLength(0);
-    // 尝试获取被删除的组件，应返回 null
-    expect(getComponentById(2, state.components)).toBeNull();
-    expect(getComponentById(3, state.components)).toBeNull();
+    const state = useComponentsStore.getState();
+    const page = state.components[1];
+    expect(page.children).toEqual([]);
+    expect(state.components[2]).toBeUndefined();
+    expect(state.components[3]).toBeUndefined();
   });
 
-  it("updateComponentProps: 应该能正确更新指定组件的 props", () => {
+  it("updateComponentProps: 能够合并更新组件的 props", () => {
     act(() => {
-      useComponetsStore
+      useComponentsStore
         .getState()
         .addComponent(
-          { id: 101, name: "Button", desc: "按钮", props: { text: "旧文本" } },
+          { id: 101, name: "Button", desc: "按钮", props: { text: "默认" } },
           1
         );
     });
 
     act(() => {
-      useComponetsStore
+      useComponentsStore
         .getState()
-        .updateComponentProps(101, { text: "新文本", type: "primary" });
+        .updateComponentProps(101, { text: "更新后", size: "large" });
     });
 
-    const state = useComponetsStore.getState();
-    const button = getComponentById(101, state.components);
-
-    expect(button?.props.text).toBe("新文本");
-    expect(button?.props.type).toBe("primary");
+    const state = useComponentsStore.getState();
+    const button = state.components[101];
+    expect(button.props).toEqual({ text: "更新后", size: "large" });
   });
 
-  it("updateComponentProps: 支持 replace 并能写入事件配置", () => {
+  it("updateComponentStyles: 能够合并更新组件的 styles", () => {
     act(() => {
-      useComponetsStore
-        .getState()
-        .addComponent(
-          {
-            id: 202,
-            name: "Button",
-            desc: "按钮",
-            props: { text: "旧文本", size: "small" },
-          },
-          1
-        );
-    });
-
-    const actions = [
-      { type: "showMessage", config: { type: "success", text: "事件触发" } },
-    ];
-
-    act(() => {
-      useComponetsStore
-        .getState()
-        .updateComponentProps(202, {
-          text: "新文本",
-          onClick: { actions },
-        });
-    });
-
-    let state = useComponetsStore.getState();
-    let button = getComponentById(202, state.components);
-
-    expect(button?.props.text).toBe("新文本");
-    expect(button?.props.size).toBe("small");
-    expect(button?.props.onClick?.actions).toEqual(actions);
-
-    act(() => {
-      useComponetsStore
-        .getState()
-        .updateComponentProps(202, { width: 120 }, true);
-    });
-
-    state = useComponetsStore.getState();
-    button = getComponentById(202, state.components);
-
-    expect(button?.props).toEqual({ width: 120 });
-  });
-
-  it("moveComponents: 应该能将一个组件从根目录移动到另一个容器中", () => {
-    // 准备初始状态：Page > [Button, Container]
-    act(() => {
-      useComponetsStore
-        .getState()
-        .addComponent({ id: 101, name: "Button", desc: "按钮", props: {} }, 1);
-      useComponetsStore
-        .getState()
-        .addComponent(
-          { id: 102, name: "Container", desc: "容器", props: {}, children: [] },
-          1
-        );
-    });
-
-    // 将 Button(101) 移动到 Container(102) 中
-    act(() => {
-      useComponetsStore.getState().moveComponents(101, 102);
-    });
-
-    const state = useComponetsStore.getState();
-    const page = state.components[0];
-    const container = page.children?.find((c) => c.id === 102);
-
-    expect(page.children).toHaveLength(1); // Page 下只剩 Container
-    expect(page.children?.[0].id).toBe(102);
-    expect(container?.children).toBeDefined();
-    expect(container?.children).toHaveLength(1); // Container 下有了 Button
-    expect(container?.children?.[0].id).toBe(101);
-    expect(container?.children?.[0].parentId).toBe(102);
-  });
-
-  it("copyComponents & pasteComponents: 应该能复制一个组件并粘贴到指定容器", () => {
-    // 1. 准备一个待复制的组件
-    act(() => {
-      useComponetsStore
+      useComponentsStore
         .getState()
         .addComponent(
           {
             id: 201,
-            name: "Input",
-            desc: "输入框",
-            props: { placeholder: "原始" },
-          },
-          1
-        );
-    });
-
-    // 2. 执行复制
-    act(() => {
-      useComponetsStore.getState().copyComponents(201);
-    });
-
-    const clipboardContent = useComponetsStore.getState().clipboard;
-    expect(clipboardContent?.id).toBe(201);
-
-    // 3. 执行粘贴
-    act(() => {
-      useComponetsStore.getState().pasteComponents(1); // 粘贴到 Page
-    });
-
-    const state = useComponetsStore.getState();
-    const page = state.components[0];
-    expect(page.children).toHaveLength(2);
-
-    const pastedComponent = page.children?.find((c) => c.id !== 201);
-    expect(pastedComponent).toBeDefined();
-    expect(pastedComponent?.id).not.toBe(201); // 关键：ID 必须是新的
-    expect(pastedComponent?.name).toBe("Input");
-    expect(pastedComponent?.props.placeholder).toBe("原始");
-    expect(pastedComponent?.parentId).toBe(1);
-  });
-
-  it("updateComponentStyles: 支持合并和替换样式", () => {
-    act(() => {
-      useComponetsStore
-        .getState()
-        .addComponent(
-          {
-            id: 303,
             name: "Container",
             desc: "容器",
             props: {},
-            styles: { width: 100 },
           },
           1
         );
     });
 
     act(() => {
-      useComponetsStore.getState().setCurComponentId(303);
+      useComponentsStore
+        .getState()
+        .updateComponentStyles(201, { width: 100, height: 50 });
     });
 
     act(() => {
-      useComponetsStore
+      useComponentsStore
         .getState()
-        .updateComponentStyles(303, { height: 200 });
+        .updateComponentStyles(201, { height: 80 });
     });
 
-    let state = useComponetsStore.getState();
-    let container = getComponentById(303, state.components);
-
-    expect(container?.styles).toEqual({ width: 100, height: 200 });
-
-    act(() => {
-      useComponetsStore
-        .getState()
-        .updateComponentStyles(303, { width: 320 }, true);
-    });
-
-    state = useComponetsStore.getState();
-    container = getComponentById(303, state.components);
-
-    expect(container?.styles).toEqual({ width: 320 });
+    const state = useComponentsStore.getState();
+    const container = state.components[201];
+    expect(container.styles).toEqual({ width: 100, height: 80 });
   });
 
-  it("setCurComponentId: 应该能正确设置和清除当前选中的组件", () => {
-    // Mock temporal 的 pause/resume
-    const temporalState = useComponetsStore.temporal.getState();
-    const pauseSpy = vi.spyOn(temporalState, "pause");
-    const resumeSpy = vi.spyOn(temporalState, "resume");
-
-    // 1. 设置选中
+  it("resetComponents: 应该能重置画布到初始状态", () => {
     act(() => {
-      useComponetsStore.getState().setCurComponentId(1);
+      useComponentsStore
+        .getState()
+        .addComponent(
+          { id: 301, name: "Button", desc: "按钮", props: {} },
+          1
+        );
     });
 
-    let state = useComponetsStore.getState();
-    expect(state.curComponentId).toBe(1);
-    const selected = state.curComponentId
-      ? getComponentById(state.curComponentId, state.components)
-      : null;
-    expect(selected?.name).toBe("Page");
-    expect(pauseSpy).toHaveBeenCalled();
-    expect(resumeSpy).toHaveBeenCalled();
-
-    // 2. 清除选中
     act(() => {
-      useComponetsStore.getState().setCurComponentId(null);
+      useComponentsStore.getState().resetComponents();
     });
 
-    state = useComponetsStore.getState();
-    expect(state.curComponentId).toBeNull();
-    const selectedAfterClear = state.curComponentId
-      ? getComponentById(state.curComponentId, state.components)
-      : null;
-    expect(selectedAfterClear).toBeNull();
+    const state = useComponentsStore.getState();
+    expect(Object.keys(state.components)).toHaveLength(1);
+    const page = state.components[state.rootId];
+    expect(page.name).toBe("Page");
   });
 
-  it("setMode: 能够在编辑和预览模式之间切换", () => {
-    expect(useComponetsStore.getState().mode).toBe("edit");
+  it("moveComponents: 能够将组件移动到新的父组件下", () => {
+    act(() => {
+      useComponentsStore
+        .getState()
+        .addComponent(
+          { id: 401, name: "Container", desc: "容器1", props: {} },
+          1
+        );
+      useComponentsStore
+        .getState()
+        .addComponent(
+          { id: 402, name: "Container", desc: "容器2", props: {} },
+          1
+        );
+    });
 
     act(() => {
-      useComponetsStore.getState().setMode("preview");
+      useComponentsStore.getState().moveComponents(401, 402);
     });
-    expect(useComponetsStore.getState().mode).toBe("preview");
+
+    const state = useComponentsStore.getState();
+    const container2 = state.components[402];
+    expect(container2.children).toContain(401);
+    const container1 = state.components[401];
+    expect(container1.parentId).toBe(402);
+  });
+
+  it("pasteComponents: 能够从剪切板粘贴组件树到指定父节点下", () => {
+    // 在剪切板中放入一个简单的树状结构：Container > Button
+    act(() => {
+      useUIStore.getState().setClipboard({
+        id: 1000,
+        name: "Container",
+        desc: "剪切板容器",
+        props: {},
+        children: [
+          {
+            id: 1001,
+            name: "Button",
+            desc: "剪切板按钮",
+            props: { text: "来自剪切板" },
+          },
+        ],
+      });
+    });
 
     act(() => {
-      useComponetsStore.getState().setMode("edit");
+      useComponentsStore.getState().pasteComponents(1);
     });
-    expect(useComponetsStore.getState().mode).toBe("edit");
+
+    const state = useComponentsStore.getState();
+    const page = state.components[1];
+    expect(page.children && page.children.length).toBe(1);
+
+    const pastedContainerId = page.children![0];
+    const pastedContainer = state.components[pastedContainerId];
+    expect(pastedContainer.name).toBe("Container");
+    expect(pastedContainer.parentId).toBe(1);
+    expect(pastedContainer.children && pastedContainer.children.length).toBe(1);
+
+    const pastedButtonId = pastedContainer.children![0];
+    const pastedButton = state.components[pastedButtonId];
+    expect(pastedButton.name).toBe("Button");
+    expect(pastedButton.props.text).toBe("来自剪切板");
   });
 });
 
@@ -410,7 +318,7 @@ describe("Preview 事件编排", () => {
     };
 
     act(() => {
-      useComponetsStore
+      useComponentsStore
         .getState()
         .addComponent(
           {

@@ -8,11 +8,9 @@
  */
 import { Collapse, Input, type CollapseProps } from "antd";
 import { useState, useMemo } from "react";
-import {
-  useComponetsStore,
-  getComponentById,
-  type Component,
-} from "../../../stores/components";
+import { useComponentsStore, getComponentById } from "../../../stores/components";
+import { useUIStore } from "../../../stores/uiStore";
+import type { Component } from "../../../interface";
 import { useComponentConfigStore } from "../../../stores/component-config";
 
 // 引入子组件和模态框
@@ -26,8 +24,8 @@ import { ArrowIcon } from "../../common/ArrowIcon";
 
 export function ComponentEvent() {
   // --- 状态和数据获取 ---
-  const { curComponentId, components, updateComponentProps } =
-    useComponetsStore();
+  const { components, updateComponentProps } = useComponentsStore();
+  const curComponentId = useUIStore((s) => s.curComponentId);
   const { componentConfig } = useComponentConfigStore();
   const [searchKeyword, setSearchKeyword] = useState("");
 

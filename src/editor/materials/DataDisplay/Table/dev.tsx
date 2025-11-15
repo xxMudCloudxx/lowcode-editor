@@ -25,7 +25,7 @@ function TableDev({
     item: {
       type: name,
       dragType: "move",
-      id: id,
+      id,
     },
   });
 
@@ -35,22 +35,29 @@ function TableDev({
   }, []);
 
   const columns = useMemo(() => {
-    return React.Children.map(children, (suspenseElement: any) => {
-      if (!suspenseElement) return null;
-      const item = suspenseElement.props.children;
-      return {
-        title: (
-          <div
-            className="m-[-16px] p-[16px]"
-            data-component-id={item.props?.id}
-          >
-            {item.props?.title}
-          </div>
-        ),
-        dataIndex: item.props?.dataIndex,
-        key: item.props?.id,
-      };
-    })?.filter(Boolean);
+    const list =
+      React.Children.map(children, (suspenseElement: any) => {
+        if (!suspenseElement) return null;
+
+        const item = suspenseElement.props?.children;
+        // 兼容性保护：如果某个 child 不是预期结构，直接跳过
+        if (!item || !item.props) return null;
+
+        return {
+          title: (
+            <div
+              className="m-[-16px] p-[16px]"
+              data-component-id={item.props.id}
+            >
+              {item.props.title}
+            </div>
+          ),
+          dataIndex: item.props.dataIndex,
+          key: item.props.id,
+        };
+      })?.filter(Boolean) || [];
+
+    return list;
   }, [children]);
 
   return (
@@ -77,3 +84,4 @@ function TableDev({
 }
 
 export default TableDev;
+

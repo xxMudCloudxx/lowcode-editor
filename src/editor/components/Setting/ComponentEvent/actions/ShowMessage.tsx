@@ -1,6 +1,6 @@
 import { Input, Select } from "antd";
-import { useComponetsStore } from "../../../../stores/components";
 import { useEffect, useState } from "react";
+import { useUIStore } from "../../../../stores/uiStore";
 
 export interface ShowMessageConfig {
   type: "showMessage";
@@ -19,7 +19,7 @@ export interface ShowMessageProps {
 export function ShowMessage(props: ShowMessageProps) {
   const { defaultValue, onChange, value: val } = props;
 
-  const { curComponentId } = useComponetsStore();
+  const curComponentId = useUIStore((s) => s.curComponentId);
 
   const [type, setType] = useState<"success" | "error">(
     defaultValue?.type || "success"

@@ -3,11 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import type { CSSProperties } from "react";
 import { debounce } from "lodash-es";
-import {
-  useComponetsStore,
-  getComponentById,
-  type Component,
-} from "../stores/components";
+import { useComponentsStore, getComponentById } from "../stores/components";
+import { useUIStore } from "../stores/uiStore";
+import type { Component } from "../interface";
 import {
   convertStyleObjectToCssString,
   parseCssStringToObject,
@@ -17,8 +15,8 @@ import {
  * 负责管理组件样式状态和更新逻辑的 Hook
  */
 export function useComponentStyleManager(form: any) {
-  const { components, curComponentId, updateComponentStyles } =
-    useComponetsStore();
+  const { components, updateComponentStyles } = useComponentsStore();
+  const curComponentId = useUIStore((s) => s.curComponentId);
 
   // 在 UI 层按需派生当前选中组件，避免在 store 中冗余存储快照
   const curComponent = useMemo<Component | null>(

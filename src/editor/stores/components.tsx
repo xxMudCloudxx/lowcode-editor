@@ -1,14 +1,13 @@
 /**
  * @file /src/editor/stores/components.tsx
  * @description
- * 使用 Zustand 管理编辑器画布中的所有组件实例状态。
- * 这个 store 是整个应用的核心数据中心，负责：
- * - 存储画布上所有组件的树状结构 (components)
- * - 管理当前选中的组件 (curComponentId)
- * - 控制编辑/预览模式 (mode)
- * - 提供对组件进行 CRUD (增删改查) 和移动、复制/粘贴操作的 actions
- * - 通过组合 `temporal` (时间旅行)、`persist` (持久化) 和 `immer` (不可变更新) 三个中间件，实现了撤销/重做、状态本地存储和安全的 state 更新。
- * @module Stores/Components
+ * 使用 Zustand 管理编辑器画布中的组件数据状态。
+ * 经过重构后：
+ * - 只负责“画布数据”（组件实例及其层级关系）
+ * - 使用范式化的 Map 结构：components: Record<number, Component>
+ * - 所有读写操作都可以通过 id 在 O(1) 时间内完成
+ *
+ * UI 相关的瞬时状态（如 mode、curComponentId、clipboard）已经迁移到 uiStore.ts。
  */
 
 import type { CSSProperties } from "react";
@@ -17,145 +16,207 @@ import { persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { temporal } from "zundo";
 
-/**
- * @interface Component
- * @description 定义了画布中一个独立组件的元数据结构。
- * 这是构成组件树的基本节点。
- */
-export interface Component {
-  id: number; // 组件的唯一标识符，通常是基于时间戳的自增ID
-  name: string; // 组件的类型名称, 对应 component-config.tsx 中的 key
-  props: any; // 传递给组件的 props，由右侧“属性”面板配置
-  desc: string; // 组件的描述，用于 UI 展示（如物料名称、大纲树节点名）
-  children?: Component[]; // 子组件列表，构成了组件树
-  parentId?: number; // 父组件的 ID，用于实现向上追溯等逻辑
-  styles?: CSSProperties; // 应用于组件的内联样式
-}
+import type { Component, ComponentTree } from "../interface";
+import { useUIStore } from "./uiStore";
 
 /**
  * @interface State
- * @description 定义了 store 的 state 结构。
+ * @description 组件数据层的状态结构
  */
 interface State {
-  components: Component[]; // 画布上所有组件的根节点列表，通常只有一个 Page 组件
-  mode: "edit" | "preview"; // 编辑器当前模式
-  curComponentId?: number | null; // 当前选中组件的 ID
-  clipboard: Component | null; // 剪切板状态，用于存储被复制的组件信息
+  /**
+   * 范式化后的组件 Map：
+   * - key: 组件 id
+   * - value: 单个组件节点（children 只保存子节点 id）
+   */
+  components: Record<number, Component>;
+  /**
+   * 根节点 id（通常是 Page 节点）
+   */
+  rootId: number;
 }
 
 /**
  * @interface Action
- * @description 定义了所有可以修改 state 的 actions。
+ * @description 定义可以修改组件数据的 actions
  */
 interface Action {
-  addComponent: (Component: Component, parentId?: number) => void;
-  deleteComponent: (ComponentId: number) => void;
+  /**
+   * 向指定的父组件中添加一个新组件
+   * @param component 组件模板（无需包含 parentId/children）
+   * @param parentId 父组件 id
+   */
+  addComponent: (
+    component: Omit<Component, "parentId" | "children">,
+    parentId: number
+  ) => void;
+
+  /**
+   * 删除指定组件及其所有后代
+   */
+  deleteComponent: (componentId: number) => void;
+
+  /**
+   * 更新组件 props
+   */
   updateComponentProps: (
-    ComponentId: number,
+    componentId: number,
     props: any,
     replace?: boolean
   ) => void;
+
+  /**
+   * 更新组件样式
+   */
   updateComponentStyles: (
-    ComponentId: number,
+    componentId: number,
     styles: CSSProperties,
     replace?: boolean
   ) => void;
-  setCurComponentId: (componetId: number | null) => void;
-  setMode: (mode: State["mode"]) => void;
+
+  /**
+   * 重置组件树到初始状态
+   */
   resetComponents: () => void;
-  copyComponents: (componentId: number | null) => void;
-  pasteComponents: (componentId: number | null) => void;
+
+  /**
+   * 从剪切板中粘贴组件树到指定父组件下
+   */
+  pasteComponents: (parentId: number | null) => void;
+
+  /**
+   * 将一个组件移动到新的父组件下
+   */
   moveComponents: (sourId: number | null, disId: number | null) => void;
-  // 全量设置组件树（用于大纲树拖拽等场景）
-  setComponents: (components: Component[]) => void;
+
+  /**
+   * 全量设置组件树（用于大纲树拖拽、Schema 导入等场景）
+   * 入参仍然是树状结构，内部会自动范式化为 Map
+   */
+  setComponents: (tree: ComponentTree[]) => void;
 }
 
-// 定义组合后的类型
-type EditorStore = State & Action;
+// 组合后的 Store 类型
+export type ComponentsStore = State & Action;
 
-/**
- * @description Zustand store 的核心创建逻辑。
- * 它接收 `set` 方法来定义 state 和 actions，并被 immer 中间件包裹。
- * @param {Function} set - immer 中间件提供的 set 函数，允许直接以可变的方式修改 draft state，底层会自动处理不可变更新。
- */
-const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
-  set
-) => ({
-  components: [
-    {
-      id: 1,
+// 根节点固定为 Page(id=1)
+const INITIAL_ROOT_ID = 1;
+
+const createInitialState = (): State => ({
+  components: {
+    [INITIAL_ROOT_ID]: {
+      id: INITIAL_ROOT_ID,
       name: "Page",
       props: {},
       desc: "页面",
+      parentId: null,
+      children: [],
     },
-  ],
-  curComponentId: null,
-  mode: "edit",
-  clipboard: null,
+  },
+  rootId: INITIAL_ROOT_ID,
+});
 
-  // --- Actions ---
+/**
+ * @description Zustand store 的核心创建逻辑
+ * 使用 immer 中间件包裹，允许在 set 函数中直接“可变地”修改 draft state。
+ */
+const creator: StateCreator<ComponentsStore, [["zustand/immer", never]]> = (
+  set
+) => ({
+  ...createInitialState(),
 
   /**
-   * @description 全量更新组件树。
-   * @param {Component[]} components - 新的组件树数组。
+   * @description 全量替换组件树（从树状结构转换为范式化 Map）
    */
-  setComponents: (components) => {
+  setComponents: (tree) => {
     set((state) => {
-      state.components = components;
+      const { map, rootId } = normalizeComponentTree(tree);
+      state.components = map;
+      state.rootId = rootId;
     });
   },
 
   /**
-   * @description 移动一个组件到另一个容器组件中。
-   * @param {number | null} sourId - 要移动的源组件 ID。
-   * @param {number | null} disId - 目标容器组件的 ID。
+   * @description 向指定父组件添加一个新组件
    */
-  moveComponents(sourId, disId) {
+  addComponent: (component, parentId) => {
     set((state) => {
-      if (!sourId || !disId) return;
-      const sourComponent = getComponentById(sourId, state.components);
-      const disComponent = getComponentById(disId, state.components);
-      if (!sourComponent || !disComponent) return;
+      const parent = state.components[parentId];
+      if (!parent) return;
 
-      // 从其父组件的 children 数组中移除
-      if (sourComponent.parentId) {
-        const parent = getComponentById(
-          sourComponent.parentId,
-          state.components
-        );
-        if (parent?.children) {
-          parent.children = parent.children.filter((c) => c.id !== sourId);
-        }
-      } else {
-        // 如果没有 parentId，说明是根组件，直接从顶层删除
-        state.components = state.components.filter((c) => c.id !== sourId);
+      const newComponent: Component = structuredClone(component);
+      // 如果调用方未指定 id，则生成一个新的唯一 id
+      if (!newComponent.id) {
+        newComponent.id = generateUniqueId();
       }
 
-      // 将源组件添加到目标容器的 children 中
-      if (!disComponent.children) disComponent.children = [];
-      sourComponent.parentId = disId;
-      disComponent.children.push(sourComponent);
+      newComponent.parentId = parentId;
+      newComponent.children = [];
+
+      // 写入 Map（O(1)）
+      state.components[newComponent.id] = newComponent;
+
+      // 更新父节点的 children id 列表
+      if (!parent.children) parent.children = [];
+      parent.children.push(newComponent.id);
     });
   },
 
   /**
-   * @description 设置编辑器的模式。
-   * @param {'edit' | 'preview'} mode - 要设置的模式。
+   * @description 删除指定组件及其所有后代
    */
-  setMode: (mode) => set({ mode }),
-
-  /**
-   * @description 更新指定组件的样式。
-   * @param {number} ComponentId - 目标组件的 ID。
-   * @param {CSSProperties} styles - 要更新的样式对象。
-   * @param {boolean} [replace=false] - 是否完全替换现有样式。`false` (默认) 为合并，`true` 为替换。
-   */
-  updateComponentStyles: (ComponentId, styles, replace = false) => {
+  deleteComponent: (componentId) => {
     set((state) => {
-      const component = getComponentById(ComponentId, state.components);
+      const component = state.components[componentId];
       if (!component) return;
 
-      // `replace` 参数决定是覆盖样式还是合并样式
+      // 1. 从父节点 children 中移除
+      if (component.parentId != null) {
+        const parent = state.components[component.parentId];
+        if (parent?.children) {
+          parent.children = parent.children.filter((id) => id !== componentId);
+        }
+      }
+
+      // 2. 递归删除所有子节点
+      const deleteRecursive = (id: number) => {
+        const comp = state.components[id];
+        if (!comp) return;
+        if (comp.children && comp.children.length > 0) {
+          comp.children.forEach(deleteRecursive);
+        }
+        delete state.components[id];
+      };
+
+      deleteRecursive(componentId);
+    });
+  },
+
+  /**
+   * @description 更新指定组件的 props
+   */
+  updateComponentProps: (componentId, props, replace = false) => {
+    set((state) => {
+      const component = state.components[componentId]; // O(1) 查找
+      if (!component) return;
+
+      component.props = replace
+        ? props
+        : {
+            ...component.props,
+            ...props,
+          };
+    });
+  },
+
+  /**
+   * @description 更新指定组件的 styles
+   */
+  updateComponentStyles: (componentId, styles, replace = false) => {
+    set((state) => {
+      const component = state.components[componentId]; // O(1) 查找
+      if (!component) return;
+
       component.styles = replace
         ? { ...styles }
         : { ...component.styles, ...styles };
@@ -163,233 +224,240 @@ const creator: StateCreator<EditorStore, [["zustand/immer", never]]> = (
   },
 
   /**
-   * @description 设置当前选中的组件ID。
-   * @param {number | null} comId - 要选中的组件ID，或 `null` 取消选中。
-   */
-  setCurComponentId: (comId) => {
-    // 核心优化：在更新选中状态这种纯UI、无需撤销/重做的操作前后，
-    // 明确地【暂停】和【恢复】历史记录。
-    // 这可以防止这类操作污染 `temporal` 的历史栈。
-    useComponetsStore.temporal.getState().pause();
-    set((state) => {
-      state.curComponentId = comId;
-    });
-    useComponetsStore.temporal.getState().resume();
-  },
-
-  /**
-   * @description 向指定的父组件中添加一个新组件。
-   * @param {Component} component - 要添加的组件对象。
-   * @param {number} [parentId] - 目标父组件的ID。如果未提供，则添加到根级。
-   */
-  addComponent: (component, parentId) => {
-    set((state) => {
-      // 使用 structuredClone 创建一个深拷贝，确保新添加的对象是纯净的
-      const newComponent = structuredClone(component);
-      if (parentId) {
-        const parent = getComponentById(parentId, state.components);
-        if (parent) {
-          if (!parent.children) parent.children = [];
-          newComponent.parentId = parentId;
-          parent.children.push(newComponent);
-        }
-      } else {
-        state.components.push(newComponent);
-      }
-    });
-  },
-
-  /**
-   * @description 根据ID删除一个组件及其所有后代。
-   * @param {number} componentId - 要删除的组件ID。
-   */
-  deleteComponent: (componentId) => {
-    set((state) => {
-      const component = getComponentById(componentId, state.components);
-      if (!component) return;
-
-      // 从其父组件的 children 数组中移除
-      if (component.parentId) {
-        const parent = getComponentById(component.parentId, state.components);
-        if (parent?.children) {
-          parent.children = parent.children.filter((c) => c.id !== componentId);
-        }
-      } else {
-        // 如果没有 parentId，说明是根组件，直接从顶层删除
-        state.components = state.components.filter((c) => c.id !== componentId);
-      }
-
-      // 关键: 如果删除的是当前选中的组件，需要同步清空选中状态
-      if (state.curComponentId === componentId) {
-        state.curComponentId = null;
-      }
-    });
-  },
-
-  /**
-   * @description 更新指定组件的 props。
-   * @param {number} componentId - 目标组件ID。
-   * @param {any} props - 要合并的新 props 对象。
-   */
-  updateComponentProps: (componentId, props, replace = false) => {
-    set((state) => {
-      const component = getComponentById(componentId, state.components);
-      if (!component) return;
-
-      // 如果 replace 为 true，则直接替换整个 props 对象
-      if (replace) {
-        component.props = props;
-      } else {
-        // 否则，合并 props
-        component.props = { ...component.props, ...props };
-      }
-
-      // 如果更新的是当前选中组件的 props，curComponent 将在 UI 层通过派生逻辑自动同步
-    });
-  },
-
-  /**
-   * @description 重置画布到初始状态。
+   * @description 重置画布到初始状态
    */
   resetComponents: () => {
     set((state) => {
-      // 重置时，需要将所有相关状态都恢复到初始值
-      state.components = [
-        {
-          id: 1,
-          name: "Page",
-          props: {},
-          desc: "页面",
-        },
-      ];
-      state.curComponentId = null;
-      state.clipboard = null;
+      const initial = createInitialState();
+      state.components = initial.components;
+      state.rootId = initial.rootId;
     });
+
+    // 同步清空 UI Store 中的选中状态和剪切板
+    useUIStore.getState().setCurComponentId(null);
+    useUIStore.getState().setClipboard(null);
   },
 
   /**
-   * @description 将指定组件复制到剪贴板。
-   * @param {number | null} componentId - 要复制的组件ID。
-   */
-  copyComponents: (componentId) => {
-    set((state) => {
-      const component = getComponentById(componentId, state.components);
-      if (!component) return;
-      state.clipboard = component;
-      // console.log(state.clipboard);
-    });
-  },
-
-  /**
-   * @description 将剪贴板中的组件粘贴到指定父组件下。
-   * @param {number | null} parentId - 目标父组件的ID。
+   * @description 将剪切板中的组件树粘贴到指定父组件下
+   * 剪切板数据来自 UI Store，仍然是树状结构
    */
   pasteComponents: (parentId) => {
+    const clipboard = useUIStore.getState().clipboard;
+    if (!parentId || !clipboard) return;
+
+    const { map: newComponentsMap, rootId } = regenerateIds(clipboard);
+
     set((state) => {
-      if (!parentId || !state.clipboard) return;
-      // 从剪贴板获取模板，并用 regenerateIds 创建一个拥有全新ID的组件树副本
-      const componentToPaste = regenerateIds(state.clipboard);
-      const parent = getComponentById(parentId, state.components);
-      if (parent) {
-        if (!parent.children) {
-          parent.children = [];
+      const parent = state.components[parentId];
+      if (!parent) return;
+
+      // 合并新的组件 Map
+      Object.assign(state.components, newComponentsMap);
+
+      const newRoot = state.components[rootId];
+      if (!newRoot) return;
+
+      // 将新 root 挂载到目标父组件下
+      newRoot.parentId = parentId;
+      if (!parent.children) parent.children = [];
+      parent.children.push(newRoot.id);
+    });
+  },
+
+  /**
+   * @description 将一个组件移动到新的父组件下
+   */
+  moveComponents: (sourId, disId) => {
+    set((state) => {
+      if (!sourId || !disId) return;
+      const sourComponent = state.components[sourId];
+      const disComponent = state.components[disId]; // 目标容器
+      if (!sourComponent || !disComponent) return;
+
+      // 1. 从旧父节点 children 移除
+      if (sourComponent.parentId) {
+        const oldParent = state.components[sourComponent.parentId];
+        if (oldParent?.children) {
+          oldParent.children = oldParent.children.filter((id) => id !== sourId);
         }
-        componentToPaste.parentId = parentId;
-        parent.children.push(componentToPaste);
       }
+
+      // 2. 添加到新父节点 children
+      if (!disComponent.children) disComponent.children = [];
+      disComponent.children.push(sourId);
+      sourComponent.parentId = disId; // 更新 parentId
     });
   },
 });
 
 /**
- * @description 递归地深克隆一个组件及其所有子组件，并为每个组件生成新的唯一 ID。
- * 这是实现安全复制粘贴的核心，确保粘贴出来的组件（及其后代）拥有与原组件完全不同的身份标识。
- * @param {Component} component - 要处理的组件模板。
- * @returns {Component} - 一个拥有全新 ID 体系的组件树副本。
+ * @description 递归地从剪切板组件树中生成新的 id，并构建范式化的组件 Map
+ * 返回：
+ * - map: 新的 (id -> Component) 映射
+ * - rootId: 新根节点的 id
  */
-function regenerateIds(component: Component): Component {
-  const newId = generateUniqueId();
+function regenerateIds(tree: ComponentTree): {
+  map: Record<number, Component>;
+  rootId: number;
+} {
+  const map: Record<number, Component> = {};
 
-  const newComponent: Component = {
-    ...component,
-    id: newId,
-    props: {
-      ...component.props,
-    },
+  const traverse = (node: ComponentTree, parentId: number | null): number => {
+    const newId = generateUniqueId();
+
+    const normalized: Component = {
+      id: newId,
+      name: node.name,
+      props: structuredClone(node.props ?? {}),
+      desc: node.desc ?? "",
+      parentId,
+      children: [],
+      styles: node.styles ? { ...node.styles } : undefined,
+    };
+
+    map[newId] = normalized;
+
+    if (node.children && node.children.length > 0) {
+      normalized.children = node.children.map((child) =>
+        traverse(child, newId)
+      );
+    }
+
+    return newId;
   };
 
-  // 如果有子组件，递归处理它们
-  if (newComponent.children && newComponent.children.length > 0) {
-    newComponent.children = newComponent.children.map((child) => {
-      const newChild = regenerateIds(child); // 递归调用
-      newChild.parentId = newComponent.id; // 关键：更新子组件的 parentId 指向新的父ID
-      return newChild;
-    });
-  }
+  const rootId = traverse(tree, null);
 
-  return newComponent;
+  return { map, rootId };
 }
 
 /**
- * @description 递归地从组件树中根据 ID 查找并返回组件对象。
- * @param {number | null} id - 要查找的组件 ID。
- * @param {Component[]} components - 当前要搜索的组件数组（或子树）。
- * @returns {Component | null} - 找到的组件对象，如果未找到则返回 null。
+ * @description 将树状结构的组件数组转换为范式化的 Map 结构
+ * 通常用于：
+ * - 大纲树拖拽后更新
+ * - 源码面板导入 Schema
+ */
+function normalizeComponentTree(tree: ComponentTree[]): {
+  map: Record<number, Component>;
+  rootId: number;
+} {
+  const map: Record<number, Component> = {};
+  let rootId = INITIAL_ROOT_ID;
+
+  const traverse = (node: ComponentTree, parentId: number | null) => {
+    const rawId = node.id;
+    const id =
+      typeof rawId === "string"
+        ? Number.parseInt(rawId, 10)
+        : (rawId as number);
+
+    const normalized: Component = {
+      id,
+      name: node.name,
+      props: node.props ?? {},
+      desc: node.desc ?? "",
+      parentId,
+      children: [],
+      styles: node.styles,
+    };
+
+    map[id] = normalized;
+
+    if (node.children && node.children.length > 0) {
+      normalized.children = node.children.map((child) => {
+        const childRawId = child.id;
+        return typeof childRawId === "string"
+          ? Number.parseInt(childRawId, 10)
+          : (childRawId as number);
+      });
+
+      node.children.forEach((child) => {
+        traverse(child, id);
+      });
+    }
+  };
+
+  if (tree.length > 0) {
+    const rawRootId = tree[0].id;
+    rootId =
+      typeof rawRootId === "string"
+        ? Number.parseInt(rawRootId, 10)
+        : (rawRootId as number);
+  }
+
+  tree.forEach((root) => traverse(root, null));
+
+  return { map, rootId };
+}
+
+/**
+ * @description 从范式化 Map 中构建树状结构（用于渲染或导出 Schema）
+ * 返回一个根节点数组，目前通常只有一个 Page 根节点。
+ */
+export function buildComponentTree(
+  components: Record<number, Component>,
+  rootId: number
+): ComponentTree[] {
+  const buildNode = (id: number): ComponentTree | null => {
+    const node = components[id];
+    if (!node) return null;
+
+    const children =
+      node.children && node.children.length > 0
+        ? (node.children
+            .map((childId) => buildNode(childId))
+            .filter(Boolean) as ComponentTree[])
+        : undefined;
+
+    return {
+      id: node.id,
+      name: node.name,
+      props: node.props,
+      desc: node.desc,
+      parentId: node.parentId,
+      children,
+      styles: node.styles,
+    };
+  };
+
+  const root = buildNode(rootId);
+  return root ? [root] : [];
+}
+
+/**
+ * @description 基于 Map 的 O(1) 组件查找
  */
 export function getComponentById(
   id: number | null,
-  components: Component[]
+  components: Record<number, Component>
 ): Component | null {
   if (id === null) return null;
-
-  for (const component of components) {
-    if (component.id === id) {
-      return component;
-    }
-
-    if (component.children && component.children.length > 0) {
-      const result = getComponentById(id, component.children);
-      if (result) {
-        return result;
-      }
-    }
-  }
-
-  return null;
+  return components[id] || null;
 }
 
 /**
- * @description 检查一个组件是否是另一个组件的后代。
- * 这是实现“防循环拖拽”的关键校验逻辑。
- * 通过从 "childId" 开始，沿着 parentId 向上追溯，看是否能找到 "ancestorId"。
- * @param {number} childId - “后代”组件的 ID。
- * @param {number} ancestorId - “祖先”组件的 ID。
- * @param {Component[]} components - 完整的组件树。
- * @returns {boolean} - 如果是后代，则返回 true，否则返回 false。
+ * @description 检查 childId 是否是 ancestorId 的后代
+ * 通过 parentId 向上遍历链路，避免递归遍历整棵树。
  */
 export function isDescendantOf(
   childId: number,
   ancestorId: number,
-  components: Component[]
+  components: Record<number, Component>
 ): boolean {
-  let current = getComponentById(childId, components);
-
-  // 向上遍历父节点
-  while (current && current.parentId) {
+  let current = components[childId];
+  while (current && current.parentId != null) {
     if (current.parentId === ancestorId) {
-      return true; // 找到了祖先
+      return true;
     }
-    current = getComponentById(current.parentId, components);
+    current = components[current.parentId];
   }
-
-  return false; // 遍历到根节点都未找到
+  return false;
 }
 
 /**
- * @description 创建一个用于生成“单调递增”唯一ID的函数（工厂模式）。
- * 此函数利用了闭包的特性来维护一个内部的 `lastId` 状态。
- * 这样可以保证即使在同一毫秒内连续调用返回的生成器，ID也能持续递增，确保其在会话中的唯一性。
- * @returns {() => number} 返回一个ID生成器函数。该函数无参数，每次调用都会返回一个新的、唯一的数字ID。
+ * @description 创建一个用于生成“单调递增”唯一ID的函数（工厂模式）
+ * 与原实现保持一致，确保在当前会话中 id 唯一且递增。
  */
 const createIdGenerator = () => {
   // 初始化时使用当前时间戳作为基础
@@ -401,7 +469,7 @@ const createIdGenerator = () => {
     // 如果当前时间戳小于或等于上一次生成的ID（高频调用或时钟回拨可能导致）
     if (newId <= lastId) {
       // 则在上一个ID的基础上加1，保证单调递增
-      lastId++;
+      lastId += 1;
       return lastId;
     }
 
@@ -412,68 +480,86 @@ const createIdGenerator = () => {
 };
 
 /**
- * @description 生成一个在当前会话中唯一的、单调递增的数字ID。
- * @example
- * const id1 = generateUniqueId(); // -> 1750441208441
- * const id2 = generateUniqueId(); // -> 1750441208442 (即使在同一毫秒内调用)
- * @type {() => number}
+ * @description 生成一个在当前会话中唯一的、单调递增的数字ID
  */
 const generateUniqueId = createIdGenerator();
 
 /**
- * @description 创建最终的 store 实例，并组合使用多个中间件。
- * 中间件的包裹顺序非常重要，遵循“从内到外”的执行逻辑：
- * 1. `immer`: 在最内层，让我们可以用“可变”的方式写出“不可变”的更新逻辑。
- * 2. `persist`: 包裹 `immer`，将状态持久化到 localStorage。
- * 3. `temporal`: 在最外层，为整个状态（包括持久化的部分）增加撤销/重做能力。
+ * @description 创建最终的 store 实例，并组合使用多个中间件：
+ * 1. immer: 允许在 set 中直接“可变”写法
+ * 2. persist: 本地持久化，只存储 components 和 rootId
+ * 3. temporal: 撤销/重做，只跟踪组件数据的变化
  */
-export const useComponetsStore = create<EditorStore>()(
+export const useComponentsStore = create<ComponentsStore>()(
   temporal(
     persist(immer(creator), {
-      name: "lowcode-store", // 为持久化存储指定一个唯一的名称
-      // 使用 partialize 函数，只持久化核心业务状态，避免不必要或瞬时的数据（如 curComponent）被保存
+      name: "lowcode-store",
+      version: 2,
       partialize: (state) => ({
         components: state.components,
-        // TIPS: 如果需要，也可以持久化 mode, curComponentId 等
+        rootId: state.rootId,
       }),
+      migrate: (persistedState: any) => {
+        // 没有任何持久化内容：退回初始状态
+        if (!persistedState || !persistedState.components) {
+          const initial = createInitialState();
+          return {
+            components: initial.components,
+            rootId: initial.rootId,
+          };
+        }
+
+        // 旧版本：components 是数组（树）
+        if (Array.isArray(persistedState.components)) {
+          const { map, rootId } = normalizeComponentTree(
+            persistedState.components as ComponentTree[]
+          );
+          return {
+            ...persistedState,
+            components: map,
+            rootId: rootId ?? INITIAL_ROOT_ID,
+          };
+        }
+
+        // 新版本但 rootId 丢失
+        if (!persistedState.rootId) {
+          return {
+            ...persistedState,
+            rootId: INITIAL_ROOT_ID,
+          };
+        }
+
+        // 默认保持原样
+        return persistedState;
+      },
     }),
     {
-      // temporal (zundo) 的配置
-      limit: 100, // 最多记录100步历史
-      // 同样只让 temporal 关注核心的 components 变化，
-      // 像 curComponentId 这类纯粹的UI状态变化不应被记录到历史中。
-      partialize: (state) => {
-        return {
-          components: state.components,
-        };
-      },
+      limit: 100,
+      partialize: (state) => ({
+        components: state.components,
+        rootId: state.rootId,
+      }),
     }
   )
 );
 
-/**
- * @description 订阅 store 的状态变化，以处理撤销/重做等操作触发的副作用。
- * 这是连接“历史状态”和“当前UI状态”的关键桥梁，用于处理状态不同步的问题。
- */
-useComponetsStore.subscribe(
-  // `subscribe` 的回调会接收到最新的 state 和变化前的 prevState
-  (state, prevState) => {
-    // 我们只关心之前有组件被选中的情况
-    if (prevState.curComponentId) {
-      // 检查之前被选中的组件，在【新】的状态树里是否还存在
-      const componentStillExists = getComponentById(
-        prevState.curComponentId,
-        state.components // 使用最新的 components 状态
-      );
+// 向后兼容旧的拼写（避免一次性全量替换所有引用）
+export const useComponetsStore = useComponentsStore;
 
-      // 如果组件在新状态里不见了（说明它被删除了，无论是通过 delete 还是 redo/undo）
-      if (!componentStillExists) {
-        // 那么就清空当前选中的ID，避免产生“幽灵选中”的 bug
-        // 使用 setTimeout(..., 0) 将此更新推入下一个事件循环，以避免在当前更新流程中直接修改 state 引发冲突
-        setTimeout(() => {
-          useComponetsStore.getState().setCurComponentId(null);
-        }, 0);
-      }
-    }
+/**
+ * @description 订阅数据 Store 的变化，保证 UI Store 中的 curComponentId 始终指向存在的组件
+ * 当撤销/重做或删除导致当前选中组件被移除时，自动清空选中状态。
+ */
+useComponentsStore.subscribe((state) => {
+  const curComponentId = useUIStore.getState().curComponentId;
+  if (!curComponentId) return;
+
+  const componentStillExists = !!state.components[curComponentId];
+
+  if (!componentStillExists) {
+    // 使用 setTimeout 推迟到下一个事件循环，避免与当前更新产生冲突
+    setTimeout(() => {
+      useUIStore.getState().setCurComponentId(null);
+    }, 0);
   }
-);
+});

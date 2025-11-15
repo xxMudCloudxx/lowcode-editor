@@ -3,21 +3,23 @@
  * @description
  * 编辑器的主画布区域。
  * 负责：
- * - 递归渲染 `components` store 中的组件树（的 dev 版本）。
- * - 通过事件委托（Event Delegation）处理整个画布的鼠标悬浮和点击事件，以确定当前 hover 和 selected 的组件。
- * - 条件性地渲染 HoverMask 和 SelectedMask 来提供视觉反馈。
+ * - 基于 `components` store 中的范式化组件 Map 递归渲染组件树（dev 版本）
+ * - 通过事件委托处理画布的鼠标悬浮和点击事件，确定当前 hover / selected 的组件
+ * - 条件性地渲染 HoverMask / SelectedMask 来提供视觉反馈
  * @module Components/EditArea
  */
 
 import React, { Suspense, useState, type MouseEventHandler } from "react";
-import { useComponetsStore, type Component } from "../../stores/components";
+import { useComponentsStore } from "../../stores/components";
 import { useComponentConfigStore } from "../../stores/component-config";
+import { useUIStore } from "../../stores/uiStore";
 import HoverMask from "./HoverMask";
 import SelectedMask from "./SelectedMask";
 import LoadingPlaceholder from "../common/LoadingPlaceholder";
 
 export function EditArea() {
-  const { components, curComponentId, setCurComponentId } = useComponetsStore();
+  const { components, rootId } = useComponentsStore();
+  const { curComponentId, setCurComponentId } = useUIStore();
   const { componentConfig } = useComponentConfigStore();
 
   // 使用 state 追踪当前鼠标悬浮在其上的组件 ID
@@ -53,15 +55,16 @@ export function EditArea() {
    */
   const handleClick: MouseEventHandler = (e) => {
     const path = e.nativeEvent.composedPath();
-    for (let i = 0; i < path.length; i++) {
+    for (let i = 0; i < path.length; i += 1) {
       const ele = path[i] as HTMLElement;
       if (ele && ele.dataset) {
         const componentId = ele.dataset.componentId;
         if (componentId) {
-          if (curComponentId === +componentId) {
+          const id = +componentId;
+          if (curComponentId === id) {
             setCurComponentId(null);
           } else {
-            setCurComponentId(+componentId);
+            setCurComponentId(id);
           }
           return;
         }
@@ -70,46 +73,43 @@ export function EditArea() {
   };
 
   /**
-   * @description 递归渲染函数。
-   * 遍历组件树，并使用 React.createElement 动态创建每个组件的“开发版本”(`dev`)。
-   * `dev` 版本组件通常包含了用于编辑器交互的额外逻辑（如 useDrag, useDrop）。
-   * @param {Component[]} components - 要渲染的组件（或子组件）数组。
-   * @returns {React.ReactNode} - 渲染出的 React 节点。
+   * 基于范式化 Map 的递归渲染函数。
+   * 通过组件 id 从 Map 中取出节点，查找其 dev 版本组件并渲染，
+   * 再根据 children id 列表递归渲染子节点。
    */
-  function renderComponents(components: Component[]): React.ReactNode {
-    return components.map((component: Component) => {
-      const config = componentConfig?.[component.name];
+  const RenderNode = ({ id }: { id: number }) => {
+    const component = components[id];
+    if (!component) return null;
 
-      // 如果找不到组件配置或没有 dev 版本，则不渲染
-      if (!config?.dev) {
-        return null;
-      }
+    const config = componentConfig?.[component.name];
+    if (!config?.dev) {
+      return null;
+    }
 
-      // 使用 React.createElement 动态创建组件实例
-      // 将 store 中的 props 和 config 中的 defaultProps 传递下去
-      return (
-        <Suspense
-          key={component.id}
-          fallback={<LoadingPlaceholder componentDesc={config.desc} />}
-        >
-          {React.createElement(
-            config.dev,
-            {
-              key: component.id,
-              id: component.id,
-              name: component.name,
-              styles: component.styles,
-              isSelected: component.id === curComponentId,
-              ...config.defaultProps,
-              ...component.props,
-            },
-            // 递归渲染子组件
-            renderComponents(component.children || [])
-          )}
-        </Suspense>
-      );
-    });
-  }
+    return (
+      <Suspense
+        key={component.id}
+        fallback={<LoadingPlaceholder componentDesc={config.desc} />}
+      >
+        {React.createElement(
+          config.dev,
+          {
+            key: component.id,
+            id: component.id,
+            name: component.name,
+            styles: component.styles,
+            isSelected: component.id === curComponentId,
+            ...config.defaultProps,
+            ...component.props,
+          },
+          component.children?.map((childId) => (
+            <RenderNode key={childId} id={childId} />
+          ))
+        )}
+      </Suspense>
+    );
+  };
+
   return (
     <div
       className="h-full edit-area overflow-y-auto relative p-6 overflow-x-auto w-full"
@@ -128,7 +128,7 @@ export function EditArea() {
         backgroundSize: "50px 50px, 100px 100px, 100% 100%",
       }}
     >
-      {renderComponents(components)}
+      {rootId && <RenderNode id={rootId} />}
 
       {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
       {hoverComponentId &&

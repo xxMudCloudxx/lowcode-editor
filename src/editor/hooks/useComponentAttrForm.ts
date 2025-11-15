@@ -1,8 +1,9 @@
 // src/editor/hooks/useComponentAttrForm.ts
 import { useEffect } from "react";
 import { Form } from "antd";
-import { useComponetsStore } from "../stores/components";
-import type { Component } from "../stores/components";
+import { useComponentsStore } from "../stores/components";
+import { useUIStore } from "../stores/uiStore";
+import type { Component } from "../interface";
 
 type AnyObject = Record<string, any>;
 
@@ -12,7 +13,8 @@ type AnyObject = Record<string, any>;
  */
 export function useComponentAttrForm(curComponent: Component | null) {
   const [form] = Form.useForm<AnyObject>();
-  const { curComponentId, updateComponentProps } = useComponetsStore();
+  const { updateComponentProps } = useComponentsStore();
+  const curComponentId = useUIStore((s) => s.curComponentId);
 
   // Effect: 当选中组件变化时，同步 antd Form 的值
   useEffect(() => {

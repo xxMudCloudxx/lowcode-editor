@@ -8,7 +8,7 @@
 import { Form } from "antd";
 import FormItem from "antd/es/form/FormItem";
 import StyleColorPicker from "../../../common/StyleColorPicker";
-import type { Component } from "../../../../stores/components";
+import type { Component } from "../../../../interface";
 import type { CSSProperties } from "react";
 import StyleSliderWithInput from "../../../common/StyleSliderWithInput";
 import { useStyleChangeHandler } from "../../../../hooks/useStyleChangeHandler";

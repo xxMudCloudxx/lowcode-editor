@@ -8,7 +8,7 @@
  * @module Components/Setting/ComponentStyle/LayoutSetter
  */
 import type { CSSProperties } from "react";
-import type { Component } from "../../../../stores/components";
+import type { Component } from "../../../../interface";
 import BoxModelEditor from "./BoxModelEditor";
 import SizeEditor from "./SizeEditor";
 import { Form } from "antd";

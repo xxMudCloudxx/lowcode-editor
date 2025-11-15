@@ -37,17 +37,23 @@ function FormDev({
   }, []);
 
   const formItems = useMemo(() => {
-    return React.Children.map(children, (suspenseElement: any) => {
-      if (!suspenseElement) return null;
+    const list =
+      React.Children.map(children, (suspenseElement: any) => {
+        if (!suspenseElement) return null;
 
-      const item = suspenseElement.props.children;
-      return {
-        label: item.props?.label,
-        name: item.props?.name,
-        type: item.props?.type,
-        id: item.props?.id,
-      };
-    })?.filter(Boolean);
+        const item = suspenseElement.props?.children;
+        // 兼容性保护：如果不是预期的子节点结构，直接跳过
+        if (!item || !item.props) return null;
+
+        return {
+          label: item.props.label,
+          name: item.props.name,
+          type: item.props.type,
+          id: item.props.id,
+        };
+      })?.filter(Boolean) || [];
+
+    return list;
   }, [children]);
 
   return (

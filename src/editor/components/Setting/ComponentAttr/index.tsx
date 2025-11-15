@@ -2,11 +2,9 @@
 
 import { Form, Input } from "antd";
 import { useMemo } from "react";
-import {
-  useComponetsStore,
-  getComponentById,
-  type Component,
-} from "../../../stores/components";
+import { useComponentsStore, getComponentById } from "../../../stores/components";
+import { useUIStore } from "../../../stores/uiStore";
+import type { Component } from "../../../interface";
 import { useComponentConfigStore } from "../../../stores/component-config";
 import { getValuePropNameFor } from "../../../utils/formUtils";
 import { FormElementRenderer } from "./FormElementRenderer";
@@ -14,7 +12,8 @@ import { useComponentAttrForm } from "../../../hooks/useComponentAttrForm";
 import FormItem from "antd/es/form/FormItem";
 
 export function ComponentAttr() {
-  const { curComponentId, components } = useComponetsStore();
+  const { components } = useComponentsStore();
+  const curComponentId = useUIStore((s) => s.curComponentId);
   const { componentConfig } = useComponentConfigStore();
 
   // 在 UI 层按需派生当前选中组件
@@ -70,4 +69,3 @@ export function ComponentAttr() {
     </Form>
   );
 }
-

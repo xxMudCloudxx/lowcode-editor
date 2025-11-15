@@ -8,7 +8,7 @@
  */
 
 import { useState } from "react";
-import { useComponetsStore } from "../../stores/components";
+import { useUIStore } from "../../stores/uiStore";
 import { Segmented } from "antd";
 import { ComponentAttr } from "./ComponentAttr";
 import { ComponentStyle } from "./ComponentStyle";
@@ -44,7 +44,7 @@ const EmptyStatus = () => {
 };
 
 export function Setting() {
-  const { curComponentId } = useComponetsStore();
+  const curComponentId = useUIStore((s) => s.curComponentId);
 
   // 使用 state 管理当前激活的面板 key ('属性', '样式', '事件')
   const [key, setKey] = useState<string>("属性");

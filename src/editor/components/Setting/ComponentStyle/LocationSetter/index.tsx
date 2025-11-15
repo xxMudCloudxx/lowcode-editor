@@ -6,7 +6,7 @@
  * @module Components/Setting/ComponentStyle/LocationSetter
  */
 import { Form, InputNumber, Select, type SelectProps } from "antd";
-import type { Component } from "../../../../stores/components";
+import type { Component } from "../../../../interface";
 import { useEffect, useState, type CSSProperties } from "react";
 import LocationBoxModalEditor from "./BoxModalEditor";
 import { cap } from "../../../../utils/styles";

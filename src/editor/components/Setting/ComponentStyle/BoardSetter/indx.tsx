@@ -7,7 +7,7 @@
  * @module Components/Setting/ComponentStyle/BoardSetter
  */
 import { Form } from "antd";
-import type { Component } from "../../../../stores/components";
+import type { Component } from "../../../../interface";
 import { type CSSProperties } from "react";
 import BorderRadiusEditor from "./BorderRadiusEditor";
 import type { KebabCaseCSSProperties } from "../../../../utils/styles";

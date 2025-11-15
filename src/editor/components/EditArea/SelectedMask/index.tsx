@@ -1,11 +1,11 @@
 /**
  * @file /src/editor/components/EditArea/SelectedMask/index.tsx
  * @description
- * 一个用于在编辑器画布中高亮“选中”组件的遮罩层。
- * 功能与 HoverMask 类似，但增加了额外的交互功能：
- * - 显示组件层级关系（父组件面包屑）。
- * - 提供删除组件的操作。
- * 同样使用 React Portal 进行渲染。
+ * 在编辑器画布中高亮“选中”组件的遮罩层。
+ * 功能类似 HoverMask，但增加了：
+ * - 显示组件层级关系（父组件面包屑）
+ * - 提供删除 / 复制 / 粘贴等操作
+ * 使用 React Portal 进行渲染。
  * @module Components/EditArea/SelectedMask
  */
 
@@ -13,8 +13,10 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   getComponentById,
-  useComponetsStore,
+  useComponentsStore,
 } from "../../../stores/components";
+import { useUIStore } from "../../../stores/uiStore";
+import type { Component, ComponentTree } from "../../../interface";
 import { Dropdown, message, Popconfirm, Space, Tooltip } from "antd";
 import {
   CopyOutlined,
@@ -28,12 +30,12 @@ interface SelectedMaskProps {
   containerClassName: string;
   componentId: number;
 }
+
 function SelectedMask({
   containerClassName,
   portalWrapperClassName,
   componentId,
 }: SelectedMaskProps) {
-  // ... (position state 和 updatePosition 函数与 HoverMask 完全相同)
   const [position, setPosition] = useState({
     left: 0,
     top: 0,
@@ -43,24 +45,15 @@ function SelectedMask({
     labelLeft: 0,
   });
 
-  const {
-    curComponentId,
-    components,
-    deleteComponent,
-    setCurComponentId,
-    copyComponents,
-    pasteComponents,
-  } = useComponetsStore();
+  const { components, deleteComponent, pasteComponents } = useComponentsStore();
+  const { curComponentId, setCurComponentId, setClipboard } = useUIStore();
 
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
-  // 一个专门用于强制更新的触发器。
-  // 当我们需要在DOM布局变化后重新计算遮罩层位置时（如窗口缩放），
-  // 就通过更新这个 state 来触发 useLayoutEffect 的重新执行。
-  const [updateTrigger, setUpdateTrigger] = useState(0);
-
-  // 如果撤销或重做，可以及时更新SelectedMask
-  const { pastStates, futureStates } = useStore(useComponetsStore.temporal);
+  // 如果撤销或重做，可以及时更新 SelectedMask
+  const { pastStates, futureStates } = useStore(
+    useComponentsStore.temporal
+  );
 
   useEffect(() => {
     const el = document.querySelector(`.${portalWrapperClassName}`);
@@ -68,162 +61,120 @@ function SelectedMask({
   }, [portalWrapperClassName]);
 
   /**
-   * @description 将所有外部事件监听统一管理。
-   * 无论是容器滚动还是尺寸变化，我们都只做一件事：触发更新。
-   * 这样做不仅逻辑清晰，而且性能更可控。
+   * 将所有外部事件监听统一管理。
+   * 无论是容器滚动还是窗口尺寸变化，都触发一次位置更新。
    */
   useEffect(() => {
     const container = document.querySelector(`.${containerClassName}`);
-    const node = document.querySelector<HTMLElement>(
-      `[data-component-id="${componentId}"]`
-    );
-    if (!container || !node) return;
+    if (!container) return;
 
-    // 创建一个可复用的强制更新函数
-    const forceUpdate = () => setUpdateTrigger((v) => v + 1);
-
-    // 对滚动事件进行节流（throttle），防止过于频繁地触发更新，提升性能
-    // requestAnimationFrame 是浏览器原生支持的，非常适合做此类UI更新的节流
-    let scrollTimeOut: number;
-
-    // 定义滚动事件的处理函数
     const handleScroll = () => {
-      // 取消上一个动画帧请求
-      // 如果在前一个 16ms 内已经有了一个更新请求，但它还没来得及执行，
-      // 那么就取消它。我们只关心最新的状态。
-      cancelAnimationFrame(scrollTimeOut);
-      //注册一个新的动画帧请求;
-      // 告诉浏览器：“请在下一次屏幕可以重绘的时候，帮我调用 forceUpdate”。
-      // 这就保证了在 16.7ms 的时间窗口内，forceUpdate 最多只会被调用一次。
-      scrollTimeOut = requestAnimationFrame(forceUpdate);
+      updatePosition();
     };
 
-    const resizeObserver = new ResizeObserver(forceUpdate);
-    // 使用 passive: true 优化滚动性能，确保滚动动画的流畅性。
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    resizeObserver.observe(container);
-    resizeObserver.observe(node);
+    const handleResize = () => {
+      updatePosition();
+    };
 
-    // 观察 node 的 style / class 变动（margin 常通过 style/class）
-    const mutationObserver = new MutationObserver(forceUpdate);
-    mutationObserver.observe(node, {
-      attributes: true,
-      attributeFilter: ["style", "class"],
-    });
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      resizeObserver.disconnect();
       container.removeEventListener("scroll", handleScroll);
-      cancelAnimationFrame(scrollTimeOut);
-      mutationObserver.disconnect();
+      window.removeEventListener("resize", handleResize);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [containerClassName, componentId]);
 
-  // 将所有定位逻辑统一到 useLayoutEffect 中。
-  // 它保证了DOM测量（getBoundingClientRect）发生在DOM更新之后、浏览器绘制之前，
-  // 从而读取到最准确的布局信息，彻底解决了因“赛跑问题”导致的定位偏移。
+  // 将定位逻辑放在 useLayoutEffect 中，确保在 DOM 更新之后、浏览器绘制之前执行
   useLayoutEffect(() => {
-    // 把 updatePosition 的逻辑放在 effect 内部，确保它能访问到最新的所有依赖
+    updatePosition();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [componentId, components, pastStates, futureStates]);
+
+  /**
+   * 计算并更新遮罩层的位置和大小
+   */
+  function updatePosition() {
     if (!componentId) return;
 
     const container = document.querySelector(`.${containerClassName}`);
     if (!container) return;
 
-    const node = document.querySelector(`[data-component-id="${componentId}"]`);
-    // 当组件被删除时，node 可能不存在，此时应隐藏遮罩
-    if (!node) {
-      setPosition((pos) => ({ ...pos, width: 0, height: 0 }));
-      return;
-    }
+    const node = document.querySelector(
+      `[data-component-id="${componentId}"]`
+    );
+    if (!node) return;
 
     const { top, left, width, height } = node.getBoundingClientRect();
     const { top: containerTop, left: containerLeft } =
       container.getBoundingClientRect();
 
     let labelTop = top - containerTop + container.scrollTop;
-    let labelLeft = left - containerLeft + width;
-
+    const labelLeft = left - containerLeft + width;
     if (labelTop <= 0) {
       labelTop += 20;
     }
 
-    if (labelLeft <= 100) {
-      labelLeft += labelLeft;
-    }
-
     setPosition({
       top: top - containerTop + container.scrollTop,
-      left: left - containerLeft + container.scrollLeft, // 确保 scrollLeft 的修正是保留的
+      left: left - containerLeft + container.scrollLeft,
       width,
       height,
-      labelTop,
       labelLeft,
+      labelTop,
     });
+  }
 
-    // 依赖项现在包含了组件ID、组件树、以及我们的resize触发器
-    // 任何一个发生变化，都会在最正确的时机重新计算位置
-  }, [
-    componentId,
-    components,
-    updateTrigger,
-    containerClassName,
-    pastStates,
-    futureStates,
-  ]);
+  // 当前选中组件
+  const curComponent = useMemo<Component | null>(
+    () =>
+      curComponentId != null
+        ? getComponentById(curComponentId, components)
+        : null,
+    [curComponentId, components]
+  );
 
-  const curComponent = useMemo(() => {
-    return getComponentById(componentId, components);
-  }, [componentId]);
+  // 通过 parentId 向上遍历，构建父组件面包屑
+  const parentComponents = useMemo<Component[]>(() => {
+    const parents: Component[] = [];
+    let component = curComponent;
+    while (component?.parentId != null) {
+      const parent = getComponentById(component.parentId, components);
+      if (!parent) break;
+      parents.push(parent);
+      component = parent;
+    }
+    return parents;
+  }, [curComponent, components]);
 
   function handleCopy(e?: React.MouseEvent<HTMLElement>) {
     e?.stopPropagation();
-    if (curComponentId) {
-      copyComponents(curComponentId);
-      message.success("已复制");
-    }
-  }
+    if (!curComponentId) return;
 
-  //TODO：智能计算List
-  const ContainerList: Set<string> = new Set([
-    "Container",
-    "Page",
-    "Modal",
-    "Table",
-  ]);
+    const tree = buildClipboardTree(curComponentId, components);
+    if (!tree) return;
+
+    setClipboard(tree);
+    message.success("复制成功");
+  }
 
   function handlePaste(e?: React.MouseEvent<HTMLElement>) {
     e?.stopPropagation();
-    // 智能判断粘贴目标：
-    // 如果当前选中是容器，就粘贴到容器内部
-    // 否则，粘贴到当前组件的父级中（成为其兄弟节点）
-    if (!curComponent) return;
-    const parentId = ContainerList.has(curComponent.name)
-      ? curComponent.id
-      : curComponent.parentId;
-
-    if (parentId) {
-      pasteComponents(parentId);
+    if (curComponentId) {
+      pasteComponents(curComponentId);
+      message.success("粘贴成功");
     }
-
-    message.success("粘贴成功");
   }
 
   function handleDelete(e?: React.MouseEvent<HTMLElement>) {
     e?.stopPropagation();
-    deleteComponent(curComponentId!);
+    if (!curComponentId) return;
+    deleteComponent(curComponentId);
     setCurComponentId(null);
   }
-  const parentComponents = useMemo(() => {
-    const parentComponents = [];
-    let component = curComponent;
-    while (component?.parentId) {
-      component = getComponentById(component.parentId, components)!;
-      parentComponents.push(component);
-    }
-    return parentComponents;
-  }, [curComponent]);
 
-  if (!portalEl) return null;
+  if (!portalEl || !curComponent) return null;
 
   return createPortal(
     <>
@@ -265,7 +216,6 @@ function SelectedMask({
                 label: item.desc,
               })),
               onClick: ({ key }) => {
-                // 允许用户通过面包屑快速选中父组件
                 setCurComponentId(+key);
               },
             }}
@@ -281,10 +231,11 @@ function SelectedMask({
                 whiteSpace: "nowrap",
               }}
             >
-              {curComponent?.desc}
+              {curComponent.desc}
             </div>
           </Dropdown>
-          {/* 删除按钮 (根 Page 组件不允许删除) */}
+
+          {/* 删除按钮（Page 组件不允许删除） */}
           {curComponentId !== 1 && (
             <Tooltip title="删除">
               <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
@@ -299,32 +250,23 @@ function SelectedMask({
               </div>
             </Tooltip>
           )}
+
           {/* 复制按钮 */}
-          {
-            <Tooltip title="复制">
-              <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
-                <CopyOutlined style={{ color: "#fff" }} onClick={handleCopy} />
-              </div>
-            </Tooltip>
-          }
-          {/* 粘贴按钮  */}
-          {
-            <Tooltip title="粘贴">
-              <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
-                {/* <Popconfirm
-                  title="确认粘贴？"
-                  okText={"确认"}
-                  cancelText={"取消"}
-                  onConfirm={handlePaste}
-                >
-                </Popconfirm> */}
-                <FileAddOutlined
-                  style={{ color: "#fff" }}
-                  onClick={handlePaste}
-                />
-              </div>
-            </Tooltip>
-          }
+          <Tooltip title="复制">
+            <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
+              <CopyOutlined style={{ color: "#fff" }} onClick={handleCopy} />
+            </div>
+          </Tooltip>
+
+          {/* 粘贴按钮 */}
+          <Tooltip title="粘贴">
+            <div style={{ padding: "0 8px", backgroundColor: "blue" }}>
+              <FileAddOutlined
+                style={{ color: "#fff" }}
+                onClick={handlePaste}
+              />
+            </div>
+          </Tooltip>
         </Space>
       </div>
     </>,
@@ -332,4 +274,33 @@ function SelectedMask({
   );
 }
 
+/**
+ * 从范式化 Map 中构建以指定组件为根的树状结构，用于剪切板。
+ */
+function buildClipboardTree(
+  id: number,
+  components: Record<number, Component>
+): ComponentTree | null {
+  const node = components[id];
+  if (!node) return null;
+
+  const children =
+    node.children && node.children.length > 0
+      ? (node.children
+          .map((childId) => buildClipboardTree(childId, components))
+          .filter(Boolean) as ComponentTree[])
+      : undefined;
+
+  return {
+    id: node.id,
+    name: node.name,
+    props: node.props,
+    desc: node.desc,
+    parentId: node.parentId,
+    children,
+    styles: node.styles,
+  };
+}
+
 export default SelectedMask;
+

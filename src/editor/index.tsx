@@ -4,13 +4,12 @@ import { Header } from "./components/Header/Header";
 import { EditArea } from "./components/EditArea";
 import { Setting } from "./components/Setting";
 import { MaterialWrapper } from "./components/MaterialWrapper";
-import { useComponetsStore } from "./stores/components";
 import { Preview } from "./components/Preview";
 import { useShortcutKeys } from "./hooks/useShortcutKeys";
+import { useUIStore } from "./stores/uiStore";
 
 export default function ReactPlayground() {
-  const { mode } = useComponetsStore();
-
+  const mode = useUIStore((s) => s.mode);
   useShortcutKeys();
 
   return (

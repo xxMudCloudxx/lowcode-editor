@@ -1,11 +1,9 @@
 import { useMemo } from "react";
 
 import { RightOutlined } from "@ant-design/icons";
-import {
-  getComponentById,
-  useComponetsStore,
-  type Component,
-} from "../../../stores/components";
+import { getComponentById, useComponentsStore } from "../../../stores/components";
+import { useUIStore } from "../../../stores/uiStore";
+import type { Component } from "../../../interface";
 
 // 子组件保持不变，但样式将被大大简化
 const BreadcrumbItem = ({
@@ -34,8 +32,8 @@ const BreadcrumbItem = ({
 };
 
 export function ComponentBreadcrumb() {
-  const { components, curComponentId, setCurComponentId } =
-    useComponetsStore();
+  const { components } = useComponentsStore();
+  const { curComponentId, setCurComponentId } = useUIStore();
 
   // 在 UI 层派生当前选中组件
   const curComponent = useMemo(

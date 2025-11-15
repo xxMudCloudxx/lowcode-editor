@@ -2,7 +2,7 @@
 import { useState } from "react";
 import type { ComponentEvent } from "../stores/component-config";
 import type { ActionConfig } from "../components/Setting/ComponentEvent/ActionModal";
-import type { Component } from "../stores/components";
+import type { Component } from "../interface";
 
 // 这个Hook封装了所有关于Action的CRUD操作和模态框状态
 export function useActionManager(
