@@ -1,5 +1,10 @@
 // src/code-generator/types/publisher.ts
 
+/**
+ * @file 发布器类型定义
+ * @description 定义出码发布器接口及其选项，用于约束不同发布实现的输入与输出。
+ */
+
 import type { IGeneratedFile } from "./ir";
 
 /**

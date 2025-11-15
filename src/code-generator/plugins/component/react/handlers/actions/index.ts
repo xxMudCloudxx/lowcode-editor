@@ -1,4 +1,10 @@
 // src/code-generator/plugins/component/react/handlers/action/index.ts
+
+/**
+ * @file Action 处理器注册表
+ * @description 按 actionType 注册并查找对应的 Action 处理器，供 JSX 生成阶段统一调度。
+ */
+
 import type { IActionHandler } from "./type";
 import { showMessageActionHandler } from "./showMessage";
 import { defaultActionHandler } from "./default";

@@ -1,5 +1,10 @@
 // src/code-generator/publisher/zip-publisher.ts
 
+/**
+ * @file ZIP 发布器
+ * @description 使用 JSZip 将虚拟文件列表打包为 ZIP Blob，作为代码导出的最终产物。
+ */
+
 import JSZip from "jszip";
 import type { IGeneratedFile } from "../types/ir";
 import type { IPublisher, IPublisherOptions } from "../types/publisher";

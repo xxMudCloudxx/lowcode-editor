@@ -1,5 +1,10 @@
 // src/code-generator/parser/component-handlers.ts
 
+/**
+ * @file 组件解析处理器注册表
+ * @description 定义 SchemaParser 可用的节点/属性处理器，包括 Icon、Button、Typography 等组件的专用转换逻辑。
+ */
+
 import type {
   IRNode,
   IRPropValue,

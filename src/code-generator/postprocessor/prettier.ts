@@ -1,3 +1,7 @@
+/**
+ * @file Prettier 后处理器
+ * @description 封装 Prettier v3 Standalone，在代码生成完成后对不同类型的文件内容进行格式化。
+ */
 // src/code-generator/postprocessor/prettier.ts
 import * as prettier from "prettier/standalone"; //  Standalone 运行时
 import type { Options } from "prettier"; // 导入类型

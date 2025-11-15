@@ -1,5 +1,10 @@
 // src/code-generator/plugins/project/index.ts
 
+/**
+ * @file 项目级出码插件入口
+ * @description 汇总并导出所有项目级插件（样式、路由、入口文件、配置等），由解决方案统一执行。
+ */
+
 import globalStylePlugin from "./global-style";
 import routerPlugin from "./router";
 import entryPlugin from "./entry";

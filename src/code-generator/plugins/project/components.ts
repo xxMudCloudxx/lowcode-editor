@@ -1,5 +1,10 @@
 // src/code-generator/plugins/project/components.ts
 
+/**
+ * @file 项目级运行时组件生成插件
+ * @description 向生成项目中注入 Page、PageHeader 等运行时 React 组件，供最终页面渲染使用。
+ */
+
 import type { IProjectPlugin } from "../../types/plugin";
 import type { ProjectBuilder } from "../../generator/project-builder";
 

@@ -1,3 +1,7 @@
+/**
+ * @file 浏览器下载工具函数
+ * @description 提供将 Blob 对象触发为浏览器下载的工具方法，用于本地导出 ZIP 等文件。
+ */
 // src/code-generator/utils/download.ts
 
 /**

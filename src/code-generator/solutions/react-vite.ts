@@ -33,6 +33,11 @@ export interface ICodeGeneratorSolution {
  * 支持插件流水线
  */
 const reactViteSolution: ICodeGeneratorSolution = {
+  /**
+   * 按 React + Vite 流水线执行完整出码。
+   * @param schema - 编辑器导出的 Schema 数据
+   * @returns 含有所有生成文件的 ProjectBuilder 实例
+   */
   run: async (schema: ISchema) => {
     // 1. 解析 Schema -> IR (Intermediate Representation)
     const parser = new SchemaParser();

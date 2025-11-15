@@ -1,3 +1,7 @@
+/**
+ * @file 组件方法状态提升预处理器
+ * @description 遍历 IR 树，查找 componentMethod 动作，将其提升为页面级的状态与方法，并重写相关 Action 配置。
+ */
 // src/code-generator/preprocessor/state-lifter.ts
 
 import { upperFirst } from "lodash-es";
