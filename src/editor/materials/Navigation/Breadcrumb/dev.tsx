@@ -3,7 +3,12 @@ import type { CommonComponentProps } from "../../../interface";
 import { useDrag } from "react-dnd";
 import { useRef } from "react";
 
-const BreadcrumbDev = ({ id, styles, ...antProps }: CommonComponentProps) => {
+const BreadcrumbDev = ({
+  id,
+  styles,
+  isSelected,
+  ...antProps
+}: CommonComponentProps) => {
   const divRef = useRef<HTMLDivElement>(null);
   const [_, drag] = useDrag({
     type: "Breadcrumb",

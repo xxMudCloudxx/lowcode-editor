@@ -11,6 +11,7 @@ const CardDev = ({
   children,
   isSelected,
   styles,
+  bordered,
   ...props
 }: CommonComponentProps) => {
   const { isOver, drop } = useMaterailDrop(id, name);
@@ -29,6 +30,8 @@ const CardDev = ({
     ? children.length > 0
     : !!children;
 
+  const variant = bordered === false ? "borderless" : "outlined";
+
   return (
     <div
       ref={divRef}
@@ -38,7 +41,7 @@ const CardDev = ({
         isSelected ? "" : `${isOver ? "outline outline-blue-500" : ""}`
       }`}
     >
-      <AntdCard style={styles} {...props}>
+      <AntdCard style={styles} {...props} variant={variant}>
         {hasChildren ? (
           children
         ) : (

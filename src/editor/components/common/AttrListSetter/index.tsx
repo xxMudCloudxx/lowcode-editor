@@ -272,7 +272,7 @@ export const AttrListSetter = ({
         open={isModalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
-        destroyOnClose // 关闭时销毁内部组件，保证每次打开都是新的
+        destroyOnHidden // 关闭时销毁内部组件，保证每次打开都是新的
       >
         <Form
           form={form}

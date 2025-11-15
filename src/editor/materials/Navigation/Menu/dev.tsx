@@ -3,7 +3,13 @@ import type { CommonComponentProps } from "../../../interface";
 import { useDrag } from "react-dnd";
 import { useRef } from "react";
 
-const MenuDev = ({ id, styles, ...antProps }: CommonComponentProps) => {
+const MenuDev = ({
+  id,
+  styles,
+  children,
+  isSelected,
+  ...antProps
+}: CommonComponentProps) => {
   const divRef = useRef<HTMLDivElement>(null);
   const [_, drag] = useDrag({
     type: "Menu",

@@ -11,6 +11,8 @@ const TypographyDev = ({
   content,
   type,
   children,
+  toString,
+  isSelected,
   ...props
 }: CommonComponentProps) => {
   const [_, drag] = useDrag({

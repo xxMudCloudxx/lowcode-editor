@@ -3,6 +3,7 @@ import { useMaterailDrop } from "../../../hooks/useMatrialDrop";
 import type { CommonComponentProps } from "../../../interface";
 import { Form as AntdForm, Input } from "antd";
 import { useDrag } from "react-dnd";
+import { useComponentsStore } from "../../../stores/components";
 
 /**
  * @description Form 组件的“生产”版本，用于编辑器画布内。
@@ -17,6 +18,8 @@ function FormDev({
   ...antProps
 }: CommonComponentProps) {
   const [form] = AntdForm.useForm();
+
+  const { components } = useComponentsStore();
 
   const { isOver, drop } = useMaterailDrop(id, name);
 
@@ -41,7 +44,10 @@ function FormDev({
       React.Children.map(children, (suspenseElement: any) => {
         if (!suspenseElement) return null;
 
-        const item = suspenseElement.props?.children;
+        const itemId = suspenseElement.props?.id;
+        if (!itemId) return null;
+
+        const item = components[itemId];
         // 兼容性保护：如果不是预期的子节点结构，直接跳过
         if (!item || !item.props) return null;
 
@@ -49,12 +55,12 @@ function FormDev({
           label: item.props.label,
           name: item.props.name,
           type: item.props.type,
-          id: item.props.id,
+          id: itemId,
         };
       })?.filter(Boolean) || [];
 
     return list;
-  }, [children]);
+  }, [children, components]);
 
   return (
     <div

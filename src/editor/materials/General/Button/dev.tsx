@@ -11,6 +11,7 @@ const ButtonDev = ({
   text,
   id,
   styles,
+  isSelected,
   ...antProps
 }: CommonComponentProps) => {
   const [_, drag] = useDrag({

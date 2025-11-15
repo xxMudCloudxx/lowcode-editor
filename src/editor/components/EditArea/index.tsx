@@ -9,7 +9,12 @@
  * @module Components/EditArea
  */
 
-import React, { Suspense, useState, type MouseEventHandler } from "react";
+import React, {
+  Suspense,
+  useMemo,
+  useState,
+  type MouseEventHandler,
+} from "react";
 import { useComponentsStore } from "../../stores/components";
 import { useComponentConfigStore } from "../../stores/component-config";
 import { useUIStore } from "../../stores/uiStore";
@@ -110,6 +115,10 @@ export function EditArea() {
     );
   };
 
+  const componentTree = useMemo(() => {
+    return rootId ? <RenderNode id={rootId} /> : null;
+  }, [rootId, components, componentConfig, curComponentId]);
+
   return (
     <div
       className="h-full edit-area overflow-y-auto relative p-6 overflow-x-auto w-full"
@@ -128,7 +137,7 @@ export function EditArea() {
         backgroundSize: "50px 50px, 100px 100px, 100% 100%",
       }}
     >
-      {rootId && <RenderNode id={rootId} />}
+      {componentTree}
 
       {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
       {hoverComponentId &&

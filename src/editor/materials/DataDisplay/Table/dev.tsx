@@ -3,6 +3,7 @@ import { useMaterailDrop } from "../../../hooks/useMatrialDrop";
 import type { CommonComponentProps } from "../../../interface";
 import { useDrag } from "react-dnd";
 import { Table as AntdTable } from "antd";
+import { useComponentsStore } from "../../../stores/components";
 
 /**
  * @description Table 组件的“开发”版本，用于编辑器画布内。
@@ -20,6 +21,8 @@ function TableDev({
 
   const divRef = useRef<HTMLDivElement>(null);
 
+  const { components } = useComponentsStore();
+
   const [_, drag] = useDrag({
     type: name,
     item: {
@@ -36,29 +39,31 @@ function TableDev({
 
   const columns = useMemo(() => {
     const list =
-      React.Children.map(children, (suspenseElement: any) => {
-        if (!suspenseElement) return null;
+      React.Children.map(children, (renderNodeElement: any) => {
+        if (!renderNodeElement) return null;
 
-        const item = suspenseElement.props?.children;
-        // 兼容性保护：如果某个 child 不是预期结构，直接跳过
-        if (!item || !item.props) return null;
+        const childId = renderNodeElement.props.id;
+        if (!childId) return null;
+
+        const componentData = components[childId];
+        if (!componentData) return null;
 
         return {
           title: (
             <div
               className="m-[-16px] p-[16px]"
-              data-component-id={item.props.id}
+              data-component-id={componentData?.id}
             >
-              {item.props.title}
+              {componentData.props.title}
             </div>
           ),
-          dataIndex: item.props.dataIndex,
-          key: item.props.id,
+          dataIndex: componentData.props.dataIndex,
+          key: componentData.id,
         };
       })?.filter(Boolean) || [];
 
     return list;
-  }, [children]);
+  }, [children, components]);
 
   return (
     <div
@@ -84,4 +89,3 @@ function TableDev({
 }
 
 export default TableDev;
-
