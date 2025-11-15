@@ -6,14 +6,7 @@ import {
   buildComponentTree,
 } from "../../../stores/components";
 import { useUIStore } from "../../../stores/uiStore";
-
-// 容器组件列表，用于判断是否允许将组件拖拽为其子节点
-const ContainerList: Set<string> = new Set([
-  "Container",
-  "Page",
-  "Modal",
-  "Table",
-]);
+import { useComponentConfigStore } from "../../../stores/component-config";
 
 /**
  * 大纲树组件，展示当前组件树结构，并支持通过拖拽调整层级。
@@ -21,6 +14,7 @@ const ContainerList: Set<string> = new Set([
 export function Outline() {
   const { components, rootId, moveComponentInOutline } = useComponentsStore();
   const { setCurComponentId } = useUIStore();
+  const { componentConfig } = useComponentConfigStore();
 
   const treeData = useMemo(
     () => buildComponentTree(components, rootId),
@@ -45,14 +39,27 @@ export function Outline() {
     moveComponentInOutline(dragKey, dropKey, dropToGap, dropPosition);
   };
 
-  const allowDrop: TreeProps["allowDrop"] = ({ dropNode, dropPosition }) => {
+  const allowDrop: TreeProps["allowDrop"] = ({
+    dragNode,
+    dropNode,
+    dropPosition,
+  }) => {
     if (!dropNode) return false;
+    // 只能这样子处理，因为我要的是id，但是TreeDataType是key
     const dropNode2 = dropNode as any;
+    const dragNode2 = dragNode as any;
+    const dropComponent = components[dropNode2.id as number];
+    const dragComponent = components[dragNode2.id as number];
+    if (!dropComponent || !dragComponent) return false;
+
+    const dragParentTypes = componentConfig[dragComponent.name].parentTypes;
+    if (!dragParentTypes) return false;
+
     // 如果 dropPosition 为 0，意味着想要拖入节点内部
-    if (Number(dropNode2.id) === 1) return false;
+    if (dragComponent.id === rootId) return false;
     if (dropPosition === 0) {
       // 检查这个目标节点是不是我们定义的容器类型
-      if (ContainerList.has(dropNode2.name)) {
+      if (dragParentTypes.includes(dropComponent.name)) {
         return true; // 是容器，允许放入
       }
       return false; // 不是容器，禁止放入
