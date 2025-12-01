@@ -50,7 +50,7 @@ export function ComponentEvent() {
 
   const filteredEvents = useEventSearch(allEvents, searchKeyword);
   // 如果没有选中任何组件，则不渲染任何内容
-  if (!curComponent) {
+  if (!curComponent || !actionManager) {
     return null;
   }
 
