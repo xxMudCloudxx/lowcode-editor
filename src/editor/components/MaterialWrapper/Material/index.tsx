@@ -21,10 +21,13 @@ export function Material() {
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >(
-    categoryOrder.reduce((acc, category) => {
-      acc[category] = true;
-      return acc;
-    }, {} as Record<string, boolean>)
+    categoryOrder.reduce(
+      (acc, category) => {
+        acc[category] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>
+    )
   );
 
   // 切换分类展开状态
@@ -41,14 +44,17 @@ export function Material() {
     );
 
     // 按分类分组
-    const grouped = components.reduce((acc, component) => {
-      const category = component.category || "其他";
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(component);
-      return acc;
-    }, {} as Record<string, typeof components>);
+    const grouped = components.reduce(
+      (acc, component) => {
+        const category = component.category || "其他";
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(component);
+        return acc;
+      },
+      {} as Record<string, typeof components>
+    );
 
     // 按预定义顺序排序分类
     const sortedCategories = categoryOrder.filter(
@@ -62,7 +68,7 @@ export function Material() {
   }, [componentConfig]);
 
   return (
-    <div className="w-[100%] custom-scrollbar overflow-y-auto absolute overscroll-y-contain pr-6 h-[100%] pb-20">
+    <div className="w-full custom-scrollbar overflow-y-auto absolute overscroll-y-contain pr-6 h-full pb-20">
       {categorizedComponents.map(({ category, components }) => (
         <div key={category} className="mb-6">
           {/* 分类标题 */}

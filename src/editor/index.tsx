@@ -13,9 +13,9 @@ export default function ReactPlayground() {
   useShortcutKeys();
 
   return (
-    <div className="h-[100vh] flex flex-col bg-surface">
+    <div className="h-screen flex flex-col bg-surface">
       {/* 顶部导航栏 */}
-      <div className="h-[64px] flex items-center bg-surface-elevated border-b border-border shadow-sm px-6">
+      <div className="h-16 flex items-center bg-surface-elevated border-b border-border shadow-sm px-6">
         <Header />
       </div>
 

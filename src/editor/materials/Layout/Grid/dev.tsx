@@ -40,9 +40,7 @@ const GridDev = ({
       className={`min-h-[100px] -ml-px -mt-px ${
         isSelected
           ? "" // 如果被选中，就不要任何边框和轮廓，完全交给 SelectedMask
-          : `border-[1px] border-[#000] ${
-              isOver ? "outline outline-blue-600" : ""
-            }` // 否则，显示常规边框和悬浮轮廓
+          : `border border-black ${isOver ? "outline outline-blue-600" : ""}` // 否则，显示常规边框和悬浮轮廓
       }`}
       data-component-id={id}
       style={styles}

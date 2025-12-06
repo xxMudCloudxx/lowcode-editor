@@ -56,7 +56,7 @@ export function ComponentStyle() {
     {
       title: "CSS编辑器",
       component: (
-        <div className=" border-[1px] border-[#ccc] h-[200px] w-[95%]">
+        <div className="border border-neutral-300 h-[200px] w-[95%]">
           <CssEditor value={css} onSave={handleEditorChange} />
         </div>
       ),
@@ -130,7 +130,7 @@ export function ComponentStyle() {
   }
 
   return (
-    <div className="overflow-y-auto h-[100%] w-[95%] absolute pb-30 overscroll-y-contain ">
+    <div className="overflow-y-auto h-full w-[95%] absolute pb-30 overscroll-y-contain ">
       {styleCategories.map(({ title, component }) => (
         <div key={title} className="mb-4">
           {/* 分类标题 */}

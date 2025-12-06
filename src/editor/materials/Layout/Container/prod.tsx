@@ -6,7 +6,7 @@ import { type CommonComponentProps } from "../../../interface";
  */
 const ContainerProd = ({ children, styles }: CommonComponentProps) => {
   return (
-    <div style={styles} className={`p-[20px]`}>
+    <div style={styles} className={`p-5`}>
       {children}
     </div>
   );

@@ -6,7 +6,7 @@ import { type CommonComponentProps } from "../../interface";
  */
 function PageProd({ children, styles }: CommonComponentProps) {
   return (
-    <div className="p-[20px]" style={{ ...styles }}>
+    <div className="p-5" style={{ ...styles }}>
       {children}
     </div>
   );

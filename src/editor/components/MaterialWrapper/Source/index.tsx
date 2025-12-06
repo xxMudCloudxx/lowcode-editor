@@ -153,7 +153,7 @@ export function Source() {
       }}
     >
       {/* 顶部操作栏 */}
-      <div className="flex justify-between items-center mb-3 flex-shrink-0 gap-3">
+      <div className="flex justify-between items-center mb-3 shrink-0 gap-3">
         {/* 左侧：保存按钮 + 状态提示 */}
         <div className="flex items-center gap-2">
           <Button

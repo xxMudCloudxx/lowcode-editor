@@ -48,7 +48,7 @@ export const BorderControls: React.FC<BorderControlsProps> = ({
   const middleRowConfigs = [leftConfig, allConfig, rightConfig];
 
   return (
-    <div className="flex flex-col w-[100px] h-[100%] items-center justify-around">
+    <div className="flex flex-col w-[100px] h-full items-center justify-around">
       {/* 顶部按钮 */}
       <BorderGlyphButton
         config={topConfig}

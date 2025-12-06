@@ -2,7 +2,10 @@
 
 import { Form, Input } from "antd";
 import { useMemo } from "react";
-import { useComponentsStore, getComponentById } from "../../../stores/components";
+import {
+  useComponentsStore,
+  getComponentById,
+} from "../../../stores/components";
 import { useUIStore } from "../../../stores/uiStore";
 import type { Component } from "../../../interface";
 import { useComponentConfigStore } from "../../../stores/component-config";
@@ -41,7 +44,7 @@ export function ComponentAttr() {
       onValuesChange={handleValuesChange}
       labelCol={{ span: 6 }}
       wrapperCol={{ span: 18 }}
-      className="overflow-y-auto h-[100%] w-[90%] absolute overscroll-y-contain pb-90"
+      className="overflow-y-auto h-full w-[90%] absolute overscroll-y-contain pb-90"
     >
       {/* 固定的只读信息 */}
       <FormItem label="组件id">

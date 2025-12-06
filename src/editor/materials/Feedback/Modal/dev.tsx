@@ -31,12 +31,10 @@ function ModalDev({
       ref={drop}
       style={styles}
       data-component-id={id}
-      className={`min-h-[100px] p-[20px] -ml-px -mt-px ${
+      className={`min-h-[100px] p-5 -ml-px -mt-px ${
         isSelected
           ? ""
-          : `border-[1px] border-[#000] ${
-              isOver ? "outline outline-blue-600" : ""
-            }`
+          : `border border-black ${isOver ? "outline outline-blue-600" : ""}`
       }`}
     >
       <h4>{title}</h4>
