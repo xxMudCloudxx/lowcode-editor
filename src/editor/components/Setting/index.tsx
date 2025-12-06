@@ -68,7 +68,7 @@ export function Setting() {
             { label: "样式", value: "样式" },
             { label: "事件", value: "事件" },
           ]}
-          className="!bg-gray-50 !p-1 select-none"
+          className="select-none"
         />
       </div>
 

@@ -86,7 +86,7 @@ export default function CssEditor(props: Props) {
 
   return (
     // 1. 使用一个相对定位的容器来包裹编辑器和按钮
-    <div className="h-[100%] w-[100%] flex flex-col">
+    <div className="h-full w-full flex flex-col">
       {/* 2. 保存按钮，使用绝对定位放置在右上角 */}
       <Button
         onClick={handleSave}

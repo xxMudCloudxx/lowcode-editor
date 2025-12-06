@@ -50,10 +50,7 @@ function TableDev({
 
         return {
           title: (
-            <div
-              className="m-[-16px] p-[16px]"
-              data-component-id={componentData?.id}
-            >
+            <div className="-m-4 p-4" data-component-id={componentData?.id}>
               {componentData.props.title}
             </div>
           ),
@@ -67,12 +64,10 @@ function TableDev({
 
   return (
     <div
-      className={`min-h-[100px] p-[20px] -ml-px -mt-px ${
+      className={`min-h-[100px] p-5 -ml-px -mt-px ${
         isSelected
           ? "" // 如果被选中，就不要任何边框和轮廓，完全交给 SelectedMask
-          : `border-[1px] border-[#000] ${
-              isOver ? "outline outline-blue-600" : ""
-            }` // 否则，显示常规边框和悬浮轮廓
+          : `border border-black ${isOver ? "outline outline-blue-600" : ""}` // 否则，显示常规边框和悬浮轮廓
       }`}
       ref={divRef}
       data-component-id={id}

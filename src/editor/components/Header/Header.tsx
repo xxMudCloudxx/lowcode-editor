@@ -2,17 +2,29 @@
  * @file /src/editor/components/Header/Header.tsx
  * @description
  * 应用的顶部全局页头组件。
- * 负责显示应用标题，并提供“预览”、“重置画布”、“撤销/重做”以及“快捷键指南”等核心功能入口。
+ * 负责显示应用标题，并提供"预览"、"重置画布"、"撤销/重做"以及"快捷键指南"等核心功能入口。
  * @module Components/Header
  */
 
 import { Button, Space, Popconfirm, Typography, Popover } from "antd";
+import {
+  QuestionCircleOutlined,
+  UndoOutlined,
+  RedoOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
+  CodeOutlined,
+  ClearOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 
 const { Text, Title } = Typography;
-import { useComponentsStore, buildComponentTree } from "../../stores/components";
+import {
+  useComponentsStore,
+  buildComponentTree,
+} from "../../stores/components";
 import { useUIStore } from "../../stores/uiStore";
 import { useStore } from "zustand";
-import { QuestionCircleOutlined } from "@ant-design/icons";
 import { exportSourceCode } from "../../../code-generator";
 import type { IGeneratedFile, ISchema } from "../../../code-generator/types/ir";
 import { useState } from "react";
@@ -22,27 +34,44 @@ import { CodePreviewDrawer } from "../CodePreviewDrawer";
  * @description 快捷键指南的 Popover 内容
  */
 const shortcutsContent = (
-  <div style={{ width: "260px" }}>
-    <Space direction="vertical">
-      <Text>
-        <strong>通用快捷键</strong>
+  <div className="w-64 space-y-3">
+    <div>
+      <Text className="text-text-secondary text-xs font-medium uppercase tracking-wide">
+        通用快捷键
       </Text>
-      <div>
-        <Text code>Cmd/Ctrl + Z</Text>: 撤销更改
+    </div>
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <Text code className="text-xs">
+          Cmd/Ctrl + Z
+        </Text>
+        <Text className="text-text-secondary text-sm">撤销</Text>
       </div>
-      <div>
-        <Text code>Cmd/Ctrl + Shift + Z</Text>: 恢复更改
+      <div className="flex justify-between items-center">
+        <Text code className="text-xs">
+          Cmd/Ctrl + Shift + Z
+        </Text>
+        <Text className="text-text-secondary text-sm">恢复</Text>
       </div>
-      <div>
-        <Text code>Cmd/Ctrl + C</Text>: 复制选中组件
+      <div className="flex justify-between items-center">
+        <Text code className="text-xs">
+          Cmd/Ctrl + C
+        </Text>
+        <Text className="text-text-secondary text-sm">复制</Text>
       </div>
-      <div>
-        <Text code>Cmd/Ctrl + V</Text>: 粘贴到选中容器或同级
+      <div className="flex justify-between items-center">
+        <Text code className="text-xs">
+          Cmd/Ctrl + V
+        </Text>
+        <Text className="text-text-secondary text-sm">粘贴</Text>
       </div>
-      <div>
-        <Text code>Delete / Backspace</Text>: 删除选中组件
+      <div className="flex justify-between items-center">
+        <Text code className="text-xs">
+          Delete
+        </Text>
+        <Text className="text-text-secondary text-sm">删除</Text>
       </div>
-    </Space>
+    </div>
   </div>
 );
 
@@ -114,9 +143,9 @@ export function Header() {
     <div className="w-full h-full">
       <div className="h-full flex justify-between items-center">
         {/* 应用标题 */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-3">
           <svg
-            className="w-8 h-8"
+            className="w-8 h-8 text-accent-600"
             viewBox="0 0 1112 1024"
             version="1.1"
             xmlns="http://www.w3.org/2000/svg"
@@ -127,10 +156,10 @@ export function Header() {
             />
           </svg>
           <div>
-            <Title level={4} className="!mb-0 !text-gray-800 font-semibold">
+            <Title level={4} className="mb-0 text-neutral-800 font-semibold">
               低代码编辑器
             </Title>
-            <Text className="text-xs text-gray-500">
+            <Text className="text-xs text-neutral-400">
               Modern Low-Code Editor
             </Text>
           </div>
@@ -138,14 +167,14 @@ export function Header() {
 
         {/* 交互按钮区域 */}
         <Space size="middle">
-          {/* 当处于“编辑”模式时，显示所有编辑相关操作按钮 */}
+          {/* 当处于"编辑"模式时，显示所有编辑相关操作按钮 */}
           {mode === "edit" && (
             <>
               {/* 快捷键帮助按钮 */}
               <Popover
                 content={shortcutsContent}
                 title={
-                  <Title level={5} className="!mb-2">
+                  <Title level={5} className="mb-2">
                     快捷键指南
                   </Title>
                 }
@@ -156,17 +185,16 @@ export function Header() {
                   icon={<QuestionCircleOutlined />}
                   shape="circle"
                   size="middle"
-                  className="!border-gray-300 !h-9 !w-9 hover:!border-indigo-400 hover:!bg-indigo-50 !shadow-sm"
                 />
               </Popover>
 
               {/* 撤销/重做按钮组 */}
-              <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
+              <div className="flex bg-neutral-100 rounded-lg p-1 gap-1">
                 <Button
                   onClick={() => undo()}
                   disabled={!pastStates.length}
                   size="middle"
-                  className="!border !border-gray-200 !bg-gray-50 !h-8 hover:!bg-white hover:!shadow-sm hover:!border-gray-300 disabled:!bg-gray-100 disabled:!border-gray-100"
+                  icon={<UndoOutlined />}
                 >
                   撤销
                 </Button>
@@ -174,14 +202,14 @@ export function Header() {
                   onClick={() => redo()}
                   disabled={!futureStates.length}
                   size="middle"
-                  className="!border !border-gray-200 !bg-gray-50 !h-8 hover:!bg-white hover:!shadow-sm hover:!border-gray-300 disabled:!bg-gray-100 disabled:!border-gray-100"
+                  icon={<RedoOutlined />}
                 >
                   重做
                 </Button>
               </div>
 
               {/* 重置按钮组 */}
-              <div className="flex space-x-2">
+              <div className="flex gap-2">
                 <Popconfirm
                   title="确认重置历史记录？"
                   description="此操作将清空所有撤销/重做历史，且无法恢复。"
@@ -190,10 +218,7 @@ export function Header() {
                   cancelText="取消"
                   placement="bottomRight"
                 >
-                  <Button
-                    size="middle"
-                    className="!border-red-300 !text-red-600 !h-8 hover:!border-red-400 hover:!bg-red-50 !shadow-sm"
-                  >
+                  <Button size="middle" icon={<ClearOutlined />} danger>
                     重置历史
                   </Button>
                 </Popconfirm>
@@ -206,17 +231,18 @@ export function Header() {
                   cancelText="取消"
                   placement="bottomRight"
                 >
-                  <Button
-                    size="middle"
-                    className="!border-red-300 !text-red-600 !h-8 hover:!border-red-400 hover:!bg-red-50 !shadow-sm"
-                  >
+                  <Button size="middle" icon={<DeleteOutlined />} danger>
                     重置画布
                   </Button>
                 </Popconfirm>
               </div>
 
               {/* 出码按钮 */}
-              <Button onClick={handleOpenCodePreview} loading={isExporting}>
+              <Button
+                onClick={handleOpenCodePreview}
+                loading={isExporting}
+                icon={<CodeOutlined />}
+              >
                 {isExporting ? "生成中..." : "出码预览"}
               </Button>
               <CodePreviewDrawer
@@ -234,14 +260,14 @@ export function Header() {
                 }}
                 type="primary"
                 size="middle"
-                className="!bg-indigo-600 hover:!bg-indigo-700 !border-indigo-600 hover:!border-indigo-700 !h-9 !shadow-md"
+                icon={<EyeOutlined />}
               >
                 预览
               </Button>
             </>
           )}
 
-          {/* 预览模式下仅显示“退出预览”按钮 */}
+          {/* 预览模式下仅显示"退出预览"按钮 */}
           {mode === "preview" && (
             <Button
               onClick={() => {
@@ -249,7 +275,7 @@ export function Header() {
               }}
               type="primary"
               size="middle"
-              className="!h-9 !border-indigo-600 hover:!border-indigo-700 !shadow-md"
+              icon={<EyeInvisibleOutlined />}
             >
               退出预览
             </Button>
@@ -259,4 +285,3 @@ export function Header() {
     </div>
   );
 }
-

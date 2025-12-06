@@ -13,12 +13,12 @@ export default function ReactPlayground() {
   useShortcutKeys();
 
   return (
-    <div className="h-[100vh] flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-surface">
       {/* 顶部导航栏 */}
-      <div className="h-[64px] flex items-center bg-white border-b border-gray-200 shadow-sm px-6">
+      <div className="h-16 flex items-center bg-surface-elevated border-b border-border shadow-sm px-6">
         <Header />
       </div>
-      
+
       {mode === "edit" ? (
         <div className="flex-1 flex overflow-hidden">
           <Allotment>
@@ -30,17 +30,17 @@ export default function ReactPlayground() {
                 </div>
               </div>
             </Allotment.Pane>
-            
+
             {/* 中间编辑区域 */}
             <Allotment.Pane>
-              <div className="h-full bg-gradient-to-br from-slate-50 to-slate-100">
+              <div className="h-full bg-gradient-to-br from-surface to-neutral-100">
                 <EditArea />
               </div>
             </Allotment.Pane>
-            
+
             {/* 右侧设置面板 */}
             <Allotment.Pane preferredSize={360} maxSize={480} minSize={320}>
-              <div className="h-full custom-panel border-l border-gray-200">
+              <div className="h-full custom-panel border-l border-border">
                 <div className="p-4">
                   <Setting />
                 </div>
