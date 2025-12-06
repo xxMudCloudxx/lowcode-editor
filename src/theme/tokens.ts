@@ -1,20 +1,20 @@
 /**
  * @file src/theme/tokens.ts
  * @description
- * Design tokens - the source of truth for the design system.
- * These values are consumed by Antd ConfigProvider.
+ * 设计令牌 - 设计系统的单一真值源。
+ * 这些值被 Antd ConfigProvider 消费。
  *
- * ⚠️ TECH DEBT: These values must be manually synced with index.css @theme directive.
- * If you change a color here, update index.css as well.
+ * ⚠️ 技术债务：这些值必须与 index.css @theme 指令手动同步。
+ * 如果在此修改颜色，请同时更新 index.css。
  */
 
 // =============================================================================
-// COLOR PALETTE (Numbered shades 50-900)
+// 颜色色板 (50-900 分级)
 // =============================================================================
 
 /**
- * Neutral palette - warm stone grays for a premium, spa-like aesthetic
- * Created using gradient division with subtle warm hue adjustment
+ * 中性色板 - 温暖的石灰色，打造高级 SPA 风格
+ * 使用渐变分割法创建，带有轻微的暖色调调整
  */
 export const neutral = {
   50: "#fafaf9",
@@ -30,8 +30,8 @@ export const neutral = {
 } as const;
 
 /**
- * Accent palette - sophisticated slate blue
- * Cool, minimalist, premium feel
+ * 强调色板 - 精致的石板蓝
+ * 冷色调、简约、高级感
  */
 export const accent = {
   50: "#f8fafc",
@@ -47,7 +47,7 @@ export const accent = {
 } as const;
 
 /**
- * Status colors - muted for premium aesthetic
+ * 状态颜色 - 柔和的配色以保持高级感
  */
 export const success = {
   50: "#f0fdf4",
@@ -74,33 +74,38 @@ export const danger = {
 } as const;
 
 // =============================================================================
-// SEMANTIC TOKENS (Purpose-based naming)
+// 语义化令牌 (基于用途命名)
 // =============================================================================
 
 export const semantic = {
+  /** 文字颜色 */
   text: {
-    primary: neutral[900],
-    secondary: neutral[500],
-    tertiary: neutral[400],
-    inverse: "#ffffff",
-    accent: accent[600],
+    primary: neutral[900], // 主要文字
+    secondary: neutral[500], // 次要文字
+    tertiary: neutral[400], // 辅助文字
+    inverse: "#ffffff", // 反色文字（深色背景上）
+    accent: accent[600], // 强调文字
   },
+  /** 表面/背景颜色 */
   surface: {
-    base: neutral[50],
-    elevated: "#ffffff",
-    sunken: neutral[100],
+    base: neutral[50], // 页面底色
+    elevated: "#ffffff", // 卡片、弹窗等抬升表面
+    sunken: neutral[100], // 凹陷表面
   },
+  /** 边框颜色 */
   border: {
-    default: neutral[200],
-    subtle: neutral[100],
-    strong: neutral[300],
-    focus: accent[500],
+    default: neutral[200], // 默认边框
+    subtle: neutral[100], // 轻微边框
+    strong: neutral[300], // 强调边框
+    focus: accent[500], // 聚焦边框
   },
+  /** 强调色 */
   accent: {
-    default: accent[600],
-    hover: accent[700],
-    subtle: accent[100],
+    default: accent[600], // 主色
+    hover: accent[700], // 悬停态
+    subtle: accent[100], // 浅色背景
   },
+  /** 状态颜色 */
   state: {
     success: success[600],
     successSubtle: success[50],
@@ -112,7 +117,7 @@ export const semantic = {
 } as const;
 
 // =============================================================================
-// SPACING & SIZING
+// 间距与尺寸
 // =============================================================================
 
 export const spacing = {
@@ -138,7 +143,7 @@ export const radius = {
 } as const;
 
 // =============================================================================
-// TYPOGRAPHY
+// 字体
 // =============================================================================
 
 export const fontFamily = {
@@ -153,7 +158,7 @@ export const fontWeight = {
 } as const;
 
 // =============================================================================
-// SHADOWS
+// 阴影
 // =============================================================================
 
 export const shadow = {

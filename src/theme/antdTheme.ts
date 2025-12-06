@@ -1,8 +1,8 @@
 /**
  * @file src/theme/antdTheme.ts
  * @description
- * Ant Design v5 ConfigProvider theme configuration.
- * Consumes design tokens to auto-style all Antd components.
+ * Ant Design v5 ConfigProvider 主题配置。
+ * 消费设计令牌，自动为所有 Antd 组件应用主题样式。
  */
 
 import type { ThemeConfig } from "antd";
@@ -17,43 +17,44 @@ import {
 
 export const antdTheme: ThemeConfig = {
   token: {
-    // Primary brand color
+    // 主色/品牌色
     colorPrimary: semantic.accent.default,
     colorPrimaryHover: semantic.accent.hover,
 
-    // Background colors
+    // 背景颜色
     colorBgContainer: semantic.surface.elevated,
     colorBgLayout: semantic.surface.base,
     colorBgElevated: semantic.surface.elevated,
 
-    // Text colors
+    // 文字颜色
     colorText: semantic.text.primary,
     colorTextSecondary: semantic.text.secondary,
     colorTextTertiary: semantic.text.tertiary,
 
-    // Border
+    // 边框
     colorBorder: semantic.border.default,
     colorBorderSecondary: semantic.border.subtle,
 
-    // Status colors
+    // 状态颜色
     colorSuccess: semantic.state.success,
     colorWarning: semantic.state.warning,
     colorError: semantic.state.danger,
 
-    // Shape
+    // 圆角
     borderRadius: radius.md,
     borderRadiusSM: radius.sm,
     borderRadiusLG: radius.lg,
 
-    // Typography
+    // 字体
     fontFamily: fontFamily.sans,
 
-    // Sizing
+    // 控件尺寸
     controlHeight: 36,
     controlHeightSM: 28,
     controlHeightLG: 44,
   },
 
+  // 组件级别的样式覆盖
   components: {
     Button: {
       borderRadius: radius.md,
