@@ -5,6 +5,12 @@
  * 负责存储操作历史（patches），并提供撤销/重做功能。
  *
  * @security 使用 immer 的 applyPatches 安全地应用补丁。
+ *
+ * @collaboration
+ * 为未来实时协同编辑预留了接口：
+ * - isApplyingPatches: 阻止 undo/redo 操作被记录
+ * - isApplyingRemotePatch: 阻止远程用户的操作进入本地撤销栈
+ * - applyRemotePatch(): 安全应用来自服务器的补丁
  */
 
 import { create } from "zustand";
@@ -21,8 +27,14 @@ export interface PatchGroup {
 interface HistoryState {
   past: PatchGroup[];
   future: PatchGroup[];
-  /** 标志位：当为 true 时，undoMiddleware 不记录本次变更 */
+  /** 标志位：当为 true 时，undoMiddleware 不记录本次变更（用于 undo/redo） */
   isApplyingPatches: boolean;
+  /**
+   * 标志位：当为 true 时，正在应用来自远程协同者的补丁
+   * 用于区分「我做的操作」vs「别人做的操作」
+   * @collaboration 未来 WebSocket 接收补丁时使用
+   */
+  isApplyingRemotePatch: boolean;
 }
 
 interface HistoryAction {
@@ -32,8 +44,16 @@ interface HistoryAction {
   clear: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
-  /** 设置是否正在应用补丁（供 middleware 调用） */
+  /** 设置是否正在应用补丁（供 undo/redo 调用） */
   setApplyingPatches: (value: boolean) => void;
+  /** 设置是否正在应用远程补丁（供 WebSocket handler 调用） */
+  setApplyingRemotePatch: (value: boolean) => void;
+  /**
+   * 应用来自远程协同者的补丁
+   * 会设置 isApplyingRemotePatch = true，确保不污染本地撤销栈
+   * @collaboration 未来 WebSocket 接收消息时调用此方法
+   */
+  applyRemotePatch: (patches: Patch[]) => Promise<void>;
 }
 
 /**
@@ -53,14 +73,21 @@ export const useHistoryStore = create<HistoryState & HistoryAction>(
     past: [],
     future: [],
     isApplyingPatches: false,
+    isApplyingRemotePatch: false,
 
     setApplyingPatches: (value) => {
       set({ isApplyingPatches: value });
     },
 
+    setApplyingRemotePatch: (value) => {
+      set({ isApplyingRemotePatch: value });
+    },
+
     addPatch: (patches, inversePatches) => {
       // 如果正在应用补丁（undo/redo 过程中），跳过记录
       if (get().isApplyingPatches) return;
+      // 如果正在应用远程补丁，跳过记录（不污染本地撤销栈）
+      if (get().isApplyingRemotePatch) return;
       // 空补丁不记录
       if (patches.length === 0 && inversePatches.length === 0) return;
 
@@ -68,6 +95,41 @@ export const useHistoryStore = create<HistoryState & HistoryAction>(
         past: [...state.past, { patches, inversePatches }],
         future: [], // 新操作会清空 future
       }));
+    },
+
+    /**
+     * 应用来自远程协同者的补丁
+     * 确保不会进入本地撤销栈
+     *
+     * @example
+     * // WebSocket 消息处理
+     * socket.on('remote_patch', (patches) => {
+     *   useHistoryStore.getState().applyRemotePatch(patches);
+     * });
+     */
+    applyRemotePatch: async (patches) => {
+      if (patches.length === 0) return;
+
+      // 设置远程补丁标志
+      set({ isApplyingRemotePatch: true });
+
+      try {
+        const useComponentsStore = await getComponentsStore();
+        useComponentsStore.setState((state) => {
+          const currentData = {
+            components: state.components,
+            rootId: state.rootId,
+          };
+          const patched = applyPatches(currentData, patches);
+          return {
+            ...state,
+            components: patched.components,
+            rootId: patched.rootId,
+          };
+        });
+      } finally {
+        set({ isApplyingRemotePatch: false });
+      }
     },
 
     undo: async () => {
