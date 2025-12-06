@@ -14,6 +14,7 @@
  */
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { applyPatches, type Patch } from "immer";
 
 /**
@@ -31,7 +32,6 @@ interface HistoryState {
   isApplyingPatches: boolean;
   /**
    * 标志位：当为 true 时，正在应用来自远程协同者的补丁
-   * 用于区分「我做的操作」vs「别人做的操作」
    * @collaboration 未来 WebSocket 接收补丁时使用
    */
   isApplyingRemotePatch: boolean;
@@ -44,15 +44,8 @@ interface HistoryAction {
   clear: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
-  /** 设置是否正在应用补丁（供 undo/redo 调用） */
   setApplyingPatches: (value: boolean) => void;
-  /** 设置是否正在应用远程补丁（供 WebSocket handler 调用） */
   setApplyingRemotePatch: (value: boolean) => void;
-  /**
-   * 应用来自远程协同者的补丁
-   * 会设置 isApplyingRemotePatch = true，确保不污染本地撤销栈
-   * @collaboration 未来 WebSocket 接收消息时调用此方法
-   */
   applyRemotePatch: (patches: Patch[]) => Promise<void>;
 }
 
@@ -68,151 +61,140 @@ const getComponentsStore = async () => {
   return componentsStoreModule.useComponentsStore;
 };
 
-export const useHistoryStore = create<HistoryState & HistoryAction>(
-  (set, get) => ({
-    past: [],
-    future: [],
-    isApplyingPatches: false,
-    isApplyingRemotePatch: false,
+export const useHistoryStore = create<HistoryState & HistoryAction>()(
+  persist(
+    (set, get) => ({
+      past: [],
+      future: [],
+      isApplyingPatches: false,
+      isApplyingRemotePatch: false,
 
-    setApplyingPatches: (value) => {
-      set({ isApplyingPatches: value });
-    },
+      setApplyingPatches: (value) => {
+        set({ isApplyingPatches: value });
+      },
 
-    setApplyingRemotePatch: (value) => {
-      set({ isApplyingRemotePatch: value });
-    },
+      setApplyingRemotePatch: (value) => {
+        set({ isApplyingRemotePatch: value });
+      },
 
-    addPatch: (patches, inversePatches) => {
-      // 如果正在应用补丁（undo/redo 过程中），跳过记录
-      if (get().isApplyingPatches) return;
-      // 如果正在应用远程补丁，跳过记录（不污染本地撤销栈）
-      if (get().isApplyingRemotePatch) return;
-      // 空补丁不记录
-      if (patches.length === 0 && inversePatches.length === 0) return;
+      addPatch: (patches, inversePatches) => {
+        if (get().isApplyingPatches) return;
+        if (get().isApplyingRemotePatch) return;
+        if (patches.length === 0 && inversePatches.length === 0) return;
 
-      set((state) => ({
-        past: [...state.past, { patches, inversePatches }],
-        future: [], // 新操作会清空 future
-      }));
-    },
+        set((state) => ({
+          past: [...state.past, { patches, inversePatches }],
+          future: [],
+        }));
+      },
 
-    /**
-     * 应用来自远程协同者的补丁
-     * 确保不会进入本地撤销栈
-     *
-     * @example
-     * // WebSocket 消息处理
-     * socket.on('remote_patch', (patches) => {
-     *   useHistoryStore.getState().applyRemotePatch(patches);
-     * });
-     */
-    applyRemotePatch: async (patches) => {
-      if (patches.length === 0) return;
+      applyRemotePatch: async (patches) => {
+        if (patches.length === 0) return;
 
-      // 设置远程补丁标志
-      set({ isApplyingRemotePatch: true });
+        set({ isApplyingRemotePatch: true });
 
-      try {
-        const useComponentsStore = await getComponentsStore();
-        useComponentsStore.setState((state) => {
-          const currentData = {
-            components: state.components,
-            rootId: state.rootId,
-          };
-          const patched = applyPatches(currentData, patches);
-          return {
-            ...state,
-            components: patched.components,
-            rootId: patched.rootId,
-          };
-        });
-      } finally {
-        set({ isApplyingRemotePatch: false });
-      }
-    },
+        try {
+          const useComponentsStore = await getComponentsStore();
+          useComponentsStore.setState((state) => {
+            const currentData = {
+              components: state.components,
+              rootId: state.rootId,
+            };
+            const patched = applyPatches(currentData, patches);
+            return {
+              ...state,
+              components: patched.components,
+              rootId: patched.rootId,
+            };
+          });
+        } finally {
+          set({ isApplyingRemotePatch: false });
+        }
+      },
 
-    undo: async () => {
-      const { past, future } = get();
-      if (past.length === 0) return;
+      undo: async () => {
+        const { past, future } = get();
+        if (past.length === 0) return;
 
-      const lastPatchGroup = past[past.length - 1];
-      const newPast = past.slice(0, -1);
+        const lastPatchGroup = past[past.length - 1];
+        const newPast = past.slice(0, -1);
 
-      // 标记正在应用补丁，防止 middleware 再次记录
-      set({ isApplyingPatches: true });
+        set({ isApplyingPatches: true });
 
-      try {
-        // 获取 components store 并应用逆向补丁
-        const useComponentsStore = await getComponentsStore();
-        useComponentsStore.setState((state) => {
-          // 只对 components 和 rootId 应用补丁
-          const currentData = {
-            components: state.components,
-            rootId: state.rootId,
-          };
-          const patched = applyPatches(
-            currentData,
-            lastPatchGroup.inversePatches
-          );
-          return {
-            ...state,
-            components: patched.components,
-            rootId: patched.rootId,
-          };
-        });
+        try {
+          const useComponentsStore = await getComponentsStore();
+          useComponentsStore.setState((state) => {
+            const currentData = {
+              components: state.components,
+              rootId: state.rootId,
+            };
+            const patched = applyPatches(
+              currentData,
+              lastPatchGroup.inversePatches
+            );
+            return {
+              ...state,
+              components: patched.components,
+              rootId: patched.rootId,
+            };
+          });
 
-        // 更新历史栈
-        set({
-          past: newPast,
-          future: [lastPatchGroup, ...future],
-        });
-      } finally {
-        set({ isApplyingPatches: false });
-      }
-    },
+          set({
+            past: newPast,
+            future: [lastPatchGroup, ...future],
+          });
+        } finally {
+          set({ isApplyingPatches: false });
+        }
+      },
 
-    redo: async () => {
-      const { past, future } = get();
-      if (future.length === 0) return;
+      redo: async () => {
+        const { past, future } = get();
+        if (future.length === 0) return;
 
-      const nextPatchGroup = future[0];
-      const newFuture = future.slice(1);
+        const nextPatchGroup = future[0];
+        const newFuture = future.slice(1);
 
-      // 标记正在应用补丁
-      set({ isApplyingPatches: true });
+        set({ isApplyingPatches: true });
 
-      try {
-        // 获取 components store 并应用正向补丁
-        const useComponentsStore = await getComponentsStore();
-        useComponentsStore.setState((state) => {
-          const currentData = {
-            components: state.components,
-            rootId: state.rootId,
-          };
-          const patched = applyPatches(currentData, nextPatchGroup.patches);
-          return {
-            ...state,
-            components: patched.components,
-            rootId: patched.rootId,
-          };
-        });
+        try {
+          const useComponentsStore = await getComponentsStore();
+          useComponentsStore.setState((state) => {
+            const currentData = {
+              components: state.components,
+              rootId: state.rootId,
+            };
+            const patched = applyPatches(currentData, nextPatchGroup.patches);
+            return {
+              ...state,
+              components: patched.components,
+              rootId: patched.rootId,
+            };
+          });
 
-        // 更新历史栈
-        set({
-          past: [...past, nextPatchGroup],
-          future: newFuture,
-        });
-      } finally {
-        set({ isApplyingPatches: false });
-      }
-    },
+          set({
+            past: [...past, nextPatchGroup],
+            future: newFuture,
+          });
+        } finally {
+          set({ isApplyingPatches: false });
+        }
+      },
 
-    clear: () => {
-      set({ past: [], future: [] });
-    },
+      clear: () => {
+        set({ past: [], future: [] });
+      },
 
-    canUndo: () => get().past.length > 0,
-    canRedo: () => get().future.length > 0,
-  })
+      canUndo: () => get().past.length > 0,
+      canRedo: () => get().future.length > 0,
+    }),
+    {
+      name: "lowcode-history",
+      // 只持久化 past 和 future，不持久化临时标志位
+      partialize: (state) => ({
+        past: state.past,
+        future: state.future,
+      }),
+    }
+  )
 );
