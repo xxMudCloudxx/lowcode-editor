@@ -2,11 +2,22 @@
  * @file /src/editor/components/Header/Header.tsx
  * @description
  * 应用的顶部全局页头组件。
- * 负责显示应用标题，并提供"预览"、"重置画布"、"撤销/重做"以及"快捷键指南"等核心功能入口。
+ * 采用三区布局：左区（品牌）、中区（工作台控件）、右区（元操作）
  * @module Components/Header
  */
 
-import { Button, Space, Popconfirm, Typography, Popover } from "antd";
+import {
+  Button,
+  Space,
+  Popconfirm,
+  Typography,
+  Popover,
+  Dropdown,
+  Segmented,
+  Avatar,
+  Tooltip,
+  type MenuProps,
+} from "antd";
 import {
   QuestionCircleOutlined,
   UndoOutlined,
@@ -14,8 +25,10 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   CodeOutlined,
-  ClearOutlined,
-  DeleteOutlined,
+  MoreOutlined,
+  DesktopOutlined,
+  MobileOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
 const { Text, Title } = Typography;
@@ -77,37 +90,30 @@ const shortcutsContent = (
 
 /**
  * @description
- * 页头组件，包含标题和模式切换按钮。
- * - 使用 UI Store (`useUIStore`) 管理编辑/预览模式与当前选中组件
- * - 使用 Components Store (`useComponentsStore`) 管理画布数据与撤销/重做历史
+ * 页头组件 - 三区布局
+ *
+ * 左区 (Brand & Context): Logo、应用名称、保存状态
+ * 中区 (Workbench Controls): 撤销/重做、画布尺寸、快捷键
+ * 右区 (Meta Actions): 出码、预览、更多菜单、用户头像
  */
 export function Header() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<IGeneratedFile[]>([]);
+  // TODO: 实现画布切换功能
+  // const [canvasSize, setCanvasSize] = useState<"desktop" | "mobile">("desktop");
 
   const { resetComponents } = useComponentsStore();
   const { mode, setMode, setCurComponentId } = useUIStore();
-
-  // 从 history store 中获取撤销/重做相关 state 和 actions
   const { undo, redo, clear, past, future } = useHistoryStore();
 
-  /**
-   * @description 处理画布重置逻辑
-   * 它会调用 store action 来清空画布上的所有组件
-   * 注意：此处的 "重置" 仅重置画布内容，不影响撤销/重做的历史记录
-   */
   const handleReset = () => {
     resetComponents();
   };
 
-  /**
-   * @description 导出源码预览
-   */
   const handleOpenCodePreview = async () => {
     setIsExporting(true);
     const { components, rootId } = useComponentsStore.getState();
-
     const schema = buildComponentTree(components, rootId);
 
     if (!schema || schema.length === 0) {
@@ -117,14 +123,13 @@ export function Header() {
     }
 
     try {
-      // 调用 exportSourceCode 并指定 publisher: 'none'
       const result = await exportSourceCode(schema as ISchema, {
         publisher: "none",
       });
 
       if (result.success && result.files) {
         setGeneratedFiles(result.files);
-        setIsDrawerVisible(true); // 打开抽屉
+        setIsDrawerVisible(true);
       } else {
         console.error("出码失败:", result.message);
         alert(`出码失败: ${result.message}`);
@@ -137,10 +142,50 @@ export function Header() {
     }
   };
 
+  // 更多菜单（危险操作折叠）
+  const moreMenuItems: MenuProps["items"] = [
+    {
+      key: "reset-history",
+      label: (
+        <Popconfirm
+          title="确认重置历史记录？"
+          description="此操作将清空所有撤销/重做历史，且无法恢复。"
+          onConfirm={clear}
+          okText="确认"
+          cancelText="取消"
+        >
+          <span className="text-red-500">重置历史记录</span>
+        </Popconfirm>
+      ),
+    },
+    {
+      key: "reset-canvas",
+      label: (
+        <Popconfirm
+          title="确认清空画布？"
+          description="此操作将清空所有组件，且无法撤销。"
+          onConfirm={handleReset}
+          okText="确认"
+          cancelText="取消"
+        >
+          <span className="text-red-500">清空画布</span>
+        </Popconfirm>
+      ),
+    },
+  ];
+
+  // 用户菜单
+  const userMenuItems: MenuProps["items"] = [
+    { key: "profile", label: "个人设置" },
+    { key: "projects", label: "我的项目" },
+    { type: "divider" },
+    { key: "logout", label: "退出登录", danger: true },
+  ];
+
   return (
     <div className="w-full h-full">
       <div className="h-full flex justify-between items-center">
-        {/* 应用标题 */}
+        {/* ========== 左区：Brand & Context ========== */}
         <div className="flex items-center gap-3">
           <svg
             className="w-8 h-8 text-accent-600"
@@ -154,94 +199,84 @@ export function Header() {
             />
           </svg>
           <div>
-            <Title level={4} className="mb-0 text-neutral-800 font-semibold">
+            <Title level={5} className="!mb-0 text-neutral-800 font-semibold">
               低代码编辑器
             </Title>
             <Text className="text-xs text-neutral-400">
-              Modern Low-Code Editor
+              {mode === "edit" ? "编辑中" : "预览模式"}
             </Text>
           </div>
         </div>
 
-        {/* 交互按钮区域 */}
-        <Space size="middle">
-          {/* 当处于"编辑"模式时，显示所有编辑相关操作按钮 */}
-          {mode === "edit" && (
-            <>
-              {/* 快捷键帮助按钮 */}
-              <Popover
-                content={shortcutsContent}
-                title={
-                  <Title level={5} className="mb-2">
-                    快捷键指南
-                  </Title>
-                }
-                trigger="click"
-                overlayClassName="custom-popover"
-              >
-                <Button
-                  icon={<QuestionCircleOutlined />}
-                  shape="circle"
-                  size="middle"
-                />
-              </Popover>
-
-              {/* 撤销/重做按钮组 */}
-              <div className="flex bg-neutral-100 rounded-lg p-1 gap-1">
+        {/* ========== 中区：Workbench Controls ========== */}
+        {mode === "edit" && (
+          <div className="flex items-center gap-4">
+            {/* 撤销/重做 */}
+            <div className="flex items-center bg-neutral-100 rounded-lg p-1 gap-1">
+              <Tooltip title="撤销 (Ctrl+Z)">
                 <Button
                   onClick={() => undo()}
                   disabled={!past.length}
-                  size="middle"
+                  size="small"
                   icon={<UndoOutlined />}
-                >
-                  撤销
-                </Button>
+                  type="text"
+                />
+              </Tooltip>
+              <Tooltip title="重做 (Ctrl+Shift+Z)">
                 <Button
                   onClick={() => redo()}
                   disabled={!future.length}
-                  size="middle"
+                  size="small"
                   icon={<RedoOutlined />}
-                >
-                  重做
-                </Button>
-              </div>
+                  type="text"
+                />
+              </Tooltip>
+            </div>
 
-              {/* 重置按钮组 */}
-              <div className="flex gap-2">
-                <Popconfirm
-                  title="确认重置历史记录？"
-                  description="此操作将清空所有撤销/重做历史，且无法恢复。"
-                  onConfirm={clear}
-                  okText="确认重置"
-                  cancelText="取消"
-                  placement="bottomRight"
-                >
-                  <Button size="middle" icon={<ClearOutlined />} danger>
-                    重置历史
-                  </Button>
-                </Popconfirm>
+            {/* 画布尺寸切换 */}
+            {/* TODO: 实现画布切换功能 */}
+            {/* <Segmented
+              size="small"
+              value={canvasSize}
+              onChange={(v) => setCanvasSize(v as "desktop" | "mobile")}
+              options={[
+                { value: "desktop", icon: <DesktopOutlined /> },
+                { value: "mobile", icon: <MobileOutlined /> },
+              ]}
+            /> */}
 
-                <Popconfirm
-                  title="确认重置画布？"
-                  description="此操作将清空所有组件，且无法撤销。"
-                  onConfirm={handleReset}
-                  okText="确认重置"
-                  cancelText="取消"
-                  placement="bottomRight"
-                >
-                  <Button size="middle" icon={<DeleteOutlined />} danger>
-                    重置画布
-                  </Button>
-                </Popconfirm>
-              </div>
+            {/* 快捷键指南 */}
+            <Popover
+              content={shortcutsContent}
+              title={
+                <Title level={5} className="!mb-2">
+                  快捷键指南
+                </Title>
+              }
+              trigger="click"
+              placement="bottom"
+            >
+              <Button
+                icon={<QuestionCircleOutlined />}
+                size="small"
+                type="text"
+              />
+            </Popover>
+          </div>
+        )}
 
-              {/* 出码按钮 */}
+        {/* ========== 右区：Meta Actions ========== */}
+        <Space size="middle">
+          {mode === "edit" && (
+            <>
+              {/* 出码 */}
               <Button
                 onClick={handleOpenCodePreview}
                 loading={isExporting}
                 icon={<CodeOutlined />}
+                size="middle"
               >
-                {isExporting ? "生成中..." : "出码预览"}
+                {isExporting ? "生成中..." : "出码"}
               </Button>
               <CodePreviewDrawer
                 visible={isDrawerVisible}
@@ -250,7 +285,7 @@ export function Header() {
                 onClose={() => setIsDrawerVisible(false)}
               />
 
-              {/* 预览按钮 */}
+              {/* 预览（Primary Action） */}
               <Button
                 onClick={() => {
                   setMode("preview");
@@ -262,15 +297,27 @@ export function Header() {
               >
                 预览
               </Button>
+
+              {/* 更多菜单 */}
+              <Dropdown menu={{ items: moreMenuItems }} placement="bottomRight">
+                <Button icon={<MoreOutlined />} size="middle" />
+              </Dropdown>
+
+              {/* 用户头像 */}
+              {/* TODO: 后面使用Clerk替代 */}
+              <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+                <Avatar
+                  size="small"
+                  icon={<UserOutlined />}
+                  className="cursor-pointer bg-accent-500"
+                />
+              </Dropdown>
             </>
           )}
 
-          {/* 预览模式下仅显示"退出预览"按钮 */}
           {mode === "preview" && (
             <Button
-              onClick={() => {
-                setMode("edit");
-              }}
+              onClick={() => setMode("edit")}
               type="primary"
               size="middle"
               icon={<EyeInvisibleOutlined />}
