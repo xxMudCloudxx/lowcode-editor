@@ -24,7 +24,7 @@ import {
   buildComponentTree,
 } from "../../stores/components";
 import { useUIStore } from "../../stores/uiStore";
-import { useStore } from "zustand";
+import { useHistoryStore } from "../../stores/historyStore";
 import { exportSourceCode } from "../../../code-generator";
 import type { IGeneratedFile, ISchema } from "../../../code-generator/types/ir";
 import { useState } from "react";
@@ -89,10 +89,8 @@ export function Header() {
   const { resetComponents } = useComponentsStore();
   const { mode, setMode, setCurComponentId } = useUIStore();
 
-  // 从 temporal store 中获取撤销/重做相关 state 和 actions
-  const { undo, redo, clear, pastStates, futureStates } = useStore(
-    useComponentsStore.temporal
-  );
+  // 从 history store 中获取撤销/重做相关 state 和 actions
+  const { undo, redo, clear, past, future } = useHistoryStore();
 
   /**
    * @description 处理画布重置逻辑
@@ -192,7 +190,7 @@ export function Header() {
               <div className="flex bg-neutral-100 rounded-lg p-1 gap-1">
                 <Button
                   onClick={() => undo()}
-                  disabled={!pastStates.length}
+                  disabled={!past.length}
                   size="middle"
                   icon={<UndoOutlined />}
                 >
@@ -200,7 +198,7 @@ export function Header() {
                 </Button>
                 <Button
                   onClick={() => redo()}
-                  disabled={!futureStates.length}
+                  disabled={!future.length}
                   size="middle"
                   icon={<RedoOutlined />}
                 >

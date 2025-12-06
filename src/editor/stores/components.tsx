@@ -13,11 +13,10 @@
 import type { CSSProperties } from "react";
 import { create, type StateCreator } from "zustand";
 import { persist } from "zustand/middleware";
-import { immer } from "zustand/middleware/immer";
-import { temporal } from "zundo";
 
 import type { Component, ComponentTree } from "../interface";
 import { useUIStore } from "./uiStore";
+import { undoMiddleware } from "./middleware/undoMiddleware";
 
 /**
  * @interface State
@@ -550,13 +549,13 @@ const generateUniqueId = createIdGenerator();
 
 /**
  * @description 创建最终的 store 实例，并组合使用多个中间件：
- * 1. immer: 允许在 set 中直接“可变”写法
- * 2. persist: 本地持久化，只存储 components 和 rootId
- * 3. temporal: 撤销/重做，只跟踪组件数据的变化
+ * 1. undoMiddleware: 替代 immer + zundo，实现 patch 记录
+ * 2. persist: 本地持久化
  */
 export const useComponentsStore = create<ComponentsStore>()(
-  temporal(
-    persist(immer(creator), {
+  persist(
+    undoMiddleware(creator),
+    {
       name: "lowcode-store",
       version: 2,
       partialize: (state) => ({
@@ -596,13 +595,6 @@ export const useComponentsStore = create<ComponentsStore>()(
         // 默认保持原样
         return persistedState;
       },
-    }),
-    {
-      limit: 100,
-      partialize: (state) => ({
-        components: state.components,
-        rootId: state.rootId,
-      }),
     }
   )
 );

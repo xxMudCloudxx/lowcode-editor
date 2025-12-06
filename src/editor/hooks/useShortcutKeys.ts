@@ -11,8 +11,8 @@ import { useEffect, useMemo } from "react";
 import { message } from "antd";
 import { useComponentsStore, getComponentById } from "../stores/components";
 import { useUIStore } from "../stores/uiStore";
+import { useHistoryStore } from "../stores/historyStore";
 import type { Component, ComponentTree } from "../interface";
-import { useStore } from "zustand";
 import { debounce } from "lodash-es";
 
 // 容器组件列表，用于智能粘贴时判断粘贴目标
@@ -30,10 +30,8 @@ const ContainerList: Set<string> = new Set([
 export function useShortcutKeys() {
   const { components, pasteComponents, deleteComponent } = useComponentsStore();
 
-  // temporal store 中的撤销 / 重做能力
-  const { undo, redo, pastStates, futureStates } = useStore(
-    useComponentsStore.temporal
-  );
+  // history store 中的撤销 / 重做能力
+  const { undo, redo, past, future } = useHistoryStore();
 
   const { curComponentId, setCurComponentId, setClipboard } = useUIStore();
 
@@ -109,12 +107,12 @@ export function useShortcutKeys() {
         // 撤销/重做
         case "z":
           // 撤销：Cmd/Ctrl + Z
-          if (isCmdOrCtrl && pastStates.length > 0 && !isShift) {
+          if (isCmdOrCtrl && past.length > 0 && !isShift) {
             e.preventDefault();
             undo();
             debouncedMessage("撤销成功");
             // 重做：Cmd/Ctrl + Shift + Z
-          } else if (isCmdOrCtrl && isShift && futureStates.length > 0) {
+          } else if (isCmdOrCtrl && isShift && future.length > 0) {
             e.preventDefault();
             redo();
             debouncedMessage("重做成功");
@@ -153,8 +151,8 @@ export function useShortcutKeys() {
     setClipboard,
     undo,
     redo,
-    pastStates,
-    futureStates,
+    past,
+    future,
     debouncedMessage,
   ]);
 }

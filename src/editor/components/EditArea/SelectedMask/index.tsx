@@ -16,6 +16,7 @@ import {
   useComponentsStore,
 } from "../../../stores/components";
 import { useUIStore } from "../../../stores/uiStore";
+import { useHistoryStore } from "../../../stores/historyStore";
 import type { Component, ComponentTree } from "../../../interface";
 import { Dropdown, message, Popconfirm, Space, Tooltip } from "antd";
 import {
@@ -23,7 +24,6 @@ import {
   DeleteOutlined,
   FileAddOutlined,
 } from "@ant-design/icons";
-import { useStore } from "zustand";
 
 interface SelectedMaskProps {
   portalWrapperClassName: string;
@@ -51,9 +51,7 @@ function SelectedMask({
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
   // 如果撤销或重做，可以及时更新 SelectedMask
-  const { pastStates, futureStates } = useStore(
-    useComponentsStore.temporal
-  );
+  const { past, future } = useHistoryStore();
 
   useEffect(() => {
     const el = document.querySelector(`.${portalWrapperClassName}`);
@@ -90,7 +88,7 @@ function SelectedMask({
   useLayoutEffect(() => {
     updatePosition();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentId, components, pastStates, futureStates]);
+  }, [componentId, components, past, future]);
 
   /**
    * 计算并更新遮罩层的位置和大小

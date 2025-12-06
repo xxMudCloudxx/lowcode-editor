@@ -12,6 +12,9 @@ import {
 vi.mock("antd", () => ({
   __esModule: true,
   Spin: () => <div data-testid="spin" />,
+  ConfigProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   message: {
     success: vi.fn(),
     error: vi.fn(),
@@ -29,6 +32,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { useComponentsStore } from "./components";
+import { useHistoryStore } from "./historyStore";
 import { useUIStore } from "./uiStore";
 import { Preview } from "../components/Preview";
 import { useComponentConfigStore } from "./component-config";
@@ -43,8 +47,8 @@ const TestButton = React.forwardRef<
   </button>
 ));
 
-const LazyTestButton = React.lazy(
-  () => Promise.resolve({ default: TestButton })
+const LazyTestButton = React.lazy(() =>
+  Promise.resolve({ default: TestButton })
 );
 
 const TestPage = React.forwardRef<
@@ -63,15 +67,14 @@ let originalComponentConfig: ReturnType<
 >["componentConfig"];
 
 beforeAll(() => {
-  originalComponentConfig =
-    useComponentConfigStore.getState().componentConfig;
+  originalComponentConfig = useComponentConfigStore.getState().componentConfig;
 });
 
 // 在每个测试用例开始前，重置 store 状态
 beforeEach(() => {
   act(() => {
     useComponentsStore.getState().resetComponents();
-    useComponentsStore.temporal.getState().clear();
+    useHistoryStore.getState().clear();
     useUIStore.getState().setCurComponentId(null);
     useUIStore.getState().setMode("edit");
     useUIStore.getState().setClipboard(null);
@@ -113,10 +116,7 @@ describe("useComponentsStore 核心 actions", () => {
     act(() => {
       useComponentsStore
         .getState()
-        .addComponent(
-          { id: 2, name: "Container", desc: "容器", props: {} },
-          1
-        );
+        .addComponent({ id: 2, name: "Container", desc: "容器", props: {} }, 1);
       useComponentsStore
         .getState()
         .addComponent({ id: 3, name: "Button", desc: "按钮", props: {} }, 2);
@@ -156,17 +156,15 @@ describe("useComponentsStore 核心 actions", () => {
 
   it("updateComponentStyles: 能够合并更新组件的 styles", () => {
     act(() => {
-      useComponentsStore
-        .getState()
-        .addComponent(
-          {
-            id: 201,
-            name: "Container",
-            desc: "容器",
-            props: {},
-          },
-          1
-        );
+      useComponentsStore.getState().addComponent(
+        {
+          id: 201,
+          name: "Container",
+          desc: "容器",
+          props: {},
+        },
+        1
+      );
     });
 
     act(() => {
@@ -176,9 +174,7 @@ describe("useComponentsStore 核心 actions", () => {
     });
 
     act(() => {
-      useComponentsStore
-        .getState()
-        .updateComponentStyles(201, { height: 80 });
+      useComponentsStore.getState().updateComponentStyles(201, { height: 80 });
     });
 
     const state = useComponentsStore.getState();
@@ -190,10 +186,7 @@ describe("useComponentsStore 核心 actions", () => {
     act(() => {
       useComponentsStore
         .getState()
-        .addComponent(
-          { id: 301, name: "Button", desc: "按钮", props: {} },
-          1
-        );
+        .addComponent({ id: 301, name: "Button", desc: "按钮", props: {} }, 1);
     });
 
     act(() => {
@@ -318,20 +311,18 @@ describe("Preview 事件编排", () => {
     };
 
     act(() => {
-      useComponentsStore
-        .getState()
-        .addComponent(
-          {
-            id: 501,
-            name: "Button",
-            desc: "按钮",
-            props: {
-              text: "触发事件",
-              onClick: eventConfig,
-            },
+      useComponentsStore.getState().addComponent(
+        {
+          id: 501,
+          name: "Button",
+          desc: "按钮",
+          props: {
+            text: "触发事件",
+            onClick: eventConfig,
           },
-          1
-        );
+        },
+        1
+      );
     });
 
     render(<Preview />);
