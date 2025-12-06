@@ -108,8 +108,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
           <Layout className="h-full overflow-hidden">
             {/* Sider: 文件树 */}
             <Sider
-              width={"10vw"} // 确保 Sider 有宽度
-              className="bg-white! overflow-auto border-r border-gray-200 h-screen"
+              width={250}
+              style={{ background: "#fff" }}
+              className="overflow-auto border-r border-gray-200 h-screen"
             >
               <Tree
                 showLine
@@ -119,7 +120,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
                 defaultExpandAll
                 defaultExpandParent
                 selectedKeys={selectedFile ? [selectedFile.filePath] : []}
-                className="p-2"
+                className="p-2 file-tree"
               />
             </Sider>
 

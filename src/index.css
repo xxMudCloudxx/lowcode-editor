@@ -191,3 +191,43 @@ body {
 .split-view-separator:active {
   background: var(--color-neutral-400) !important;
 }
+
+/* =============================================================================
+   文件树组件 (CodePreviewDrawer)
+   ============================================================================= */
+
+.file-tree .ant-tree-treenode {
+  align-items: center;
+}
+
+.file-tree .ant-tree-node-content-wrapper {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.file-tree .ant-tree-iconEle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 6px;
+  height: 100%;
+}
+
+/* 确保图标 SVG 本身也垂直居中 */
+.file-tree .ant-tree-iconEle svg {
+  vertical-align: middle;
+}
+
+.file-tree .ant-tree-title {
+  display: inline-flex;
+  align-items: center;
+}
+
+.file-tree .ant-tree-node-selected {
+  background-color: var(--color-accent-100) !important;
+}
+
+.file-tree .ant-tree-node-content-wrapper:hover {
+  background-color: var(--color-neutral-100) !important;
+}

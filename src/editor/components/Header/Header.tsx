@@ -13,7 +13,6 @@ import {
   Typography,
   Popover,
   Dropdown,
-  Segmented,
   Avatar,
   Tooltip,
   type MenuProps,
@@ -26,8 +25,6 @@ import {
   EyeInvisibleOutlined,
   CodeOutlined,
   MoreOutlined,
-  DesktopOutlined,
-  MobileOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 
@@ -199,7 +196,7 @@ export function Header() {
             />
           </svg>
           <div>
-            <Title level={5} className="!mb-0 text-neutral-800 font-semibold">
+            <Title level={5} className="mb-0! text-neutral-800 font-semibold">
               低代码编辑器
             </Title>
             <Text className="text-xs text-neutral-400">
@@ -249,7 +246,7 @@ export function Header() {
             <Popover
               content={shortcutsContent}
               title={
-                <Title level={5} className="!mb-2">
+                <Title level={5} className="mb-2!">
                   快捷键指南
                 </Title>
               }
@@ -269,6 +266,10 @@ export function Header() {
         <Space size="middle">
           {mode === "edit" && (
             <>
+              {/* 更多菜单 */}
+              <Dropdown menu={{ items: moreMenuItems }} placement="bottomRight">
+                <Button icon={<MoreOutlined />} size="middle" />
+              </Dropdown>
               {/* 出码 */}
               <Button
                 onClick={handleOpenCodePreview}
@@ -297,11 +298,6 @@ export function Header() {
               >
                 预览
               </Button>
-
-              {/* 更多菜单 */}
-              <Dropdown menu={{ items: moreMenuItems }} placement="bottomRight">
-                <Button icon={<MoreOutlined />} size="middle" />
-              </Dropdown>
 
               {/* 用户头像 */}
               {/* TODO: 后面使用Clerk替代 */}
