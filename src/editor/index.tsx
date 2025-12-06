@@ -33,7 +33,7 @@ export default function ReactPlayground() {
 
             {/* 中间编辑区域 */}
             <Allotment.Pane>
-              <div className="h-full bg-gradient-to-br from-surface to-neutral-100">
+              <div className="h-full bg-linear-to-br from-surface to-neutral-100">
                 <EditArea />
               </div>
             </Allotment.Pane>

@@ -4,7 +4,14 @@
  * 预览模式的渲染引擎。
  * 负责将 `components` store 中的组件树数据渲染成一个可交互、
  * 纯净的（无编辑器相关交互逻辑）React 应用界面。
- * 同时根据“事件”面板中配置的动作，动态绑定组件事件。
+ * 同时根据"事件"面板中配置的动作，动态绑定组件事件。
+ *
+ * @security
+ * - 自定义 JS (customJs) 使用 iframe 沙盒执行，参见 utils/sandboxExecutor.ts
+ * - TODO: 若需支持动态表达式绑定（如 {{ state.count + 1 }}），
+ *   应使用安全的表达式求值器（如 expr-eval 或 jsep + AST 遍历），
+ *   而非 eval/new Function，以防止渲染时 XSS 攻击。
+ *
  * @module Components/Preview
  */
 
@@ -15,6 +22,7 @@ import type { Component } from "../../interface";
 import { message, ConfigProvider } from "antd";
 import type { ActionConfig } from "../Setting/ComponentEvent/ActionModal";
 import LoadingPlaceholder from "../common/LoadingPlaceholder";
+import { executeSandboxedCode } from "../../utils/sandboxExecutor";
 
 export function Preview() {
   const { components, rootId } = useComponentsStore();
@@ -50,18 +58,15 @@ export function Preview() {
                 message.error(action.config.text);
               }
             } else if (action.type === "customJs") {
-              // 警告：使用 new Function 动态执行代码存在安全风险，生产环境需谨慎处理。
-              const func = new Function("context", "args", action.code);
-              func(
-                {
-                  name: component.name,
-                  props: component.props,
-                  ShowMessage(content: string) {
-                    message.success(content);
-                  },
-                },
-                args
-              );
+              // 使用 iframe 沙盒安全执行用户代码
+              executeSandboxedCode(action.code, {
+                name: component.name,
+                props: component.props,
+                onShowMessage: (content: string) => message.success(content),
+                eventArgs: args,
+              }).catch((err: Error) => {
+                message.error(`自定义代码执行失败: ${err.message}`);
+              });
             } else if (action.type === "componentMethod") {
               const target = componentRefs.current[action.config.componentId];
               if (target) {

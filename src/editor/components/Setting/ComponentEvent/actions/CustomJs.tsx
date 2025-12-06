@@ -13,23 +13,35 @@ export interface CustomJsProps {
   onChange?: (config: CustomJsConfig) => void;
 }
 
+/**
+ * 默认代码模板，帮助用户了解可用 API
+ */
+const DEFAULT_CODE_TEMPLATE = `// 可用 API:
+// - ShowMessage("消息内容")  显示成功提示
+// - context.name           当前组件名称
+// - context.props          当前组件属性
+// - args                   事件触发时的参数
+
+ShowMessage("按钮被点击了！");
+`;
+
 export function CustomJS(props: CustomJsProps) {
   const { value: val, defaultValue, onChange } = props;
   const curComponentId = useUIStore((s) => s.curComponentId);
-  const [value, setValue] = useState(defaultValue);
+  const [value, setValue] = useState(defaultValue || DEFAULT_CODE_TEMPLATE);
 
   useEffect(() => {
-    setValue(val);
+    setValue(val || DEFAULT_CODE_TEMPLATE);
   }, [val]);
 
   function codeChange(value?: string) {
     if (!curComponentId) return;
 
-    setValue(value);
+    setValue(value || "");
 
     onChange?.({
       type: "customJs",
-      code: value!,
+      code: value || "",
     });
   }
 
@@ -74,9 +86,9 @@ export function CustomJS(props: CustomJsProps) {
             }}
           />
         </div>
-        <p className="text-xs text-gray-500">
-          提示：使用 Ctrl+J (Windows) 或 Cmd+J (Mac) 格式化代码
-        </p>
+        <div className="text-xs text-gray-500 space-y-1">
+          <p>快捷键：Ctrl+J (Windows) / Cmd+J (Mac) 格式化代码</p>
+        </div>
       </div>
     </div>
   );
