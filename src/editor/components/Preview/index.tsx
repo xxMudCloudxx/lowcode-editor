@@ -12,7 +12,7 @@ import React, { Suspense, useRef } from "react";
 import { useComponentConfigStore } from "../../stores/component-config";
 import { useComponentsStore } from "../../stores/components";
 import type { Component } from "../../interface";
-import { message } from "antd";
+import { message, ConfigProvider } from "antd";
 import type { ActionConfig } from "../Setting/ComponentEvent/ActionModal";
 import LoadingPlaceholder from "../common/LoadingPlaceholder";
 
@@ -124,6 +124,9 @@ export function Preview() {
     );
   };
 
-  return <div>{rootId && <RenderNode id={rootId} />}</div>;
+  return (
+    <ConfigProvider theme={{ inherit: false }}>
+      <div>{rootId && <RenderNode id={rootId} />}</div>
+    </ConfigProvider>
+  );
 }
-

@@ -153,44 +153,58 @@ export function Source() {
       }}
     >
       {/* 顶部操作栏 */}
-      <div className="flex justify-end items-center mb-2 flex-shrink-0">
-        <div className="flex-1">
-          {isDirty && (
-            <span className="text-yellow-600 text-xs ml-2">
-              检测到未保存的更改
-            </span>
-          )}
-        </div>
-        <Button onClick={handleSave} disabled={!isDirty} type="primary">
-          保存
-        </Button>
-        {/* 导出按钮 */}
-        <Tooltip title="导出 Schema">
-          <Button icon={<UploadOutlined />} onClick={handleExport}>
-            导出
+      <div className="flex justify-between items-center mb-3 flex-shrink-0 gap-3">
+        {/* 左侧：保存按钮 + 状态提示 */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleSave}
+            disabled={!isDirty}
+            type="primary"
+            size="small"
+          >
+            保存
           </Button>
-        </Tooltip>
+          {isDirty && <span className="text-warning-600 text-xs">未保存</span>}
+        </div>
 
-        {/* 导入按钮 (使用 Upload 组件包装) */}
-        <Upload {...uploadProps}>
-          <Tooltip title="导入 Schema (将覆盖当前画布)">
+        {/* 右侧：导入导出 + 全屏 */}
+        <div className="flex items-center gap-1">
+          <Tooltip title="导出 Schema">
             <Button
-              icon={<DownloadOutlined />}
-              onClick={(e) => e.preventDefault()}
+              icon={<UploadOutlined />}
+              onClick={handleExport}
+              size="small"
             >
-              导入
+              导出
             </Button>
           </Tooltip>
-        </Upload>
-        <Tooltip title={isFullscreen ? "退出全屏" : "全屏"}>
-          <Button
-            icon={
-              isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />
-            }
-            onClick={toggleFullscreen}
-            className="mr-2"
-          />
-        </Tooltip>
+
+          <Upload {...uploadProps}>
+            <Tooltip title="导入 Schema (将覆盖当前画布)">
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={(e) => e.preventDefault()}
+                size="small"
+              >
+                导入
+              </Button>
+            </Tooltip>
+          </Upload>
+
+          <Tooltip title={isFullscreen ? "退出全屏" : "全屏"}>
+            <Button
+              icon={
+                isFullscreen ? (
+                  <FullscreenExitOutlined />
+                ) : (
+                  <FullscreenOutlined />
+                )
+              }
+              onClick={toggleFullscreen}
+              size="small"
+            />
+          </Tooltip>
+        </div>
       </div>
 
       {/* Monaco Editor */}
@@ -218,4 +232,3 @@ export function Source() {
     </div>
   );
 }
-

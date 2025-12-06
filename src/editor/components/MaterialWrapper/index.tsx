@@ -20,7 +20,7 @@ export function MaterialWrapper() {
             { label: "大纲", value: "大纲" },
             { label: "源码", value: "源码" },
           ]}
-          className="!bg-gray-50 !p-1"
+          className=""
         />
       </div>
 

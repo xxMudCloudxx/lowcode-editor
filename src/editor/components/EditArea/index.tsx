@@ -15,6 +15,7 @@ import React, {
   useState,
   type MouseEventHandler,
 } from "react";
+import { ConfigProvider } from "antd";
 import { useComponentsStore } from "../../stores/components";
 import { useComponentConfigStore } from "../../stores/component-config";
 import { useUIStore } from "../../stores/uiStore";
@@ -137,7 +138,10 @@ export function EditArea() {
         backgroundSize: "50px 50px, 100px 100px, 100% 100%",
       }}
     >
-      {componentTree}
+      {/* 重置 Antd 主题为默认，让画布中的组件使用默认颜色 */}
+      <ConfigProvider theme={{ inherit: false }}>
+        {componentTree}
+      </ConfigProvider>
 
       {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
       {hoverComponentId &&
