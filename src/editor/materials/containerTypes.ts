@@ -10,7 +10,14 @@
 // C_ stands for Category
 
 // 页面级/主布局容器。这些是顶层或主要的结构块。
-export const C_PAGE = ["Page", "Container", "Modal", "GridColumn", "TabPane"];
+export const C_PAGE = [
+  "Page",
+  "Container",
+  "Modal",
+  "GridColumn",
+  "TabPane",
+  "Space",
+];
 
 // 内容区块级容器。例如 Card，它本身可以容纳其他组件。
 export const C_BLOCK = [...C_PAGE, "Card", "Tooltip"];

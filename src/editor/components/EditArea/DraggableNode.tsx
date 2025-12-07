@@ -90,18 +90,21 @@ export function DraggableNode({
     return cloneElement(childElement, {
       ref: mergedRef,
       "data-component-id": id,
+      "data-component-type": name, // 注入组件类型，供 CSS 作用域瞄准
       style: {
         ...childStyle,
         // 容器悬浮时的视觉反馈
         ...(isContainer && isOver
           ? {
-              outline: "2px dashed var(--ant-color-primary, #1677ff)",
+              outline: "2px solid var(--ant-color-primary, #1677ff)",
+              outlineOffset: "-2px",
             }
           : {}),
       },
     } as React.Attributes & {
       ref: typeof mergedRef;
       "data-component-id": number;
+      "data-component-type": string;
       style: CSSProperties;
     });
   }

@@ -231,3 +231,61 @@ body {
 .file-tree .ant-tree-node-content-wrapper:hover {
   background-color: var(--color-neutral-100) !important;
 }
+
+/* =============================================================================
+   编辑器画布专用样式 (CSS 作用域策略)
+   
+   这些样式只在 .edit-area 内生效，预览和出码时不会应用。
+   组件本身保持纯净，不包含任何编辑器特有的样式逻辑。
+   ============================================================================= */
+
+/* 容器组件基础样式 - 虚线边框和最小高度 */
+.edit-area [data-component-type="Container"],
+.edit-area [data-component-type="Grid"],
+.edit-area [data-component-type="GridColumn"],
+.edit-area [data-component-type="Space"],
+.edit-area [data-component-type="Card"],
+.edit-area [data-component-type="Modal"],
+.edit-area [data-component-type="Form"],
+.edit-area [data-component-type="TabPane"] {
+  min-height: 60px;
+  outline: 1px dashed var(--color-neutral-300);
+  outline-offset: -1px;
+  transition: outline-color 0.2s ease;
+}
+
+/* 容器悬浮时高亮边框 */
+.edit-area [data-component-type="Container"]:hover,
+.edit-area [data-component-type="Grid"]:hover,
+.edit-area [data-component-type="GridColumn"]:hover,
+.edit-area [data-component-type="Space"]:hover {
+  outline-color: var(--color-accent-400);
+}
+
+/* 空容器占位提示 - 使用 :empty 伪类 */
+.edit-area [data-component-type="Container"]:empty::before,
+.edit-area [data-component-type="Grid"]:empty::before,
+.edit-area [data-component-type="GridColumn"]:empty::before,
+.edit-area [data-component-type="Space"]:empty::before {
+  content: "拖拽组件到这里";
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 60px;
+  color: var(--color-neutral-400);
+  font-size: 16px;
+  background-color: var(--color-neutral-100);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* GridColumn 和 Space 特殊提示 */
+.edit-area [data-component-type="GridColumn"]:empty::before {
+  content: "拖拽组件到此列";
+}
+
+.edit-area [data-component-type="Grid"]:empty::before {
+  content: "拖拽栅格列到这里";
+}

@@ -1,11 +1,28 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Container/meta.tsx
+ * @description Container 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_LAYOUT } from "../../containerTypes";
 
-export default {
+const ContainerProtocol: ComponentProtocol = {
+  // ===== 身份层 =====
   name: "Container",
   desc: "容器",
   category: "布局",
+
+  // ===== 渲染层 =====
+  component: lazy(() => import("./index")),
   defaultProps: {},
-  // 容器自身也可以被放置在"页面"或另一个"容器"或"弹窗"中
-  parentTypes: PT_LAYOUT,
-} as Omit<ComponentConfig, "dev" | "prod">;
+
+  // ===== 编辑层 =====
+  editor: {
+    isContainer: true, // 容器组件，可以接收子组件
+    parentTypes: PT_LAYOUT,
+    interactiveInEditor: false,
+    display: "block",
+  },
+};
+
+export default ContainerProtocol;

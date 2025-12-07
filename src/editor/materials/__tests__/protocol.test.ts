@@ -18,7 +18,17 @@ import type {
 
 describe("物料协议合规性测试", () => {
   // 所有已迁移到新协议的组件
-  const MIGRATED_COMPONENTS = ["Button", "Icon", "Typography"];
+  const MIGRATED_COMPONENTS = [
+    // Phase 1: General
+    "Button",
+    "Icon",
+    "Typography",
+    // Phase 2: Layout
+    "Container",
+    "Grid",
+    "GridColumn",
+    "Space",
+  ];
 
   describe("基础字段检查", () => {
     it("所有物料都有 name 和 desc 字段", () => {

@@ -24,8 +24,9 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   CodeOutlined,
-  MoreOutlined,
   UserOutlined,
+  ClearOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 
 const { Text, Title } = Typography;
@@ -139,37 +140,37 @@ export function Header() {
     }
   };
 
-  // 更多菜单（危险操作折叠）
-  const moreMenuItems: MenuProps["items"] = [
-    {
-      key: "reset-history",
-      label: (
-        <Popconfirm
-          title="确认重置历史记录？"
-          description="此操作将清空所有撤销/重做历史，且无法恢复。"
-          onConfirm={clear}
-          okText="确认"
-          cancelText="取消"
-        >
-          <span className="text-red-500">重置历史记录</span>
-        </Popconfirm>
-      ),
-    },
-    {
-      key: "reset-canvas",
-      label: (
-        <Popconfirm
-          title="确认清空画布？"
-          description="此操作将清空所有组件，且无法撤销。"
-          onConfirm={handleReset}
-          okText="确认"
-          cancelText="取消"
-        >
-          <span className="text-red-500">清空画布</span>
-        </Popconfirm>
-      ),
-    },
-  ];
+  // // 更多菜单（危险操作折叠）
+  // const moreMenuItems: MenuProps["items"] = [
+  //   {
+  //     key: "reset-history",
+  //     label: (
+  //       <Popconfirm
+  //         title="确认重置历史记录？"
+  //         description="此操作将清空所有撤销/重做历史，且无法恢复。"
+  //         onConfirm={clear}
+  //         okText="确认"
+  //         cancelText="取消"
+  //       >
+  //         <span className="text-red-500">重置历史记录</span>
+  //       </Popconfirm>
+  //     ),
+  //   },
+  //   {
+  //     key: "reset-canvas",
+  //     label: (
+  //       <Popconfirm
+  //         title="确认清空画布？"
+  //         description="此操作将清空所有组件，且无法撤销。"
+  //         onConfirm={handleReset}
+  //         okText="确认"
+  //         cancelText="取消"
+  //       >
+  //         <span className="text-red-500">清空画布</span>
+  //       </Popconfirm>
+  //     ),
+  //   },
+  // ];
 
   // 用户菜单
   const userMenuItems: MenuProps["items"] = [
@@ -266,10 +267,34 @@ export function Header() {
         <Space size="middle">
           {mode === "edit" && (
             <>
-              {/* 更多菜单 */}
-              <Dropdown menu={{ items: moreMenuItems }} placement="bottomRight">
-                <Button icon={<MoreOutlined />} size="middle" />
-              </Dropdown>
+              {/* 重置按钮组 */}
+              <div className="flex gap-2">
+                <Popconfirm
+                  title="确认重置历史记录？"
+                  description="此操作将清空所有撤销/重做历史，且无法恢复。"
+                  onConfirm={clear}
+                  okText="确认重置"
+                  cancelText="取消"
+                  placement="bottomRight"
+                >
+                  <Button size="middle" icon={<ClearOutlined />} danger>
+                    重置历史
+                  </Button>
+                </Popconfirm>
+
+                <Popconfirm
+                  title="确认重置画布？"
+                  description="此操作将清空所有组件，且无法撤销。"
+                  onConfirm={handleReset}
+                  okText="确认重置"
+                  cancelText="取消"
+                  placement="bottomRight"
+                >
+                  <Button size="middle" icon={<DeleteOutlined />} danger>
+                    重置画布
+                  </Button>
+                </Popconfirm>
+              </div>
               {/* 出码 */}
               <Button
                 onClick={handleOpenCodePreview}

@@ -27,3 +27,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+/docs/项目亮点.md

@@ -1,16 +1,34 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Grid/meta.tsx
+ * @description Grid 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_LAYOUT } from "../../containerTypes";
 
-export default {
+const GridProtocol: ComponentProtocol = {
+  // ===== 身份层 =====
   name: "Grid",
+  desc: "栅格-行",
+  category: "布局",
+
+  // ===== 渲染层 =====
+  component: lazy(() => import("./index")),
   defaultProps: {
     gutter: 1,
     justify: "start",
     align: "top",
     wrap: false,
   },
-  desc: "栅格-行",
-  category: "布局",
+
+  // ===== 编辑层 =====
+  editor: {
+    isContainer: true,
+    parentTypes: PT_LAYOUT,
+    interactiveInEditor: false,
+    display: "block",
+  },
+
   setter: [
     {
       name: "gutter",
@@ -50,5 +68,6 @@ export default {
       ],
     },
   ],
-  parentTypes: PT_LAYOUT,
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default GridProtocol;
