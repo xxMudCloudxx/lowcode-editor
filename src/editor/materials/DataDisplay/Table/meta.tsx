@@ -1,44 +1,42 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Table/meta.tsx
+ * @description Table 组件协议配置（容器组件）
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_DATA } from "../../containerTypes";
 
-export default {
+const TableProtocol: ComponentProtocol = {
   name: "Table",
+  desc: "表格",
+  category: "数据展示",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     bordered: false,
     size: "middle",
   },
-  desc: "表格",
-  category: "数据展示",
+
+  editor: {
+    isContainer: true,
+    parentTypes: PT_DATA,
+    interactiveInEditor: false,
+    display: "block",
+  },
+
   setter: [
-    {
-      name: "url",
-      label: "数据地址",
-      type: "input",
-    },
-    {
-      name: "bordered",
-      label: "显示边框",
-      type: "switch",
-    },
+    { name: "url", label: "数据地址", type: "input" },
+    { name: "bordered", label: "显示边框", type: "switch" },
     {
       name: "size",
       label: "尺寸",
       type: "radio",
       options: ["large", "middle", "small"],
     },
-    {
-      name: "showHeader",
-      label: "显示表头",
-      type: "switch",
-      default: true, // antd 默认为 true
-    },
+    { name: "showHeader", label: "显示表头", type: "switch" },
   ],
-  methods: [
-    {
-      name: "refresh",
-      label: "刷新数据",
-    },
-  ],
-  // 表格可以被放置在"页面"、"容器"或"弹窗"中
-  parentTypes: PT_DATA,
-} as Omit<ComponentConfig, "dev" | "prod">;
+
+  methods: [{ name: "refresh", label: "刷新数据" }],
+};
+
+export default TableProtocol;

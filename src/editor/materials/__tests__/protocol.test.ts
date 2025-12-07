@@ -38,6 +38,15 @@ describe("物料协议合规性测试", () => {
     "Slider",
     "Switch",
     "Upload",
+    // Phase 4: DataDisplay
+    "Avatar",
+    "Card",
+    "Image",
+    "List",
+    "ListItem",
+    "Table",
+    "TableColumn",
+    "Tooltip",
   ];
 
   describe("基础字段检查", () => {

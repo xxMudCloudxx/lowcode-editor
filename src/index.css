@@ -244,7 +244,8 @@ body {
 .edit-area [data-component-type="Grid"],
 .edit-area [data-component-type="GridColumn"],
 .edit-area [data-component-type="Space"],
-.edit-area [data-component-type="Card"],
+.edit-area [data-component-type="List"],
+.edit-area [data-component-type="ListItem"],
 .edit-area [data-component-type="Modal"],
 .edit-area [data-component-type="Form"],
 .edit-area [data-component-type="TabPane"] {
@@ -254,11 +255,63 @@ body {
   transition: outline-color 0.2s ease;
 }
 
-/* 容器悬浮时高亮边框 */
+/* 🚨 Card 和 Table 特殊处理：
+   Antd 组件的背景会遮挡父级的 outline（因为层叠上下文）
+   改用 ::after 伪元素在最顶层绘制边框 */
+.edit-area [data-component-type="Card"],
+.edit-area [data-component-type="Table"] {
+  min-height: 60px;
+  outline: none !important;
+  position: relative;
+}
+
+.edit-area [data-component-type="Card"]::after,
+.edit-area [data-component-type="Table"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px dashed var(--color-neutral-300);
+  pointer-events: none;
+  z-index: 100;
+  transition:
+    border-color 0.2s ease,
+    border-width 0.2s ease;
+}
+
+.edit-area [data-component-type="Card"]:hover::after,
+.edit-area [data-component-type="Table"]:hover::after {
+  border-color: var(--color-accent-400);
+}
+
+/* ✨ 拖拽悬停状态 (data-is-over) - 通用规则 */
+.edit-area [data-is-over="true"] {
+  outline: 2px solid var(--ant-color-primary, #1677ff);
+  outline-offset: -2px;
+}
+
+/* 🛑 Card 和 Table 拖拽悬停特权规则：用 ::after 覆盖层 */
+.edit-area [data-component-type="Card"][data-is-over="true"],
+.edit-area [data-component-type="Table"][data-is-over="true"] {
+  outline: none !important;
+}
+
+.edit-area [data-component-type="Card"][data-is-over="true"]::after,
+.edit-area [data-component-type="Table"][data-is-over="true"]::after {
+  border: 2px solid var(--ant-color-primary, #1677ff);
+  z-index: 999;
+}
+
+/* 容器悬浮时高亮边框（排除 Card 和 Table，上面已用 ::after 处理） */
 .edit-area [data-component-type="Container"]:hover,
 .edit-area [data-component-type="Grid"]:hover,
 .edit-area [data-component-type="GridColumn"]:hover,
-.edit-area [data-component-type="Space"]:hover {
+.edit-area [data-component-type="Space"]:hover,
+.edit-area [data-component-type="List"]:hover,
+.edit-area [data-component-type="Form"]:hover,
+.edit-area [data-component-type="ListItem"]:hover {
   outline-color: var(--color-accent-400);
 }
 
@@ -266,6 +319,11 @@ body {
 .edit-area [data-component-type="Container"]:empty::before,
 .edit-area [data-component-type="Grid"]:empty::before,
 .edit-area [data-component-type="GridColumn"]:empty::before,
+.edit-area [data-component-type="Form"]:empty::before,
+.edit-area [data-component-type="ListItem"]:empty::before,
+.edit-area [data-component-type="List"]:empty::before,
+.edit-area [data-component-type="Card"]:empty::before,
+.edit-area [data-component-type="Table"]:empty::before,
 .edit-area [data-component-type="Space"]:empty::before {
   content: "拖拽组件到这里";
   display: flex;
@@ -295,4 +353,36 @@ body {
 }
 .edit-area [data-component-type="Container"]:empty::before {
   content: "拖拽组件到容器内";
+}
+
+/* Card、List、ListItem 需要选择 Antd 组件内部元素，因为 wrapper div 内始终有内容 */
+.edit-area [data-component-type="Card"] .ant-card-body:empty::before {
+  content: "拖拽组件到卡片内";
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60px;
+  color: var(--color-neutral-400);
+  font-size: 14px;
+}
+
+.edit-area [data-component-type="List"] .ant-list:empty::before,
+.edit-area [data-component-type="List"] .ant-spin-container:empty::before {
+  content: "拖拽列表项到这里";
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60px;
+  color: var(--color-neutral-400);
+  font-size: 14px;
+}
+
+.edit-area [data-component-type="ListItem"] .ant-list-item:empty::before {
+  content: "拖拽组件到列表项内";
+  color: var(--color-neutral-400);
+  font-size: 14px;
+}
+
+.edit-area [data-component-type="Table"]:empty::before {
+  content: "拖拽表格列到这里";
 }

@@ -91,20 +91,17 @@ export function DraggableNode({
       ref: mergedRef,
       "data-component-id": id,
       "data-component-type": name, // 注入组件类型，供 CSS 作用域瞄准
+      // 把 isOver 状态变成 DOM 属性，让 CSS 能看见
+      "data-is-over": isContainer && isOver ? "true" : undefined,
       style: {
         ...childStyle,
-        // 容器悬浮时的视觉反馈
-        ...(isContainer && isOver
-          ? {
-              outline: "2px solid var(--ant-color-primary, #1677ff)",
-              outlineOffset: "-2px",
-            }
-          : {}),
+        // 删除内联 outline 逻辑，交给 CSS 处理
       },
     } as React.Attributes & {
       ref: typeof mergedRef;
       "data-component-id": number;
       "data-component-type": string;
+      "data-is-over"?: string;
       style: CSSProperties;
     });
   }

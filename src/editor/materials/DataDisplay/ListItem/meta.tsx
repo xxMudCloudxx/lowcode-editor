@@ -1,12 +1,26 @@
-// src/editor/materials/DataDisplay/ListItem/meta.tsx
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file ListItem/meta.tsx
+ * @description ListItem 组件协议配置（容器组件）
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 
-export default {
+const ListItemProtocol: ComponentProtocol = {
   name: "ListItem",
   desc: "列表项",
   category: "数据展示",
+
+  component: lazy(() => import("./index")),
   defaultProps: {},
-  // 只能被放入 List 中
-  parentTypes: ["List"],
-  setter: [], // 列表项的内容由其子组件决定，暂不开放自身属性
-} as Omit<ComponentConfig, "dev" | "prod">;
+
+  editor: {
+    isContainer: true,
+    parentTypes: ["List"],
+    interactiveInEditor: false,
+    display: "block",
+  },
+
+  setter: [],
+};
+
+export default ListItemProtocol;

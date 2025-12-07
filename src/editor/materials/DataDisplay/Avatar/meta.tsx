@@ -1,17 +1,30 @@
-// src/editor/materials/DataDisplay/Avatar/meta.tsx
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Avatar/meta.tsx
+ * @description Avatar 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_GENERAL } from "../../containerTypes";
 
-export default {
+const AvatarProtocol: ComponentProtocol = {
   name: "Avatar",
   desc: "头像",
   category: "数据展示",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     shape: "circle",
     size: "default",
     icon: "UserOutlined",
   },
-  parentTypes: PT_GENERAL,
+
+  editor: {
+    isContainer: false,
+    parentTypes: PT_GENERAL,
+    interactiveInEditor: false,
+    display: "inline-block",
+  },
+
   setter: [
     {
       name: "shape",
@@ -25,21 +38,10 @@ export default {
       type: "radio",
       options: ["large", "default", "small"],
     },
-    {
-      name: "src",
-      label: "图片地址",
-      type: "input",
-    },
-    {
-      name: "icon",
-      label: "图标类型",
-      type: "input",
-      // 提示：这里也可以改成Select，但为了简单先用Input
-    },
-    {
-      name: "alt",
-      label: "替代文本",
-      type: "input",
-    },
+    { name: "src", label: "图片地址", type: "input" },
+    { name: "icon", label: "图标类型", type: "input" },
+    { name: "alt", label: "替代文本", type: "input" },
   ],
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default AvatarProtocol;
