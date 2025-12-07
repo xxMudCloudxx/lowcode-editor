@@ -1,10 +1,17 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Radio/meta.tsx
+ * @description Radio 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_GENERAL } from "../../containerTypes";
 
-export default {
+const RadioProtocol: ComponentProtocol = {
   name: "Radio",
   desc: "单选框",
   category: "数据录入",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     options: [
       { label: "选项A", value: "A" },
@@ -13,7 +20,14 @@ export default {
     ],
     optionType: "default",
   },
-  parentTypes: PT_GENERAL,
+
+  editor: {
+    isContainer: false,
+    parentTypes: PT_GENERAL,
+    interactiveInEditor: false,
+    display: "inline-block",
+  },
+
   setter: [
     {
       name: "options",
@@ -52,10 +66,8 @@ export default {
         { label: "填色", value: "solid" },
       ],
     },
-    {
-      name: "disabled",
-      label: "禁用",
-      type: "switch",
-    },
+    { name: "disabled", label: "禁用", type: "switch" },
   ],
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default RadioProtocol;

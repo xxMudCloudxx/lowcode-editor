@@ -1,21 +1,33 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Select/meta.tsx
+ * @description Select 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_GENERAL } from "../../containerTypes";
 
-export default {
+const SelectProtocol: ComponentProtocol = {
   name: "Select",
   desc: "选择器",
   category: "数据录入",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     options: [
       { value: "jack", label: "Jack" },
       { value: "lucy", label: "Lucy" },
       { value: "Yiminghe", label: "yiminghe" },
     ],
-    styles: {
-      width: "100px",
-    },
+    style: { width: "100px" },
   },
-  parentTypes: PT_GENERAL,
+
+  editor: {
+    isContainer: false,
+    parentTypes: PT_GENERAL,
+    interactiveInEditor: false,
+    display: "inline-block",
+  },
+
   setter: [
     {
       name: "options",
@@ -31,4 +43,6 @@ export default {
       },
     },
   ],
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default SelectProtocol;

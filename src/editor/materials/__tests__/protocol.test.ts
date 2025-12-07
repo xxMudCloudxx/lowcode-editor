@@ -28,6 +28,16 @@ describe("物料协议合规性测试", () => {
     "Grid",
     "GridColumn",
     "Space",
+    // Phase 3: DataEntry
+    "Form",
+    "FormItem",
+    "Input",
+    "InputNumber",
+    "Radio",
+    "Select",
+    "Slider",
+    "Switch",
+    "Upload",
   ];
 
   describe("基础字段检查", () => {

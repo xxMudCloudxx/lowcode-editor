@@ -289,3 +289,10 @@ body {
 .edit-area [data-component-type="Grid"]:empty::before {
   content: "拖拽栅格列到这里";
 }
+
+.edit-area [data-component-type="Space"]:empty::before {
+  content: "拖拽组件到间距内";
+}
+.edit-area [data-component-type="Container"]:empty::before {
+  content: "拖拽组件到容器内";
+}
