@@ -3,7 +3,12 @@
  * @description 纯净的 Typography 物料组件
  *
  * 支持 Text, Title, Paragraph 三种类型
- * 必须使用 forwardRef 支持 ref 转发
+ * 根据类型动态选择合适的 wrapper 元素
+ *
+ * 设计说明：
+ * - Text 使用 span 包裹（inline 元素）
+ * - Title/Paragraph 使用 div 包裹（block 元素）
+ * 这样可以保持正确的语义和布局行为
  */
 import { forwardRef, type ReactNode, type HTMLAttributes } from "react";
 import { Typography as AntdTypography } from "antd";
@@ -12,7 +17,7 @@ const { Title, Text, Paragraph } = AntdTypography;
 
 // Omit content from HTMLAttributes to avoid conflict with our content prop (ReactNode vs string)
 export interface TypographyProps
-  extends Omit<HTMLAttributes<HTMLSpanElement>, "content"> {
+  extends Omit<HTMLAttributes<HTMLElement>, "content"> {
   /** 文本内容 */
   content?: ReactNode;
   /** 排版类型 */
@@ -41,9 +46,11 @@ export interface TypographyProps
  * Typography 物料组件
  *
  * 根据 type 属性渲染不同的排版组件
- * 使用 span 包裹以支持 ref 转发
+ * Wrapper 元素根据类型动态选择：
+ * - Text: span (inline)
+ * - Title/Paragraph: div (block)
  */
-const Typography = forwardRef<HTMLSpanElement, TypographyProps>(
+const Typography = forwardRef<HTMLElement, TypographyProps>(
   (
     {
       content,
@@ -58,7 +65,7 @@ const Typography = forwardRef<HTMLSpanElement, TypographyProps>(
       mark,
       copyable,
       editable,
-      ...restProps // 接收其他属性如 data-component-id
+      ...restProps
     },
     ref
   ) => {
@@ -72,6 +79,10 @@ const Typography = forwardRef<HTMLSpanElement, TypographyProps>(
       copyable,
       editable,
     };
+
+    // Text 使用 span（inline），Title/Paragraph 使用 div（block）
+    const isBlockType = type === "Title" || type === "Paragraph";
+    const Wrapper = isBlockType ? "div" : "span";
 
     const renderTypography = () => {
       switch (type) {
@@ -89,13 +100,13 @@ const Typography = forwardRef<HTMLSpanElement, TypographyProps>(
     };
 
     return (
-      <span
-        ref={ref}
-        style={{ display: "inline-block", ...style }}
-        {...restProps} // 转发 data-component-id 等属性
+      <Wrapper
+        ref={ref as React.Ref<HTMLDivElement & HTMLSpanElement>}
+        style={style}
+        {...restProps}
       >
         {renderTypography()}
-      </span>
+      </Wrapper>
     );
   }
 );
