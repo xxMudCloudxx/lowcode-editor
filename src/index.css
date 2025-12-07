@@ -273,9 +273,9 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  border: 1px dashed var(--color-neutral-300);
+  border: 1px solid var(--color-neutral-300);
   pointer-events: none;
-  z-index: 100;
+  /* z-index: 100; */
   transition:
     border-color 0.2s ease,
     border-width 0.2s ease;
@@ -286,13 +286,13 @@ body {
   border-color: var(--color-accent-400);
 }
 
-/* ✨ 拖拽悬停状态 (data-is-over) - 通用规则 */
+/*拖拽悬停状态 (data-is-over) - 通用规则 */
 .edit-area [data-is-over="true"] {
   outline: 2px solid var(--ant-color-primary, #1677ff);
   outline-offset: -2px;
 }
 
-/* 🛑 Card 和 Table 拖拽悬停特权规则：用 ::after 覆盖层 */
+/* Card 和 Table 拖拽悬停特权规则：用 ::after 覆盖层 */
 .edit-area [data-component-type="Card"][data-is-over="true"],
 .edit-area [data-component-type="Table"][data-is-over="true"] {
   outline: none !important;

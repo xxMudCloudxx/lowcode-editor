@@ -6,8 +6,16 @@ import { forwardRef } from "react";
 import type { MaterialProps } from "../../interface";
 
 export interface TableColumnProps extends MaterialProps {
+  /** 列标题 */
   title?: string;
+  /** 数据字段名 - 用于绑定到数据源的字段 */
   dataIndex?: string;
+  /**
+   * 自定义单元格渲染函数
+   * 在运行时会被传递给 Antd Table 的 columns[].render
+   * 在编辑器模式下不生效
+   */
+  render?: (text: any, record: any, index: number) => React.ReactNode;
 }
 
 const TableColumn = forwardRef<HTMLDivElement, TableColumnProps>(

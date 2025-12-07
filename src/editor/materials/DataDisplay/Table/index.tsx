@@ -1,10 +1,44 @@
 /**
  * @file Table/index.tsx
  * @description 纯净的 Table 物料组件
+ *
+ * 🏗️ Slot 模式：
+ * - title: 使用 TableColumn 的 props.title（纯文本）
+ * - render: 使用 TableColumn 的 children 作为单元格模板
+ *
+ * 📦 数据绑定：
+ * - 使用 React Context 提供当前行数据（Scope）
+ * - 表达式引擎或 MaterialWrapper 通过 useCellScope() 消费数据
+ * - 将表达式（如 {{record.id}}）解析为实际值后传给子组件
  */
-import { forwardRef, Children, isValidElement } from "react";
+import React, {
+  forwardRef,
+  Children,
+  isValidElement,
+  createContext,
+  useContext,
+} from "react";
 import { Table as AntdTable, type TableProps as AntdTableProps } from "antd";
 import type { MaterialProps } from "../../interface";
+
+// 类型安全的 CellScope，使用泛型
+export interface CellScope<T = Record<string, unknown>> {
+  /** 当前单元格绑定的数据值 */
+  text: unknown;
+  /** 当前行的完整数据对象 */
+  record: T;
+  /** 当前行索引 */
+  rowIndex: number;
+}
+
+const CellScopeContext = createContext<CellScope | null>(null);
+
+/**
+ * Hook: 获取当前单元格的数据作用域
+ * 供表达式引擎或 MaterialWrapper 使用，实现数据绑定
+ */
+export const useCellScope = <T = Record<string, unknown>,>() =>
+  useContext(CellScopeContext) as CellScope<T> | null;
 
 // 继承 Antd Table Props，但排除我们接管的 columns 和 dataSource
 export interface TableProps
@@ -23,23 +57,52 @@ const Table = forwardRef<HTMLDivElement, TableProps>(
     },
     ref
   ) => {
-    // 🧙‍♂️ 核心魔法：将 React 子节点映射为 Antd 列配置
+    // 将 React 子节点映射为 Antd 列配置
     const columns = Children.map(children, (child, index) => {
       if (!isValidElement(child)) return null;
 
+      const childProps = child.props as Record<string, unknown>;
+
+      // 获取唯一 ID
+      const componentId = childProps["data-component-id"] as
+        | string
+        | number
+        | undefined;
+      const uniqueKey =
+        componentId != null
+          ? `col-${componentId}`
+          : child.key || `col-fallback-${index}`;
+
+      // 读取配置
+      const userDataIndex = childProps.dataIndex as string | undefined;
+      const cellTemplate = childProps.children as React.ReactNode;
+
       return {
-        // 1. 关键：直接把 child (即 DraggableNode 包裹的 TableColumn) 塞给 title
+        // 表头：渲染 child（让 TableColumn 可选中）
         title: child,
+        key: uniqueKey,
+        dataIndex: userDataIndex || uniqueKey,
 
-        // 2. 必须要有 key，用 index 兜底
-        key: child.key || `col-${index}`,
+        // 单元格渲染：Context 提供作用域，直接渲染模板
+        render: (
+          text: unknown,
+          record: Record<string, unknown>,
+          rowIndex: number
+        ) => {
+          if (!cellTemplate) return text;
 
-        // 3. 必须有 dataIndex 才能显示出格子
-        dataIndex: `col-${index}`,
+          const scope: CellScope = { text, record, rowIndex };
 
-        // 4. 消除 Antd 表头默认 padding，让 TableColumn 组件撑满整个 th
+          // ✅ Context 自动透传给所有子孙节点，无需手动 clone
+          return (
+            <CellScopeContext.Provider value={scope}>
+              {cellTemplate}
+            </CellScopeContext.Provider>
+          );
+        },
+
         onHeaderCell: () => ({
-          style: { padding: 0 },
+          style: { padding: "12px 16px", cursor: "pointer" },
         }),
       };
     })?.filter(Boolean);
@@ -58,19 +121,14 @@ const Table = forwardRef<HTMLDivElement, TableProps>(
       >
         <AntdTable
           columns={columns as any}
-          // 给一行假数据，确保列能撑开
           dataSource={[{ key: "1" }]}
           pagination={false}
           showHeader={showHeader}
           style={{ width: "100%" }}
-          // 设置行高让表格更好看
-          onRow={() => ({
-            style: { height: 48 },
-          })}
+          onRow={() => ({ style: { height: 48 } })}
           {...props}
         />
 
-        {/* 空状态保护：如果没有列，给个提示 */}
         {(!columns || columns.length === 0) && (
           <div
             style={{
