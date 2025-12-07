@@ -2,14 +2,22 @@
  * @file /src/editor/hooks/useMatrialDrop.ts
  * @description
  * 提供物料拖放核心逻辑的自定义 Hook。
- * 通过 react-dnd 将编辑器画布上的容器组件变成可接受拖拽的“目标”区域。
+ * 通过 react-dnd 将编辑器画布上的容器组件变成可接受拖拽的"目标"区域。
+ *
+ * v2 架构变更：
+ * - 支持新协议格式（editor.parentTypes）和旧格式（parentTypes）
+ *
  * @module Hooks/useMaterailDrop
  */
 
 import { useDrop } from "react-dnd";
-import { useComponentConfigStore } from "../stores/component-config";
+import {
+  useComponentConfigStore,
+  isProtocolConfig,
+} from "../stores/component-config";
 import { isDescendantOf, useComponentsStore } from "../stores/components";
 import { useTransition } from "react";
+import type { ComponentConfig } from "../types/component-protocol";
 
 /**
  * @description useDrop Hook 中 `item` 对象的类型定义。
@@ -22,7 +30,18 @@ export interface ItemType {
 }
 
 /**
- * @description 一个“智能”的 useDrop Hook 封装，用于处理编辑器中的组件拖放。
+ * 获取组件的 parentTypes
+ * 新协议格式从 editor.parentTypes 获取，旧格式从顶层 parentTypes 获取
+ */
+function getParentTypes(config: ComponentConfig): string[] | undefined {
+  if (isProtocolConfig(config)) {
+    return config.editor.parentTypes;
+  }
+  return config.parentTypes;
+}
+
+/**
+ * @description 一个"智能"的 useDrop Hook 封装，用于处理编辑器中的组件拖放。
  * @param {number} containerId - 接收拖放的容器组件的实例 ID。
  * @param {string} containerName - 接收拖放的容器组件的类型名称 (e.g., 'Page', 'Container')。Hook 将使用此名称来查找所有将它声明为 `parentTypes` 的子组件。
  * @returns {{ canDrop: boolean; drop: ConnectDropTarget; isOver: boolean; isPending: boolean }}
@@ -40,8 +59,12 @@ export function useMaterailDrop(containerId: number, containerName: string) {
   const [isPending, startTransition] = useTransition();
 
   // 核心解耦逻辑：动态计算可接受的子组件类型列表
+  // v2 变更：支持新协议格式的 editor.parentTypes
   const accept = Object.values(componentConfig)
-    .filter((config) => config.parentTypes?.includes(containerName))
+    .filter((config) => {
+      const parentTypes = getParentTypes(config);
+      return parentTypes?.includes(containerName);
+    })
     .map((config) => config.name);
 
   const [{ canDrop, isOver }, drop] = useDrop(() => ({
@@ -76,7 +99,7 @@ export function useMaterailDrop(containerId: number, containerName: string) {
         return;
       }
 
-      // 根据拖拽来源是“移动”还是“新增”来执行不同逻辑
+      // 根据拖拽来源是"移动"还是"新增"来执行不同逻辑
       if (item.dragType === "move") {
         moveComponents(item.id, containerId);
       } else {
@@ -97,7 +120,7 @@ export function useMaterailDrop(containerId: number, containerName: string) {
     },
     collect: (monitor) => ({
       canDrop: monitor.canDrop(),
-      // 使用 { shallow: true } 判断“鼠标是否严格悬浮在当前容器上方，而不是在其后代上方”
+      // 使用 { shallow: true } 判断"鼠标是否严格悬浮在当前容器上方，而不是在其后代上方"
       isOver: monitor.isOver({ shallow: true }),
     }),
   }));
