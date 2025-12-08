@@ -1,8 +1,9 @@
 # AI 页面生成器 - 企业级重构计划
 
-> **文档版本**: 2.0  
+> **文档版本**: 2.1 (架构评审修订版)  
 > **创建日期**: 2025-12-09  
-> **目标**: 从 Demo 级提升到 Enterprise 级
+> **状态**: ✅ 架构评审通过，进入开发阶段  
+> **评审评级**: A (架构深度) / A- (工程严谨度) / Low (落地风险)
 
 ---
 
@@ -14,6 +15,7 @@
 | -------- | ------------------- | ---------------- | ------ |
 | 物料召回 | 硬匹配 (filter)     | 语义检索 (RAG)   | P0     |
 | CoT 实现 | JSON 内部 reasoning | 思考与格式化分离 | P0     |
+| 用户体验 | 死寂 Loading        | SSE 流式传输     | P0     |
 | 错误处理 | 直接崩溃            | 自我修正循环     | P1     |
 | 质量保障 | 凭感觉开发          | 自动化评估       | P2     |
 
@@ -142,6 +144,48 @@ Then, generate the JSON schema in <json> tags.
 - 添加 `login.md`, `dashboard.md`, `form.md` 等示例
 - 动态加载并注入 Prompt
 - 参考: [Prompt Engineering Guide - Few-shot](#one-shot--few-shot)
+
+---
+
+#### 1.3 SSE 流式接口 (v2.1 新增)
+
+**问题**: 多阶段生成可能需要 15-30 秒，用户面对死寂 Loading 会误以为系统崩溃。
+
+**解决方案**: 实现 Server-Sent Events 流式传输
+
+**后端任务**:
+
+```typescript
+// server/routes/generateStream.ts
+app.get("/api/generate-page-stream", async (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+
+  const sendEvent = (type: string, data: any) => {
+    res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  // 实时推送各阶段状态和 <thinking> 内容
+  sendEvent("phase", { phase: "intent", message: "🧠 分析意图..." });
+  // ...
+});
+```
+
+**前端任务**:
+
+```typescript
+// src/editor/stores/aiPageDesigner.tsx
+const eventSource = new EventSource(`/api/generate-page-stream?text=...`);
+eventSource.addEventListener("thinking", (e) => {
+  setThinkingText((prev) => prev + JSON.parse(e.data).content);
+});
+```
+
+**实现要点**:
+
+- SSE 连接中断重连处理
+- JSON Chunking (分块拼接)
+- 前端 Modal 实时显示思考过程
 
 ---
 
@@ -383,6 +427,60 @@ export function evaluateResult(result: any, expected: TestCase): EvalResult {
 
 ---
 
+#### 4.3 视觉自动化评估 (v2.1 新增，高阶优化)
+
+**问题**: 人工标注 `layoutCorrectness` 不可持续。
+
+**解决方案**: 使用 GPT-4o Vision 自动打分
+
+```typescript
+// server/evaluation/visualEval.ts
+import puppeteer from "puppeteer";
+import { ChatOpenAI } from "@langchain/openai";
+
+async function evaluateVisually(
+  schema: any,
+  userPrompt: string
+): Promise<number> {
+  // 1. 渲染页面并截图
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(
+    `http://localhost:3000/preview?schema=${encodeURIComponent(JSON.stringify(schema))}`
+  );
+  const screenshot = await page.screenshot({ encoding: "base64" });
+  await browser.close();
+
+  // 2. 使用 GPT-4o Vision 评分
+  const visionModel = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
+  const response = await visionModel.invoke([
+    {
+      type: "text",
+      content: `用户需求: "${userPrompt}"
+
+请查看这张页面截图，评估它是否满足用户需求:
+1. 布局是否合理？
+2. 组件是否完整？
+3. 视觉效果如何？
+
+请打分 0-10，并简要说明理由。
+输出格式: { "score": 8, "reason": "..." }`,
+    },
+    {
+      type: "image_url",
+      image_url: { url: `data:image/png;base64,${screenshot}` },
+    },
+  ]);
+
+  const result = JSON.parse(response.content as string);
+  return result.score;
+}
+```
+
+**优势**: 可在 CI 中自动运行 100 个测试用例，无需人工介入
+
+---
+
 ## 📁 文件变更清单
 
 ### 新增文件
@@ -407,6 +505,16 @@ export function evaluateResult(result: any, expected: TestCase): EvalResult {
 | `server/prompts/intent_system.md`          | 添加 Few-shot       |
 | `package.json`                             | 新增依赖            |
 
+### (v2.1 新增)
+
+| 文件路径                               | 说明                   |
+| -------------------------------------- | ---------------------- |
+| `server/routes/generateStream.ts`      | SSE 流式接口           |
+| `server/utils/extractJson.ts`          | 鲁棒 JSON 解析器       |
+| `scripts/enrich-materials.ts`          | 物料元数据增强脚本     |
+| `server/evaluation/visualEval.ts`      | GPT-4o Vision 视觉评估 |
+| `src/editor/stores/aiPageDesigner.tsx` | 前端 EventSource 集成  |
+
 ---
 
 ## 🗓️ 实施时间线
@@ -414,11 +522,12 @@ export function evaluateResult(result: any, expected: TestCase): EvalResult {
 ```
 Week 1
 ├── Day 1-2: Prompt Engineering 重构 (CoT 分离 + Few-shot)
-├── Day 3-5: RAG 语义检索 (向量化 + 混合检索)
+├── Day 3: SSE 流式接口 (后端 + 前端 EventSource) ⚠️ v2.1 新增
+├── Day 4-5: RAG 语义检索 (向量化 + 混合检索)
 
 Week 2
-├── Day 1-2: 自我修正循环 (JSON 容错 + 重试)
-├── Day 3-4: 评估管道 (数据集 + 自动化测试)
+├── Day 1-2: 自我修正循环 (鲁棒 JSON 解析 + 重试)
+├── Day 3-4: 评估管道 (数据集 + 视觉自动化) ⚠️ v2.1 更新
 ├── Day 5: 集成测试 + 文档更新
 ```
 
@@ -427,11 +536,12 @@ Week 2
 ## 📊 成功标准
 
 | 指标           | 当前值 | 目标值 |
-| -------------- | ------ | ------ |
+| -------------- | ------ | ------ | ------------ |
 | JSON 有效率    | ~70%   | >95%   |
 | 组件召回率     | ~60%   | >85%   |
 | 首次生成成功率 | ~50%   | >80%   |
 | 平均重试次数   | N/A    | <1.5   |
+| 视觉评分       | N/A    | >7/10  | ⚠️ v2.1 新增 |
 
 ---
 
