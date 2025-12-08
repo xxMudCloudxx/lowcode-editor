@@ -13,7 +13,6 @@
  * @module Materials/Index
  */
 import {
-  isProtocolConfig,
   type ComponentConfig,
   type ComponentProtocol,
   type EventConfig,
@@ -117,5 +116,5 @@ const mergedMaterials: ComponentConfig[] = manualList.map((man) => {
 export const materials: ComponentConfig[] = mergedMaterials;
 
 // 导出类型和工具函数，供其他模块使用
-export { isProtocolConfig, getParentTypes };
+export { getParentTypes };
 export type { ComponentConfig, ComponentProtocol };

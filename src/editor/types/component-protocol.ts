@@ -161,13 +161,6 @@ export interface ComponentProtocol {
   events?: EventConfig[];
   /** 可调用方法 */
   methods?: MethodConfig[];
-
-  /**
-   * 允许作为父组件的类型列表（向后兼容）
-   * 优先使用 editor.parentTypes
-   * @deprecated 使用 editor.parentTypes 代替
-   */
-  parentTypes?: string[];
 }
 
 // ===== 类型别名 =====
@@ -177,18 +170,6 @@ export interface ComponentProtocol {
  * v2 后统一使用 ComponentProtocol
  */
 export type ComponentConfig = ComponentProtocol;
-
-// ===== 类型守卫 =====
-
-/**
- * 类型守卫：判断是否为协议格式
- * v2 后所有组件都是协议格式，此函数保留用于兼容
- */
-export function isProtocolConfig(
-  config: ComponentConfig
-): config is ComponentProtocol {
-  return "component" in config && "editor" in config;
-}
 
 // ===== 开发时校验 =====
 

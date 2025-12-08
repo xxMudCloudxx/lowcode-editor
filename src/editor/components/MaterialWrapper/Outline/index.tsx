@@ -52,7 +52,8 @@ export function Outline() {
     const dragComponent = components[dragNode2.id as number];
     if (!dropComponent || !dragComponent) return false;
 
-    const dragParentTypes = componentConfig[dragComponent.name].parentTypes;
+    const dragParentTypes =
+      componentConfig[dragComponent.name].editor.parentTypes;
     if (!dragParentTypes) return false;
 
     // 如果 dropPosition 为 0，意味着想要拖入节点内部

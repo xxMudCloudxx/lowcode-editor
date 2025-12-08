@@ -287,8 +287,11 @@ describe("Preview 事件编排", () => {
             setter: [],
             styleSetter: [],
             events: [],
-            dev: LazyTestPage,
-            prod: LazyTestPage,
+            component: LazyTestPage,
+            editor: {
+              isContainer: true,
+              parentTypes: [],
+            },
           },
           Button: {
             name: "Button",
@@ -297,8 +300,11 @@ describe("Preview 事件编排", () => {
             setter: [],
             styleSetter: [],
             events: [{ name: "onClick", label: "点击事件" }],
-            dev: LazyTestButton,
-            prod: LazyTestButton,
+            component: LazyTestButton,
+            editor: {
+              isContainer: false,
+              parentTypes: ["Page", "Container"],
+            },
           },
         },
       });

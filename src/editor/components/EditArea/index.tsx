@@ -31,7 +31,7 @@ import HoverMask from "./HoverMask";
 import SelectedMask from "./SelectedMask";
 import LoadingPlaceholder from "../common/LoadingPlaceholder";
 import { DraggableNode } from "./DraggableNode";
-import { isProtocolConfig } from "../../types/component-protocol";
+// isProtocolConfig remove
 
 export function EditArea() {
   const { components, rootId } = useComponentsStore();
@@ -137,9 +137,7 @@ export function EditArea() {
           if (!config) continue;
 
           // 判断是否允许编辑器内交互
-          const allowInteraction = isProtocolConfig(config)
-            ? (config.editor.interactiveInEditor ?? false)
-            : false; // 旧格式默认不允许交互
+          const allowInteraction = config.editor.interactiveInEditor ?? false;
 
           if (!allowInteraction) {
             // 普通组件：拦截事件，仅做选中
@@ -175,18 +173,7 @@ export function EditArea() {
       if (!config) return false;
 
       // 新协议格式：直接读取 editor.isContainer
-      if (isProtocolConfig(config)) {
-        return config.editor.isContainer ?? false;
-      }
-
-      // 旧格式：检查是否有其他组件将此组件列为 parentType
-      // 如果有，说明此组件是可以容纳子组件的容器
-      return Object.values(componentConfig).some((otherConfig) => {
-        if (isProtocolConfig(otherConfig)) {
-          return otherConfig.editor.parentTypes?.includes(name);
-        }
-        return otherConfig.parentTypes?.includes(name);
-      });
+      return config.editor.isContainer ?? false;
     },
     [componentConfig]
   );
@@ -206,11 +193,8 @@ export function EditArea() {
       const config = componentConfig?.[component.name];
       if (!config) return null;
 
-      // 判断配置格式：新协议 vs 旧格式
-      const isProtocol = isProtocolConfig(config);
-
       // 获取要渲染的组件
-      const ComponentToRender = isProtocol ? config.component : config.dev;
+      const ComponentToRender = config.component;
 
       if (!ComponentToRender) return null;
 
@@ -230,14 +214,6 @@ export function EditArea() {
             {React.createElement(
               ComponentToRender,
               {
-                // 旧格式需要这些属性
-                ...(isProtocol
-                  ? {}
-                  : {
-                      id: component.id,
-                      name: component.name,
-                      isSelected: component.id === curComponentId,
-                    }),
                 // 通用属性
                 ...config.defaultProps,
                 ...component.props,

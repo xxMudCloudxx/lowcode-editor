@@ -17,10 +17,7 @@
  */
 
 import React, { Suspense, useRef, useCallback } from "react";
-import {
-  useComponentConfigStore,
-  isProtocolConfig,
-} from "../../stores/component-config";
+import { useComponentConfigStore } from "../../stores/component-config";
 import { useComponentsStore } from "../../stores/components";
 import type { Component } from "../../interface";
 import { message, ConfigProvider } from "antd";
@@ -114,14 +111,8 @@ export function Preview() {
       const config = componentConfig?.[component.name];
       if (!config) return null;
 
-      // 判断配置格式：新协议 vs 旧格式
-      const isProtocol = isProtocolConfig(config);
-
       // 新协议优先使用 runtimeComponent（如 Modal），否则用 component
-      // 旧格式使用 prod
-      const ComponentToRender = isProtocol
-        ? config.runtimeComponent || config.component
-        : config.prod;
+      const ComponentToRender = config.runtimeComponent || config.component;
 
       if (!ComponentToRender) return null;
 
@@ -134,13 +125,6 @@ export function Preview() {
             ComponentToRender,
             {
               key: component.id,
-              // 旧格式需要这些属性
-              ...(isProtocol
-                ? {}
-                : {
-                    id: component.id,
-                    name: component.name,
-                  }),
               style: component.styles,
               // 将组件 ref 存入 componentRefs.current 字典
               ref: (ref: unknown) => {

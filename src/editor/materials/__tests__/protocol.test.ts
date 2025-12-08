@@ -10,42 +10,10 @@
 
 import { describe, it, expect } from "vitest";
 import { materials } from "../index";
-import { isProtocolConfig } from "../../types/component-protocol";
+
 import type { ComponentProtocol } from "../../types/component-protocol";
 
 describe("物料协议合规性测试", () => {
-  // 所有组件（v2 后全部使用协议格式）
-  const ALL_COMPONENTS = [
-    // General
-    "Button",
-    "Icon",
-    "Typography",
-    // Layout
-    "Container",
-    "Grid",
-    "GridColumn",
-    "Space",
-    // DataEntry
-    "Form",
-    "FormItem",
-    "Input",
-    "InputNumber",
-    "Radio",
-    "Select",
-    "Slider",
-    "Switch",
-    "Upload",
-    // DataDisplay
-    "Avatar",
-    "Card",
-    "Image",
-    "List",
-    "ListItem",
-    "Table",
-    "TableColumn",
-    "Tooltip",
-  ];
-
   describe("基础字段检查", () => {
     it("所有物料都有 name 和 desc 字段", () => {
       materials.forEach((material) => {
@@ -67,14 +35,6 @@ describe("物料协议合规性测试", () => {
   });
 
   describe("协议格式验证", () => {
-    it("所有组件都是协议格式", () => {
-      ALL_COMPONENTS.forEach((name) => {
-        const material = materials.find((m) => m.name === name);
-        expect(material).toBeDefined();
-        expect(isProtocolConfig(material!)).toBe(true);
-      });
-    });
-
     it("所有组件必须有 component 和 editor 字段", () => {
       materials.forEach((material) => {
         const protocol = material as ComponentProtocol;
@@ -119,7 +79,6 @@ describe("物料协议合规性测试", () => {
     it("Button 组件配置正确", () => {
       const button = materials.find((m) => m.name === "Button");
       expect(button).toBeDefined();
-      expect(isProtocolConfig(button!)).toBe(true);
 
       const protocol = button as ComponentProtocol;
       expect(protocol.editor.isContainer).toBe(false);
@@ -131,7 +90,6 @@ describe("物料协议合规性测试", () => {
     it("Icon 组件配置正确", () => {
       const icon = materials.find((m) => m.name === "Icon");
       expect(icon).toBeDefined();
-      expect(isProtocolConfig(icon!)).toBe(true);
 
       const protocol = icon as ComponentProtocol;
       expect(protocol.editor.isContainer).toBe(false);
@@ -141,7 +99,6 @@ describe("物料协议合规性测试", () => {
     it("Typography 组件配置正确", () => {
       const typography = materials.find((m) => m.name === "Typography");
       expect(typography).toBeDefined();
-      expect(isProtocolConfig(typography!)).toBe(true);
 
       const protocol = typography as ComponentProtocol;
       expect(protocol.editor.isContainer).toBe(false);

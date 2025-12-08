@@ -5,19 +5,15 @@
  * 通过 react-dnd 将编辑器画布上的容器组件变成可接受拖拽的"目标"区域。
  *
  * v2 架构变更：
- * - 支持新协议格式（editor.parentTypes）和旧格式（parentTypes）
+ * - 统一使用新协议格式 (editor.parentTypes)
  *
  * @module Hooks/useMaterailDrop
  */
 
 import { useDrop } from "react-dnd";
-import {
-  useComponentConfigStore,
-  isProtocolConfig,
-} from "../stores/component-config";
+import { useComponentConfigStore } from "../stores/component-config";
 import { isDescendantOf, useComponentsStore } from "../stores/components";
 import { useTransition } from "react";
-import type { ComponentConfig } from "../types/component-protocol";
 
 /**
  * @description useDrop Hook 中 `item` 对象的类型定义。
@@ -27,17 +23,6 @@ export interface ItemType {
   type: string; // 物料的类型名称，例如 'Button'
   dragType?: "move" | "add"; // 拖拽类型：'move' 表示在画布内部移动，'add' 表示从物料面板新增
   id: number; // 组件实例 ID（仅在 'move' 类型时有值）
-}
-
-/**
- * 获取组件的 parentTypes
- * 新协议格式从 editor.parentTypes 获取，旧格式从顶层 parentTypes 获取
- */
-function getParentTypes(config: ComponentConfig): string[] | undefined {
-  if (isProtocolConfig(config)) {
-    return config.editor.parentTypes;
-  }
-  return config.parentTypes;
 }
 
 /**
@@ -62,7 +47,7 @@ export function useMaterailDrop(containerId: number, containerName: string) {
   // v2 变更：支持新协议格式的 editor.parentTypes
   const accept = Object.values(componentConfig)
     .filter((config) => {
-      const parentTypes = getParentTypes(config);
+      const parentTypes = config.editor.parentTypes;
       return parentTypes?.includes(containerName);
     })
     .map((config) => config.name);

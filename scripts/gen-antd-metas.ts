@@ -106,6 +106,14 @@ const PROP_BLACKLIST = new Set([
   "tabIndex",
   "autoFocus",
   "form",
+  // Object.prototype methods
+  "toString",
+  "toLocaleString",
+  "valueOf",
+  "hasOwnProperty",
+  "isPrototypeOf",
+  "propertyIsEnumerable",
+  "constructor",
 ]);
 
 function shouldDropProp(propName: string): boolean {

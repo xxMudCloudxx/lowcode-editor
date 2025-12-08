@@ -11,7 +11,6 @@
 import { create } from "zustand";
 import {
   materials,
-  isProtocolConfig,
   type ComponentConfig,
   type ComponentProtocol,
 } from "../materials";
@@ -29,7 +28,6 @@ export type {
   ComponentConfig,
   ComponentProtocol,
 };
-export { isProtocolConfig };
 
 interface State {
   // 使用字典结构，以组件名作为 key，快速查找组件配置
