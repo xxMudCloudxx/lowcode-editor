@@ -1,0 +1,1806 @@
+[
+  {
+    "name": "Container",
+    "desc": "容器",
+    "category": "布局",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip"
+    ],
+    "isContainer": true,
+    "defaultProps": {},
+    "props": []
+  },
+  {
+    "name": "Grid",
+    "desc": "栅格-行",
+    "category": "布局",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "gutter": 1,
+      "justify": "start",
+      "align": "top",
+      "wrap": false
+    },
+    "props": [
+      {
+        "name": "gutter",
+        "label": "栅格间隔",
+        "type": "inputNumber"
+      },
+      {
+        "name": "justify",
+        "label": "水平排列方式",
+        "type": "select",
+        "options": [
+          {
+            "label": "左对齐",
+            "value": "start"
+          },
+          {
+            "label": "右对齐",
+            "value": "end"
+          },
+          {
+            "label": "居中",
+            "value": "center"
+          },
+          {
+            "label": "两端对齐",
+            "value": "space-between"
+          },
+          {
+            "label": "均匀分布",
+            "value": "space-around"
+          },
+          {
+            "label": "等间距分布",
+            "value": "space-evenly"
+          }
+        ]
+      },
+      {
+        "name": "align",
+        "label": "垂直对齐方式",
+        "type": "select",
+        "options": [
+          {
+            "label": "顶部对齐",
+            "value": "top"
+          },
+          {
+            "label": "中间对齐",
+            "value": "middle"
+          },
+          {
+            "label": "底部对齐",
+            "value": "bottom"
+          }
+        ]
+      },
+      {
+        "name": "wrap",
+        "label": "是否换行",
+        "type": "select",
+        "options": [
+          {
+            "label": "是",
+            "value": true
+          },
+          {
+            "label": "否",
+            "value": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "GridColumn",
+    "desc": "栅格-列",
+    "category": "布局",
+    "parentTypes": [
+      "Grid"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "span": 12,
+      "offset": 0
+    },
+    "props": [
+      {
+        "name": "span",
+        "label": "占位格数",
+        "type": "inputNumber"
+      },
+      {
+        "name": "offset",
+        "label": "左侧间隔格数",
+        "type": "inputNumber"
+      },
+      {
+        "name": "order",
+        "label": "栅格顺序",
+        "type": "inputNumber"
+      },
+      {
+        "name": "pull",
+        "label": "向左移动格数",
+        "type": "inputNumber"
+      },
+      {
+        "name": "push",
+        "label": "向右移动格数",
+        "type": "inputNumber"
+      }
+    ]
+  },
+  {
+    "name": "Page",
+    "desc": "页面",
+    "category": "布局",
+    "isContainer": true,
+    "defaultProps": {},
+    "props": []
+  },
+  {
+    "name": "Space",
+    "desc": "间距",
+    "category": "布局",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "direction": "horizontal",
+      "size": "small",
+      "align": "center",
+      "wrap": false
+    },
+    "props": [
+      {
+        "name": "direction",
+        "label": "方向",
+        "type": "radio",
+        "options": [
+          "horizontal",
+          "vertical"
+        ]
+      },
+      {
+        "name": "align",
+        "label": "对齐方式",
+        "type": "select",
+        "options": [
+          {
+            "label": "起点",
+            "value": "start"
+          },
+          {
+            "label": "终点",
+            "value": "end"
+          },
+          {
+            "label": "居中",
+            "value": "center"
+          },
+          {
+            "label": "基线",
+            "value": "baseline"
+          }
+        ]
+      },
+      {
+        "name": "size",
+        "label": "间距大小",
+        "type": "segmented",
+        "options": [
+          {
+            "label": "小",
+            "value": "small"
+          },
+          {
+            "label": "中",
+            "value": "middle"
+          },
+          {
+            "label": "大",
+            "value": "large"
+          }
+        ]
+      },
+      {
+        "name": "wrap",
+        "label": "自动换行",
+        "type": "switch"
+      }
+    ]
+  },
+  {
+    "name": "Button",
+    "desc": "按钮",
+    "category": "基础",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "type": "primary",
+      "text": "按钮"
+    },
+    "props": [
+      {
+        "name": "type",
+        "label": "按钮类型",
+        "type": "radio",
+        "options": [
+          "primary",
+          "default",
+          "dashed",
+          "text",
+          "link"
+        ]
+      },
+      {
+        "name": "size",
+        "label": "尺寸",
+        "type": "segmented",
+        "options": [
+          "small",
+          "middle",
+          "large"
+        ]
+      },
+      {
+        "name": "danger",
+        "label": "危险态",
+        "type": "switch"
+      },
+      {
+        "name": "ghost",
+        "label": "幽灵",
+        "type": "switch"
+      },
+      {
+        "name": "block",
+        "label": "块级",
+        "type": "switch"
+      },
+      {
+        "name": "loading",
+        "label": "加载",
+        "type": "switch"
+      },
+      {
+        "name": "htmlType",
+        "label": "原生类型",
+        "type": "select",
+        "options": [
+          "button",
+          "submit",
+          "reset"
+        ]
+      },
+      {
+        "name": "href",
+        "label": "链接",
+        "type": "input"
+      },
+      {
+        "name": "target",
+        "label": "打开方式",
+        "type": "select",
+        "options": [
+          "_self",
+          "_blank",
+          "_parent",
+          "_top"
+        ]
+      },
+      {
+        "name": "text",
+        "label": "文本",
+        "type": "input"
+      }
+    ],
+    "events": [
+      {
+        "name": "onClick",
+        "label": "点击事件"
+      },
+      {
+        "name": "onDoubleClick",
+        "label": "双击事件"
+      }
+    ]
+  },
+  {
+    "name": "Icon",
+    "desc": "图标",
+    "category": "基础",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "icon": "HomeOutlined",
+      "spin": false,
+      "rotate": 0
+    },
+    "props": [
+      {
+        "name": "icon",
+        "label": "选择图标",
+        "type": "select",
+        "options": [
+          {
+            "label": "主页",
+            "value": "HomeOutlined"
+          },
+          {
+            "label": "设置",
+            "value": "SettingOutlined"
+          },
+          {
+            "label": "用户",
+            "value": "UserOutlined"
+          },
+          {
+            "label": "搜索",
+            "value": "SearchOutlined"
+          },
+          {
+            "label": "加载中",
+            "value": "LoadingOutlined"
+          },
+          {
+            "label": "成功",
+            "value": "CheckCircleOutlined"
+          },
+          {
+            "label": "错误",
+            "value": "CloseCircleOutlined"
+          },
+          {
+            "label": "刷新",
+            "value": "ReloadOutlined"
+          }
+        ]
+      },
+      {
+        "name": "spin",
+        "label": "旋转动画",
+        "type": "switch"
+      },
+      {
+        "name": "rotate",
+        "label": "旋转角度",
+        "type": "inputNumber"
+      }
+    ]
+  },
+  {
+    "name": "Typography",
+    "desc": "排版",
+    "category": "基础",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "content": "默认文本",
+      "type": "Text"
+    },
+    "props": [
+      {
+        "name": "content",
+        "label": "内容",
+        "type": "textarea"
+      },
+      {
+        "name": "type",
+        "label": "类型",
+        "type": "select",
+        "options": [
+          "Text",
+          "Title",
+          "Paragraph"
+        ]
+      },
+      {
+        "name": "level",
+        "label": "标题等级",
+        "type": "select",
+        "options": [
+          {
+            "label": "H1",
+            "value": 1
+          },
+          {
+            "label": "H2",
+            "value": 2
+          },
+          {
+            "label": "H3",
+            "value": 3
+          },
+          {
+            "label": "H4",
+            "value": 4
+          },
+          {
+            "label": "H5",
+            "value": 5
+          }
+        ]
+      },
+      {
+        "name": "strong",
+        "label": "加粗",
+        "type": "switch"
+      },
+      {
+        "name": "italic",
+        "label": "斜体",
+        "type": "switch"
+      },
+      {
+        "name": "underline",
+        "label": "下划线",
+        "type": "switch"
+      }
+    ]
+  },
+  {
+    "name": "Breadcrumb",
+    "desc": "面包屑",
+    "category": "导航",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "items": [
+        {
+          "title": "首页"
+        },
+        {
+          "title": "应用中心"
+        },
+        {
+          "title": "应用列表"
+        }
+      ]
+    },
+    "props": [
+      {
+        "name": "items",
+        "label": "面包屑项",
+        "type": "custom"
+      }
+    ]
+  },
+  {
+    "name": "Dropdown",
+    "desc": "下拉菜单",
+    "category": "导航",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "menu": {
+        "items": [
+          {
+            "key": "1",
+            "label": "菜单项一"
+          },
+          {
+            "key": "2",
+            "label": "菜单项二"
+          },
+          {
+            "key": "3",
+            "label": "菜单项三"
+          }
+        ]
+      },
+      "buttonText": "鼠标悬浮"
+    },
+    "props": [
+      {
+        "name": [
+          "menu",
+          "items"
+        ],
+        "label": "菜单项",
+        "type": "custom"
+      },
+      {
+        "name": "buttonText",
+        "label": "按钮文本",
+        "type": "input"
+      },
+      {
+        "name": "trigger",
+        "label": "触发方式",
+        "type": "select",
+        "options": [
+          {
+            "label": "悬浮",
+            "value": "hover"
+          },
+          {
+            "label": "点击",
+            "value": "click"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Menu",
+    "desc": "导航菜单",
+    "category": "导航",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "mode": "horizontal",
+      "items": [
+        {
+          "key": "home",
+          "label": "导航一"
+        },
+        {
+          "key": "mail",
+          "label": "导航二"
+        },
+        {
+          "key": "app",
+          "label": "导航三"
+        }
+      ]
+    },
+    "props": [
+      {
+        "name": "items",
+        "label": "菜单项",
+        "type": "custom"
+      },
+      {
+        "name": "mode",
+        "label": "菜单类型",
+        "type": "select",
+        "options": [
+          "vertical",
+          "horizontal",
+          "inline"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "PageHeader",
+    "desc": "页头",
+    "category": "导航",
+    "parentTypes": [
+      "Page",
+      "Container"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "title": "页面标题",
+      "subTitle": "这是一个副标题"
+    },
+    "props": [
+      {
+        "name": "title",
+        "label": "主标题",
+        "type": "input"
+      },
+      {
+        "name": "subTitle",
+        "label": "副标题",
+        "type": "input"
+      }
+    ]
+  },
+  {
+    "name": "Pagination",
+    "desc": "分页",
+    "category": "导航",
+    "parentTypes": [
+      "Page",
+      "Container"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "defaultCurrent": 1,
+      "total": 50
+    },
+    "props": [
+      {
+        "name": "defaultCurrent",
+        "label": "默认页码",
+        "type": "inputNumber"
+      },
+      {
+        "name": "total",
+        "label": "数据总数",
+        "type": "inputNumber"
+      },
+      {
+        "name": "pageSize",
+        "label": "每页条数",
+        "type": "inputNumber"
+      }
+    ]
+  },
+  {
+    "name": "Steps",
+    "desc": "步骤条",
+    "category": "导航",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "current": 0,
+      "items": [
+        {
+          "title": "第一步",
+          "description": "这是描述"
+        },
+        {
+          "title": "第二步",
+          "description": "这是描述"
+        },
+        {
+          "title": "第三步",
+          "description": "这是描述"
+        }
+      ]
+    },
+    "props": [
+      {
+        "name": "current",
+        "label": "当前步骤",
+        "type": "inputNumber"
+      },
+      {
+        "name": "items",
+        "label": "步骤配置",
+        "type": "custom"
+      }
+    ],
+    "methods": [
+      {
+        "name": "next",
+        "label": "下一步"
+      },
+      {
+        "name": "prev",
+        "label": "上一步"
+      }
+    ]
+  },
+  {
+    "name": "TabPane",
+    "desc": "标签项",
+    "category": "导航",
+    "parentTypes": [
+      "Tabs"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "tab": "标签项"
+    },
+    "props": [
+      {
+        "name": "tab",
+        "label": "标签标题",
+        "type": "input"
+      }
+    ]
+  },
+  {
+    "name": "Tabs",
+    "desc": "标签页",
+    "category": "导航",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "type": "line",
+      "tabPosition": "top"
+    },
+    "props": [
+      {
+        "name": "type",
+        "label": "页签类型",
+        "type": "select",
+        "options": [
+          {
+            "label": "线形",
+            "value": "line"
+          },
+          {
+            "label": "卡片",
+            "value": "card"
+          },
+          {
+            "label": "可编辑卡片",
+            "value": "editable-card"
+          }
+        ]
+      },
+      {
+        "name": "tabPosition",
+        "label": "页签位置",
+        "type": "select",
+        "options": [
+          {
+            "label": "上",
+            "value": "top"
+          },
+          {
+            "label": "下",
+            "value": "bottom"
+          },
+          {
+            "label": "左",
+            "value": "left"
+          },
+          {
+            "label": "右",
+            "value": "right"
+          }
+        ]
+      },
+      {
+        "name": "centered",
+        "label": "标签居中",
+        "type": "switch"
+      }
+    ],
+    "methods": [
+      {
+        "name": "setActiveKey",
+        "label": "切换标签页",
+        "params": [
+          {
+            "name": "key",
+            "label": "目标Key",
+            "type": "input"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Form",
+    "desc": "表单",
+    "category": "数据录入",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip"
+    ],
+    "isContainer": true,
+    "defaultProps": {},
+    "props": [
+      {
+        "name": "title",
+        "label": "标题",
+        "type": "input"
+      }
+    ],
+    "events": [
+      {
+        "name": "onFinish",
+        "label": "提交事件"
+      }
+    ],
+    "methods": [
+      {
+        "name": "submit",
+        "label": "提交"
+      }
+    ]
+  },
+  {
+    "name": "FormItem",
+    "desc": "表单项",
+    "category": "数据录入",
+    "parentTypes": [
+      "Form"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "name": 1765199208192,
+      "label": "姓名"
+    },
+    "props": [
+      {
+        "name": "type",
+        "label": "类型",
+        "type": "select",
+        "options": [
+          {
+            "label": "文本",
+            "value": "input"
+          },
+          {
+            "label": "日期",
+            "value": "date"
+          }
+        ]
+      },
+      {
+        "name": "label",
+        "label": "标题",
+        "type": "input"
+      },
+      {
+        "name": "name",
+        "label": "字段",
+        "type": "input"
+      },
+      {
+        "name": "rules",
+        "label": "校验",
+        "type": "select",
+        "options": [
+          {
+            "label": "必填",
+            "value": "required"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Input",
+    "desc": "输入框",
+    "category": "数据录入",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "placeholder": "请输入内容",
+      "disabled": false,
+      "allowClear": false,
+      "size": "middle"
+    },
+    "props": [
+      {
+        "name": "placeholder",
+        "label": "占位文本",
+        "type": "input"
+      },
+      {
+        "name": "defaultValue",
+        "label": "默认值",
+        "type": "input"
+      },
+      {
+        "name": "size",
+        "label": "尺寸",
+        "type": "select",
+        "options": [
+          {
+            "label": "大",
+            "value": "large"
+          },
+          {
+            "label": "中",
+            "value": "middle"
+          },
+          {
+            "label": "小",
+            "value": "small"
+          }
+        ]
+      },
+      {
+        "name": "type",
+        "label": "类型",
+        "type": "select",
+        "options": [
+          {
+            "label": "文本",
+            "value": "text"
+          },
+          {
+            "label": "密码",
+            "value": "password"
+          }
+        ]
+      },
+      {
+        "name": "addonBefore",
+        "label": "前置标签",
+        "type": "input"
+      },
+      {
+        "name": "addonAfter",
+        "label": "后置标签",
+        "type": "input"
+      },
+      {
+        "name": "prefix",
+        "label": "前缀图标",
+        "type": "input"
+      },
+      {
+        "name": "suffix",
+        "label": "后缀图标",
+        "type": "input"
+      },
+      {
+        "name": "maxLength",
+        "label": "最大长度",
+        "type": "inputNumber"
+      },
+      {
+        "name": "showCount",
+        "label": "显示字数",
+        "type": "switch"
+      },
+      {
+        "name": "allowClear",
+        "label": "允许清除",
+        "type": "switch"
+      },
+      {
+        "name": "disabled",
+        "label": "禁用",
+        "type": "switch"
+      }
+    ]
+  },
+  {
+    "name": "InputNumber",
+    "desc": "数字输入框",
+    "category": "数据录入",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "placeholder": "请输入数字",
+      "disabled": false,
+      "min": null,
+      "max": null,
+      "step": 1,
+      "controls": true
+    },
+    "props": [
+      {
+        "name": "placeholder",
+        "label": "占位文本",
+        "type": "input"
+      },
+      {
+        "name": "min",
+        "label": "最小值",
+        "type": "inputNumber"
+      },
+      {
+        "name": "max",
+        "label": "最大值",
+        "type": "inputNumber"
+      },
+      {
+        "name": "step",
+        "label": "步长",
+        "type": "inputNumber"
+      },
+      {
+        "name": "precision",
+        "label": "精度",
+        "type": "inputNumber"
+      },
+      {
+        "name": "controls",
+        "label": "显示按钮",
+        "type": "switch"
+      },
+      {
+        "name": "prefix",
+        "label": "前缀",
+        "type": "input"
+      },
+      {
+        "name": "disabled",
+        "label": "禁用",
+        "type": "switch"
+      }
+    ]
+  },
+  {
+    "name": "Radio",
+    "desc": "单选框",
+    "category": "数据录入",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "options": [
+        {
+          "label": "选项A",
+          "value": "A"
+        },
+        {
+          "label": "选项B",
+          "value": "B"
+        },
+        {
+          "label": "选项C",
+          "value": "C"
+        }
+      ],
+      "optionType": "default"
+    },
+    "props": [
+      {
+        "name": "options",
+        "label": "选项",
+        "type": "custom"
+      },
+      {
+        "name": "direction",
+        "label": "排列方向",
+        "type": "radio",
+        "options": [
+          "horizontal",
+          "vertical"
+        ]
+      },
+      {
+        "name": "optionType",
+        "label": "类型",
+        "type": "radio",
+        "options": [
+          {
+            "label": "默认",
+            "value": "default"
+          },
+          {
+            "label": "按钮",
+            "value": "button"
+          }
+        ]
+      },
+      {
+        "name": "buttonStyle",
+        "label": "按钮风格",
+        "type": "radio",
+        "options": [
+          {
+            "label": "描边",
+            "value": "outline"
+          },
+          {
+            "label": "填色",
+            "value": "solid"
+          }
+        ]
+      },
+      {
+        "name": "disabled",
+        "label": "禁用",
+        "type": "switch"
+      }
+    ]
+  },
+  {
+    "name": "Select",
+    "desc": "选择器",
+    "category": "数据录入",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "options": [
+        {
+          "value": "jack",
+          "label": "Jack"
+        },
+        {
+          "value": "lucy",
+          "label": "Lucy"
+        },
+        {
+          "value": "Yiminghe",
+          "label": "yiminghe"
+        }
+      ],
+      "style": {
+        "width": "100px"
+      }
+    },
+    "props": [
+      {
+        "name": "options",
+        "label": "选项",
+        "type": "custom"
+      }
+    ]
+  },
+  {
+    "name": "Slider",
+    "desc": "输入条",
+    "category": "数据录入",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "range": false,
+      "disabled": false,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    "props": [
+      {
+        "name": "range",
+        "label": "双滑块",
+        "type": "switch"
+      },
+      {
+        "name": "min",
+        "label": "最小值",
+        "type": "inputNumber"
+      },
+      {
+        "name": "max",
+        "label": "最大值",
+        "type": "inputNumber"
+      },
+      {
+        "name": "step",
+        "label": "步长",
+        "type": "inputNumber"
+      },
+      {
+        "name": "disabled",
+        "label": "禁用",
+        "type": "switch"
+      },
+      {
+        "name": "vertical",
+        "label": "垂直模式",
+        "type": "switch"
+      }
+    ]
+  },
+  {
+    "name": "Switch",
+    "desc": "开关",
+    "category": "数据录入",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "defaultChecked": false,
+      "disabled": false,
+      "loading": false,
+      "size": "default"
+    },
+    "props": [
+      {
+        "name": "defaultChecked",
+        "label": "默认选中",
+        "type": "switch"
+      },
+      {
+        "name": "disabled",
+        "label": "禁用",
+        "type": "switch"
+      },
+      {
+        "name": "loading",
+        "label": "加载中",
+        "type": "switch"
+      },
+      {
+        "name": "size",
+        "label": "尺寸",
+        "type": "radio",
+        "options": [
+          "default",
+          "small"
+        ]
+      },
+      {
+        "name": "checkedChildren",
+        "label": "选中时内容",
+        "type": "input"
+      },
+      {
+        "name": "unCheckedChildren",
+        "label": "非选中内容",
+        "type": "input"
+      }
+    ]
+  },
+  {
+    "name": "Upload",
+    "desc": "上传",
+    "category": "数据录入",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "action": "https://www.mocky.io/v2/5cc8019d300000980a055e76",
+      "listType": "text"
+    },
+    "props": [
+      {
+        "name": "action",
+        "label": "上传地址",
+        "type": "input"
+      },
+      {
+        "name": "listType",
+        "label": "列表类型",
+        "type": "select",
+        "options": [
+          "text",
+          "picture",
+          "picture-card"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Avatar",
+    "desc": "头像",
+    "category": "数据展示",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "shape": "circle",
+      "size": "default",
+      "icon": "UserOutlined"
+    },
+    "props": [
+      {
+        "name": "shape",
+        "label": "形状",
+        "type": "radio",
+        "options": [
+          "circle",
+          "square"
+        ]
+      },
+      {
+        "name": "size",
+        "label": "尺寸",
+        "type": "radio",
+        "options": [
+          "large",
+          "default",
+          "small"
+        ]
+      },
+      {
+        "name": "src",
+        "label": "图片地址",
+        "type": "input"
+      },
+      {
+        "name": "icon",
+        "label": "图标类型",
+        "type": "input"
+      },
+      {
+        "name": "alt",
+        "label": "替代文本",
+        "type": "input"
+      }
+    ]
+  },
+  {
+    "name": "Card",
+    "desc": "卡片",
+    "category": "数据展示",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "title": "卡片标题",
+      "bordered": true
+    },
+    "props": [
+      {
+        "name": "title",
+        "label": "标题",
+        "type": "input"
+      },
+      {
+        "name": "bordered",
+        "label": "显示边框",
+        "type": "switch"
+      },
+      {
+        "name": "hoverable",
+        "label": "可悬浮",
+        "type": "switch"
+      }
+    ]
+  },
+  {
+    "name": "Image",
+    "desc": "图片",
+    "category": "数据展示",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "width": 200,
+      "src": "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png",
+      "preview": true
+    },
+    "props": [
+      {
+        "name": "src",
+        "label": "图片地址",
+        "type": "textarea"
+      },
+      {
+        "name": "alt",
+        "label": "描述",
+        "type": "input"
+      },
+      {
+        "name": "width",
+        "label": "宽度",
+        "type": "inputNumber"
+      },
+      {
+        "name": "height",
+        "label": "高度",
+        "type": "inputNumber"
+      },
+      {
+        "name": "preview",
+        "label": "开启预览",
+        "type": "switch"
+      },
+      {
+        "name": "fallback",
+        "label": "失败地址",
+        "type": "input"
+      }
+    ]
+  },
+  {
+    "name": "List",
+    "desc": "列表",
+    "category": "数据展示",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "bordered": true,
+      "header": "列表头部",
+      "footer": "列表尾部"
+    },
+    "props": [
+      {
+        "name": "bordered",
+        "label": "显示边框",
+        "type": "switch"
+      },
+      {
+        "name": "header",
+        "label": "列表头部",
+        "type": "input"
+      },
+      {
+        "name": "footer",
+        "label": "列表尾部",
+        "type": "input"
+      },
+      {
+        "name": "size",
+        "label": "尺寸",
+        "type": "radio",
+        "options": [
+          "large",
+          "default",
+          "small"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ListItem",
+    "desc": "列表项",
+    "category": "数据展示",
+    "parentTypes": [
+      "List"
+    ],
+    "isContainer": true,
+    "defaultProps": {},
+    "props": []
+  },
+  {
+    "name": "Table",
+    "desc": "表格",
+    "category": "数据展示",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "bordered": false,
+      "size": "middle"
+    },
+    "props": [
+      {
+        "name": "url",
+        "label": "数据地址",
+        "type": "input"
+      },
+      {
+        "name": "bordered",
+        "label": "显示边框",
+        "type": "switch"
+      },
+      {
+        "name": "size",
+        "label": "尺寸",
+        "type": "radio",
+        "options": [
+          "large",
+          "middle",
+          "small"
+        ]
+      },
+      {
+        "name": "showHeader",
+        "label": "显示表头",
+        "type": "switch"
+      }
+    ],
+    "methods": [
+      {
+        "name": "refresh",
+        "label": "刷新数据"
+      }
+    ]
+  },
+  {
+    "name": "TableColumn",
+    "desc": "表格列",
+    "category": "数据展示",
+    "parentTypes": [
+      "Table"
+    ],
+    "isContainer": false,
+    "defaultProps": {
+      "dataIndex": "col_1765199208205",
+      "title": "列名"
+    },
+    "props": [
+      {
+        "name": "type",
+        "label": "类型",
+        "type": "select",
+        "options": [
+          {
+            "label": "文本",
+            "value": "text"
+          },
+          {
+            "label": "日期",
+            "value": "date"
+          }
+        ]
+      },
+      {
+        "name": "title",
+        "label": "标题",
+        "type": "input"
+      },
+      {
+        "name": "dataIndex",
+        "label": "字段",
+        "type": "input"
+      }
+    ]
+  },
+  {
+    "name": "Tooltip",
+    "desc": "文字提示",
+    "category": "数据展示",
+    "parentTypes": [
+      "Page",
+      "Container",
+      "Modal",
+      "GridColumn",
+      "TabPane",
+      "Space",
+      "Card",
+      "Tooltip",
+      "ListItem"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "title": "提示文字",
+      "placement": "top"
+    },
+    "props": [
+      {
+        "name": "title",
+        "label": "提示文字",
+        "type": "input"
+      },
+      {
+        "name": "placement",
+        "label": "位置",
+        "type": "select",
+        "options": [
+          "top",
+          "left",
+          "right",
+          "bottom",
+          "topLeft",
+          "topRight",
+          "bottomLeft",
+          "bottomRight",
+          "leftTop",
+          "leftBottom",
+          "rightTop",
+          "rightBottom"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Modal",
+    "desc": "弹窗",
+    "category": "反馈",
+    "parentTypes": [
+      "Page"
+    ],
+    "isContainer": true,
+    "defaultProps": {
+      "title": "弹窗",
+      "visibleInEditor": true
+    },
+    "props": [
+      {
+        "name": "title",
+        "label": "标题",
+        "type": "input"
+      },
+      {
+        "name": "visibleInEditor",
+        "label": "画布可见",
+        "type": "switch"
+      }
+    ],
+    "events": [
+      {
+        "name": "onOk",
+        "label": "确认事件"
+      },
+      {
+        "name": "onCancel",
+        "label": "取消事件"
+      }
+    ],
+    "methods": [
+      {
+        "name": "open",
+        "label": "打开弹窗"
+      },
+      {
+        "name": "close",
+        "label": "关闭弹窗"
+      }
+    ]
+  }
+]
