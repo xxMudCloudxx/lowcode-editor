@@ -42,9 +42,9 @@ export function ComponentAttr() {
     <Form
       form={form}
       onValuesChange={handleValuesChange}
-      labelCol={{ span: 6 }}
-      wrapperCol={{ span: 18 }}
-      className="overflow-y-auto h-full w-[90%] absolute overscroll-y-contain pb-90"
+      layout="vertical"
+      size="small"
+      className="h-full w-full px-3 pb-24"
     >
       {/* 固定的只读信息 */}
       <FormItem label="组件id">
