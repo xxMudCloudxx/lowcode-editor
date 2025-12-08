@@ -161,6 +161,13 @@ export interface ComponentProtocol {
   events?: EventConfig[];
   /** 可调用方法 */
   methods?: MethodConfig[];
+
+  /**
+   * 允许作为父组件的类型列表（向后兼容）
+   * 优先使用 editor.parentTypes
+   * @deprecated 使用 editor.parentTypes 代替
+   */
+  parentTypes?: string[];
 }
 
 // ===== 兼容旧格式 =====

@@ -59,7 +59,9 @@ export function ComponentAttr() {
         const valuePropName = getValuePropNameFor(setter.type);
         return (
           <FormItem
-            key={setter.name}
+            key={
+              Array.isArray(setter.name) ? setter.name.join(".") : setter.name
+            }
             name={setter.name}
             label={setter.label}
             valuePropName={valuePropName}
