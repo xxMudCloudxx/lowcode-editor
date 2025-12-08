@@ -2,33 +2,30 @@
  * @file materials/__tests__/protocol.test.ts
  * @description 物料协议合规性测试
  *
- * 验证所有物料组件符合协议规范：
+ * 验证所有物料组件符合 ComponentProtocol 规范：
  * 1. 必须字段存在
- * 2. 新协议格式 vs 旧格式识别
+ * 2. component 和 editor 字段正确
  * 3. parentTypes 配置正确
  */
 
 import { describe, it, expect } from "vitest";
 import { materials } from "../index";
 import { isProtocolConfig } from "../../types/component-protocol";
-import type {
-  ComponentProtocol,
-  LegacyComponentConfig,
-} from "../../types/component-protocol";
+import type { ComponentProtocol } from "../../types/component-protocol";
 
 describe("物料协议合规性测试", () => {
-  // 所有已迁移到新协议的组件
-  const MIGRATED_COMPONENTS = [
-    // Phase 1: General
+  // 所有组件（v2 后全部使用协议格式）
+  const ALL_COMPONENTS = [
+    // General
     "Button",
     "Icon",
     "Typography",
-    // Phase 2: Layout
+    // Layout
     "Container",
     "Grid",
     "GridColumn",
     "Space",
-    // Phase 3: DataEntry
+    // DataEntry
     "Form",
     "FormItem",
     "Input",
@@ -38,7 +35,7 @@ describe("物料协议合规性测试", () => {
     "Slider",
     "Switch",
     "Upload",
-    // Phase 4: DataDisplay
+    // DataDisplay
     "Avatar",
     "Card",
     "Image",
@@ -69,33 +66,21 @@ describe("物料协议合规性测试", () => {
     });
   });
 
-  describe("协议格式识别", () => {
-    it("已迁移组件应为新协议格式", () => {
-      MIGRATED_COMPONENTS.forEach((name) => {
+  describe("协议格式验证", () => {
+    it("所有组件都是协议格式", () => {
+      ALL_COMPONENTS.forEach((name) => {
         const material = materials.find((m) => m.name === name);
         expect(material).toBeDefined();
         expect(isProtocolConfig(material!)).toBe(true);
       });
     });
 
-    it("新协议格式组件必须有 component 和 editor 字段", () => {
+    it("所有组件必须有 component 和 editor 字段", () => {
       materials.forEach((material) => {
-        if (isProtocolConfig(material)) {
-          const protocol = material as ComponentProtocol;
-          expect(protocol.component).toBeDefined();
-          expect(protocol.editor).toBeDefined();
-          expect(typeof protocol.editor.isContainer).toBe("boolean");
-        }
-      });
-    });
-
-    it("旧格式组件必须有 dev 和 prod 字段", () => {
-      materials.forEach((material) => {
-        if (!isProtocolConfig(material)) {
-          const legacy = material as LegacyComponentConfig;
-          expect(legacy.dev).toBeDefined();
-          expect(legacy.prod).toBeDefined();
-        }
+        const protocol = material as ComponentProtocol;
+        expect(protocol.component).toBeDefined();
+        expect(protocol.editor).toBeDefined();
+        expect(typeof protocol.editor.isContainer).toBe("boolean");
       });
     });
   });
@@ -106,15 +91,9 @@ describe("物料协议合规性测试", () => {
         // Page 是根组件，不需要 parentTypes
         if (material.name === "Page") return;
 
-        if (isProtocolConfig(material)) {
-          expect(material.editor.parentTypes).toBeDefined();
-          expect(Array.isArray(material.editor.parentTypes)).toBe(true);
-          expect(material.editor.parentTypes!.length).toBeGreaterThan(0);
-        } else {
-          expect(material.parentTypes).toBeDefined();
-          expect(Array.isArray(material.parentTypes)).toBe(true);
-          expect(material.parentTypes!.length).toBeGreaterThan(0);
-        }
+        expect(material.editor.parentTypes).toBeDefined();
+        expect(Array.isArray(material.editor.parentTypes)).toBe(true);
+        expect(material.editor.parentTypes!.length).toBeGreaterThan(0);
       });
     });
 
@@ -122,13 +101,7 @@ describe("物料协议合规性测试", () => {
       const materialNames = new Set(materials.map((m) => m.name));
 
       materials.forEach((material) => {
-        let parentTypes: string[] | undefined;
-
-        if (isProtocolConfig(material)) {
-          parentTypes = material.editor.parentTypes;
-        } else {
-          parentTypes = material.parentTypes;
-        }
+        const parentTypes = material.editor.parentTypes;
 
         if (parentTypes) {
           parentTypes.forEach((parentName) => {
@@ -142,7 +115,7 @@ describe("物料协议合规性测试", () => {
     });
   });
 
-  describe("已迁移组件详细检查", () => {
+  describe("组件详细检查", () => {
     it("Button 组件配置正确", () => {
       const button = materials.find((m) => m.name === "Button");
       expect(button).toBeDefined();

@@ -170,38 +170,19 @@ export interface ComponentProtocol {
   parentTypes?: string[];
 }
 
-// ===== 兼容旧格式 =====
+// ===== 类型别名 =====
 
 /**
- * 兼容旧的 ComponentConfig 类型
- * 用于渐进式迁移
+ * 组件配置类型
+ * v2 后统一使用 ComponentProtocol
  */
-export interface LegacyComponentConfig {
-  name: string;
-  desc: string;
-  defaultProps: Record<string, unknown>;
-  category?: string;
-  parentTypes?: string[];
-  setter?: SetterConfig[];
-  styleSetter?: SetterConfig[];
-  events?: EventConfig[];
-  methods?: MethodConfig[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dev?: React.LazyExoticComponent<ComponentType<any>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  prod?: React.LazyExoticComponent<ComponentType<any>>;
-}
-
-/**
- * 统一的组件配置类型
- * 兼容新旧两种模式
- */
-export type ComponentConfig = ComponentProtocol | LegacyComponentConfig;
+export type ComponentConfig = ComponentProtocol;
 
 // ===== 类型守卫 =====
 
 /**
- * 类型守卫：判断是否为新协议格式
+ * 类型守卫：判断是否为协议格式
+ * v2 后所有组件都是协议格式，此函数保留用于兼容
  */
 export function isProtocolConfig(
   config: ComponentConfig

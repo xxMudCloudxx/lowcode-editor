@@ -3,10 +3,8 @@
  * @description
  * 使用 Zustand 管理所有"物料组件"的配置信息。
  *
- * v2 架构变更：
- * - 支持新协议格式（ComponentProtocol）和旧格式（LegacyComponentConfig）
- * - 类型定义移至 types/component-protocol.ts
- * - 导出兼容性别名以保持向后兼容
+ * v2 架构：统一使用 ComponentProtocol 格式
+ * - 类型定义位于 types/component-protocol.ts
  *
  * @module Stores/ComponentConfig
  */
@@ -16,7 +14,6 @@ import {
   isProtocolConfig,
   type ComponentConfig,
   type ComponentProtocol,
-  type LegacyComponentConfig,
 } from "../materials";
 import type {
   SetterConfig,
@@ -31,7 +28,6 @@ export type {
   MethodConfig as ComponentMethod,
   ComponentConfig,
   ComponentProtocol,
-  LegacyComponentConfig,
 };
 export { isProtocolConfig };
 
