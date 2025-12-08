@@ -90,5 +90,12 @@ export const antdTheme: ThemeConfig = {
     Typography: {
       titleMarginBottom: 0,
     },
+
+    Tree: {
+      // 选中节点的背景色 - 使用浅色强调色
+      nodeSelectedBg: neutral[200],
+      // 悬浮节点的背景色
+      nodeHoverBg: neutral[100],
+    },
   },
 };

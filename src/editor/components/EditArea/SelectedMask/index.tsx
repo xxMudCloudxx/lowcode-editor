@@ -99,9 +99,7 @@ function SelectedMask({
     const container = document.querySelector(`.${containerClassName}`);
     if (!container) return;
 
-    const node = document.querySelector(
-      `[data-component-id="${componentId}"]`
-    );
+    const node = document.querySelector(`[data-component-id="${componentId}"]`);
     if (!node) return;
 
     const { top, left, width, height } = node.getBoundingClientRect();
@@ -182,7 +180,7 @@ function SelectedMask({
           position: "absolute",
           left: position.left,
           top: position.top,
-          backgroundColor: "rgba(0, 0, 255, 0.1)",
+          backgroundColor: "rgba(0, 0, 255, 0.05)",
           border: "1px dashed blue",
           pointerEvents: "none",
           width: position.width,
@@ -301,4 +299,3 @@ function buildClipboardTree(
 }
 
 export default SelectedMask;
-
