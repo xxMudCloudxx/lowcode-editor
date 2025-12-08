@@ -1,14 +1,11 @@
 /**
  * @file /server/index.ts
- * @description 🚀 零代码 AI 页面生成器后端 (v3 重构版)
+ * @description 🚀 零代码 AI 页面生成器后端 (v4 - 增加 Design Chain)
  *
- * 核心改进：
- * 1. 使用 JsonOutputParser（比 Structured Output 更兼容）
- * 2. Core + Recall 动态物料筛选
- * 3. Linter 后处理器进行语义修正
- *
- * 注意：由于 API 提供商对 Structured Output 支持有限，
- * 暂时回退到 JsonOutputParser + 严格 Prompt 的方案
+ * 三阶段架构：
+ * 1. Phase 1: 意图分析 → 功能需求
+ * 2. Phase 2: 设计链 → 布局/颜色/字体/间距 (新增!)
+ * 3. Phase 3: Schema生成 → 带样式的组件树
  */
 
 import express from "express";
@@ -57,7 +54,6 @@ const CORE_COMPONENTS = new Set([
 const VALID_COMPONENT_NAMES = new Set(componentNames);
 
 function getMaterialContext(suggestedComponents: string[] = []): string {
-  // 过滤无效组件名
   const validSuggested = suggestedComponents.filter((name) =>
     VALID_COMPONENT_NAMES.has(name)
   );
@@ -83,12 +79,14 @@ function getMaterialContext(suggestedComponents: string[] = []): string {
 
 function loadPrompts(): {
   intentSystemPrompt: string;
+  designSystemPrompt: string;
   schemaSystemPrompt: string;
 } {
   const read = (p: string) =>
     readFileSync(path.resolve(process.cwd(), p), "utf-8");
 
   const intentSystemPrompt = read("server/prompts/intent_system.md");
+  const designSystemPrompt = read("server/prompts/design_system.md");
   const schemaRole = read("server/prompts/schema_role.md");
   let schemaSystemTemplate = read("server/prompts/schema_system_template.md");
 
@@ -97,7 +95,7 @@ function loadPrompts(): {
     schemaRole
   );
 
-  return { intentSystemPrompt, schemaSystemPrompt };
+  return { intentSystemPrompt, designSystemPrompt, schemaSystemPrompt };
 }
 
 // --- 4. 模型初始化 ---
@@ -111,6 +109,13 @@ const visionModel = new ChatOpenAI({
   configuration: { baseURL: baseUrl, timeout: API_TIMEOUT_MS },
 });
 
+const designModel = new ChatOpenAI({
+  model: "gpt-4o-mini",
+  temperature: 0.4, // 稍高温度，允许更多创意
+  apiKey: process.env.OPENAI_API_KEY,
+  configuration: { baseURL: baseUrl, timeout: API_TIMEOUT_MS },
+});
+
 const generationModel = new ChatOpenAI({
   model: "gpt-4o-mini",
   temperature: 0.1,
@@ -118,10 +123,9 @@ const generationModel = new ChatOpenAI({
   configuration: { baseURL: baseUrl, timeout: API_TIMEOUT_MS },
 });
 
-// JSON 解析器
 const jsonParser = new JsonOutputParser();
 
-// --- 5. 意图分析接口 ---
+// --- 5. 接口定义 ---
 
 interface IntentResult {
   description: string;
@@ -129,10 +133,34 @@ interface IntentResult {
   suggestedComponents: string[];
 }
 
+interface DesignResult {
+  layoutStrategy: {
+    type: string;
+    containerMaxWidth?: string;
+    containerPadding?: string;
+    containerBackground?: string;
+    containerBorderRadius?: string;
+    containerShadow?: string;
+    pageBackground?: string;
+  };
+  colorScheme: {
+    primary: string;
+    background: string;
+    surface: string;
+    text: string;
+    textSecondary: string;
+    border: string;
+  };
+  typography: Record<string, any>;
+  spacing: Record<string, string>;
+  componentStyles: Record<string, Record<string, string>>;
+}
+
 // --- 6. 主生成流程 ---
 
 async function generatePage(text: string, imageData: string | null) {
-  const { intentSystemPrompt, schemaSystemPrompt } = loadPrompts();
+  const { intentSystemPrompt, designSystemPrompt, schemaSystemPrompt } =
+    loadPrompts();
 
   // ===== Phase 1: 意图分析 =====
   console.log("\n🧠 Phase 1: 意图分析...");
@@ -158,18 +186,42 @@ async function generatePage(text: string, imageData: string | null) {
     intentResponse.content as string
   )) as IntentResult;
 
-  // 过滤无效组件名
   intent.suggestedComponents = intent.suggestedComponents.filter((name) =>
     VALID_COMPONENT_NAMES.has(name)
   );
 
   console.log("✅ 意图分析结果:");
-  console.log("  - 描述:", intent.description?.slice(0, 80) + "...");
+  console.log("  - 描述:", intent.description?.slice(0, 60) + "...");
   console.log("  - 布局类型:", intent.layoutType);
   console.log("  - 有效组件:", intent.suggestedComponents.join(", "));
 
-  // ===== Phase 2: Schema 生成 =====
-  console.log("\n🏗️ Phase 2: Schema 生成...");
+  // ===== Phase 2: 设计链 (新增!) =====
+  console.log("\n🎨 Phase 2: 设计链...");
+
+  const designMessages = [
+    new SystemMessage(designSystemPrompt),
+    new HumanMessage(
+      `页面需求：${intent.description}\n\n` +
+        `页面类型：${intent.layoutType}\n\n` +
+        `请输出视觉设计方案 JSON。`
+    ),
+  ];
+
+  const designResponse = await designModel.invoke(designMessages);
+  const design = (await jsonParser.invoke(
+    designResponse.content as string
+  )) as DesignResult;
+
+  console.log("✅ 设计方案:");
+  console.log("  - 布局策略:", design.layoutStrategy?.type);
+  console.log("  - 主色调:", design.colorScheme?.primary);
+  console.log(
+    "  - 容器宽度:",
+    design.layoutStrategy?.containerMaxWidth || "auto"
+  );
+
+  // ===== Phase 3: Schema 生成 =====
+  console.log("\n🏗️ Phase 3: Schema 生成...");
 
   const materialContext = getMaterialContext(intent.suggestedComponents);
 
@@ -177,13 +229,35 @@ async function generatePage(text: string, imageData: string | null) {
     .replace("{{MATERIALS_LIST}}", materialContext)
     .replace("{{SCHEMA_EXAMPLE}}", "");
 
+  // 构建包含设计信息的提示
+  const designContext = `
+## 设计规范（必须遵守）
+
+### 布局策略
+- 类型：${design.layoutStrategy?.type || "centered-card"}
+- 容器最大宽度：${design.layoutStrategy?.containerMaxWidth || "400px"}
+- 容器内边距：${design.layoutStrategy?.containerPadding || "40px"}
+- 页面背景色：${design.layoutStrategy?.pageBackground || "#f5f5f5"}
+
+### 颜色方案
+- 主色：${design.colorScheme?.primary || "#1677ff"}
+- 背景色：${design.colorScheme?.background || "#f5f5f5"}
+- 卡片背景：${design.colorScheme?.surface || "#ffffff"}
+- 文字色：${design.colorScheme?.text || "#1f1f1f"}
+
+### 组件样式预设
+${JSON.stringify(design.componentStyles || {}, null, 2)}
+
+请在生成组件时，将上述样式应用到对应组件的 styles 字段中。
+`;
+
   const schemaMessages = [
-    new SystemMessage(finalSchemaPrompt),
+    new SystemMessage(finalSchemaPrompt + "\n\n" + designContext),
     new HumanMessage(
       `用户需求：${intent.description}\n\n` +
         `布局类型：${intent.layoutType}\n\n` +
         `可用组件：${[...CORE_COMPONENTS, ...intent.suggestedComponents].join(", ")}\n\n` +
-        `请生成页面 Schema JSON。注意：输出必须是纯 JSON，不要任何 Markdown 或解释。`
+        `请生成页面 Schema JSON，确保应用设计规范中的样式。输出必须是纯 JSON。`
     ),
   ];
 
@@ -194,10 +268,9 @@ async function generatePage(text: string, imageData: string | null) {
 
   console.log("✅ Schema 生成完成");
 
-  // ===== Phase 3: Linter 语义修正 =====
-  console.log("\n🔧 Phase 3: Linter 修正...");
+  // ===== Phase 4: Linter 语义修正 =====
+  console.log("\n🔧 Phase 4: Linter 修正...");
 
-  // 处理两种可能的输出格式
   let rootNode: LinterNode;
   if (pageResult.root) {
     rootNode = pageResult.root;
@@ -207,10 +280,15 @@ async function generatePage(text: string, imageData: string | null) {
     rootNode = pageResult;
   }
 
-  // 确保基本结构
   if (!rootNode.props) rootNode.props = {};
   if (!rootNode.styles) rootNode.styles = {};
   if (!rootNode.children) rootNode.children = [];
+
+  // 应用页面级别样式
+  if (design.layoutStrategy?.pageBackground) {
+    rootNode.styles.backgroundColor = design.layoutStrategy.pageBackground;
+    rootNode.styles.minHeight = "100vh";
+  }
 
   const fixedRoot = fixComponentTree(rootNode);
   const finalSchema = convertToComponentTree(fixedRoot);
@@ -254,5 +332,5 @@ app.listen(port, () => {
   console.log(`[AI Server] ✅ 后端启动成功：http://localhost:${port}`);
   console.log(`[AI Server] 📦 已加载 ${(materialsAI as any[]).length} 个物料`);
   console.log(`[AI Server] 🎯 Core 组件: ${[...CORE_COMPONENTS].join(", ")}`);
-  console.log(`[AI Server] ⚠️ 使用 JsonOutputParser（更兼容）`);
+  console.log(`[AI Server] 🎨 已启用 Design Chain (4阶段流水线)`);
 });
