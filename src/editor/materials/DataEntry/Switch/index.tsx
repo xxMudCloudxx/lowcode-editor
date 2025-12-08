@@ -7,7 +7,10 @@ import { Switch as AntdSwitch } from "antd";
 import type { MaterialProps } from "../../interface";
 
 const Switch = forwardRef<HTMLDivElement, MaterialProps>(
-  ({ style, className, "data-component-id": id, ...restProps }, ref) => {
+  (
+    { style, className, children, "data-component-id": id, ...restProps },
+    ref
+  ) => {
     return (
       <div
         ref={ref}

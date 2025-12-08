@@ -1,14 +1,27 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Pagination/meta.tsx
+ * @description Pagination 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_PAGE_LEVEL } from "../../containerTypes";
 
-export default {
+const PaginationProtocol: ComponentProtocol = {
   name: "Pagination",
   desc: "分页",
   category: "导航",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     defaultCurrent: 1,
     total: 50,
   },
+
+  editor: {
+    isContainer: false,
+    parentTypes: PT_PAGE_LEVEL,
+  },
+
   setter: [
     {
       name: "defaultCurrent",
@@ -26,5 +39,6 @@ export default {
       type: "inputNumber",
     },
   ],
-  parentTypes: PT_PAGE_LEVEL,
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default PaginationProtocol;

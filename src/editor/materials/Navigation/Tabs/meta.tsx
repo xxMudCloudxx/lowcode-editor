@@ -1,17 +1,27 @@
-// src/editor/materials/Navigation/Tabs/meta.tsx
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Tabs/meta.tsx
+ * @description Tabs 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_LAYOUT } from "../../containerTypes";
 
-export default {
+const TabsProtocol: ComponentProtocol = {
   name: "Tabs",
   desc: "标签页",
   category: "导航",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     type: "line",
     tabPosition: "top",
   },
-  parentTypes: PT_LAYOUT,
-  // 属性设置器
+
+  editor: {
+    isContainer: true,
+    parentTypes: PT_LAYOUT,
+  },
+
   setter: [
     {
       name: "type",
@@ -40,18 +50,20 @@ export default {
       type: "switch",
     },
   ],
+
   methods: [
     {
       name: "setActiveKey",
       label: "切换标签页",
-      // 描述方法需要的参数
       params: [
         {
           name: "key",
           label: "目标Key",
-          type: "input", // 表示在配置时需要一个输入框
+          type: "input",
         },
       ],
     },
   ],
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default TabsProtocol;

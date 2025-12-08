@@ -18,7 +18,7 @@ import type { ComponentType } from "react";
  * 组件属性设置器配置
  */
 export interface SetterConfig {
-  name: string;
+  name: string | string[];
   label: string;
   type:
     | "input"
@@ -27,6 +27,7 @@ export interface SetterConfig {
     | "radio"
     | "inputNumber"
     | "segmented"
+    | "custom"
     | string;
   options?: string[] | { label: string; value: unknown }[];
   [key: string]: unknown;
@@ -46,7 +47,7 @@ export interface EventConfig {
 export interface MethodConfig {
   name: string;
   label: string;
-  params?: { name: string; type: string }[];
+  params?: { name: string; label?: string; type: string }[];
 }
 
 // ===== 编辑器行为协议 =====

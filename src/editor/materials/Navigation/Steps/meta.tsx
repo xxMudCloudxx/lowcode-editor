@@ -1,10 +1,17 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Steps/meta.tsx
+ * @description Steps 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_GENERAL } from "../../containerTypes";
 
-export default {
+const StepsProtocol: ComponentProtocol = {
   name: "Steps",
   desc: "步骤条",
   category: "导航",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     current: 0,
     items: [
@@ -13,6 +20,12 @@ export default {
       { title: "第三步", description: "这是描述" },
     ],
   },
+
+  editor: {
+    isContainer: false,
+    parentTypes: PT_GENERAL,
+  },
+
   setter: [
     {
       name: "current",
@@ -24,14 +37,11 @@ export default {
       label: "步骤配置",
       type: "custom",
       component: "AttrListSetter",
-      // 为 AttrListSetter 提供它所需要的配置
       props: {
-        // 定义 Steps 的每一项有两个字段：title 和 description
         itemProps: [
           { name: "title", label: "标题" },
           { name: "description", label: "描述" },
         ],
-        // 定义新增一项时的默认数据结构
         defaultItem: {
           key: "new-step",
           title: "新步骤",
@@ -40,15 +50,11 @@ export default {
       },
     },
   ],
+
   methods: [
-    {
-      name: "next",
-      label: "下一步",
-    },
-    {
-      name: "prev",
-      label: "上一步",
-    },
+    { name: "next", label: "下一步" },
+    { name: "prev", label: "上一步" },
   ],
-  parentTypes: PT_GENERAL,
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default StepsProtocol;
