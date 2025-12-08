@@ -3,19 +3,17 @@
 ## 5.1 设计哲学
 
 ```
-"Zod 负责语法，Linter 负责语义"
+"Prompt 引导生成，Linter 保底修正"
 ```
 
-| 层级       | 职责     | 示例                               |
-| ---------- | -------- | ---------------------------------- |
-| Zod Schema | 语法校验 | JSON 格式正确、`name` 在枚举范围内 |
-| Linter     | 语义修正 | Form 的子组件必须是 FormItem       |
+| 层级   | 职责         | 示例                 |
+| ------ | ------------ | -------------------- |
+| Prompt | 引导正确结构 | 黄金规则约束父子关系 |
+| Linter | 保底修正     | 自动包裹违规子组件   |
 
-### 为什么不把所有规则放在 Zod？
+### 为什么需要 Linter？
 
-1. **复杂度爆炸**：递归校验 + 父子约束会导致 Schema 过于复杂
-2. **Token 成本**：详细的 Schema 描述会显著增加 Token 消耗
-3. **灵活性**：Linter 可以实现"尽量修复"而非"直接拒绝"
+即使 Prompt 已经明确约束，LLM 仍可能产生幻觉。Linter 提供最后一道防线，确保输出结构合法。
 
 ## 5.2 父子约束规则
 
@@ -84,7 +82,6 @@ function fixComponentTree(node: LinterNode): LinterNode {
   if (rule) {
     // 3. 遍历每个子节点进行修复
     node.children = node.children.map((child) => {
-      // 如果已经符合要求，递归处理后返回
       if (child.name === rule.expectedChild) {
         return fixComponentTree(child);
       }
@@ -110,7 +107,6 @@ function fixComponentTree(node: LinterNode): LinterNode {
       return wrapper;
     });
   } else {
-    // 无特殊约束，直接递归
     node.children = node.children.map((child) => fixComponentTree(child));
   }
 
@@ -147,13 +143,12 @@ Form
 AI 可能将本应属于 Wrapper 的属性错误地放在子组件上：
 
 ```json
-// AI 错误输出
 {
   "name": "Grid",
   "children": [
     {
       "name": "Button",
-      "props": { "span": 12 } // span 属于 GridColumn，不属于 Button
+      "props": { "span": 12 }
     }
   ]
 }
@@ -164,34 +159,27 @@ AI 可能将本应属于 Wrapper 的属性错误地放在子组件上：
 Linter 自动将属性移动到正确的组件：
 
 ```typescript
-// 属性上浮逻辑
 if (child.props["span"] !== undefined) {
-  wrapper.props["span"] = child.props["span"]; // 移动到 GridColumn
-  delete child.props["span"]; // 从 Button 删除
+  wrapper.props["span"] = child.props["span"];
+  delete child.props["span"];
 }
 ```
 
-### 修复结果
+## 5.5 页面级样式应用 (v4 新增)
 
-```json
-{
-  "name": "Grid",
-  "children": [
-    {
-      "name": "GridColumn",
-      "props": { "span": 12 },
-      "children": [
-        {
-          "name": "Button",
-          "props": {}
-        }
-      ]
-    }
-  ]
+在 Phase 4 中，除了结构修复，还会应用设计链的页面级样式：
+
+```typescript
+// 应用页面级别样式
+if (design.layoutStrategy?.pageBackground) {
+  rootNode.styles.backgroundColor = design.layoutStrategy.pageBackground;
+  rootNode.styles.minHeight = "100vh";
 }
 ```
 
-## 5.5 格式转换
+这确保了 Page 组件具有正确的背景色和最小高度。
+
+## 5.6 格式转换
 
 ### `convertToComponentTree()`
 
@@ -208,7 +196,7 @@ function convertToComponentTree(
   const result = {
     id: numericId,
     name: node.name,
-    desc: node.name, // 使用组件名作为描述
+    desc: node.name,
     props: node.props || {},
     styles: node.styles || {},
     parentId,
@@ -225,31 +213,27 @@ function convertToComponentTree(
 }
 ```
 
-### 转换示例
+## 5.7 多格式输入容错 (v4 新增)
 
-```
-输入 (LinterNode):
-{
-  name: "Page",
-  children: [{ name: "Button" }]
+由于使用 JsonOutputParser，AI 可能返回不同格式。Linter 增加了容错处理：
+
+```typescript
+let rootNode: LinterNode;
+if (pageResult.root) {
+  rootNode = pageResult.root; // 标准格式: { root: {...} }
+} else if (Array.isArray(pageResult)) {
+  rootNode = pageResult[0]; // 数组格式: [{...}]
+} else {
+  rootNode = pageResult; // 直接格式: {...}
 }
 
-输出 (ComponentNode):
-{
-  id: 1,
-  name: "Page",
-  desc: "Page",
-  parentId: null,
-  children: [{
-    id: 2,
-    name: "Button",
-    desc: "Button",
-    parentId: 1
-  }]
-}
+// 确保基本结构存在
+if (!rootNode.props) rootNode.props = {};
+if (!rootNode.styles) rootNode.styles = {};
+if (!rootNode.children) rootNode.children = [];
 ```
 
-## 5.6 日志输出
+## 5.8 日志输出
 
 Linter 会输出详细的修复日志：
 
@@ -257,6 +241,4 @@ Linter 会输出详细的修复日志：
 [Linter] 修复结构: 将 Input 包裹在 FormItem 中 (父组件: Form)
   └─ 属性上浮: 'label' 从 Input 移动到 FormItem
   └─ 属性上浮: 'name' 从 Input 移动到 FormItem
-[Linter] 修复结构: 将 Button 包裹在 GridColumn 中 (父组件: Grid)
-  └─ 属性上浮: 'span' 从 Button 移动到 GridColumn
 ```
