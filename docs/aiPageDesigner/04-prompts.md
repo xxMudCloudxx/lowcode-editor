@@ -5,8 +5,9 @@
 ```
 server/prompts/
 ├── intent_system.md          # Phase 1: 意图分析系统提示词
-├── schema_role.md            # Phase 2: 黄金规则定义
-└── schema_system_template.md # Phase 2: Schema 生成模板
+├── design_system.md          # Phase 2: 设计链系统提示词 (新增!)
+├── schema_role.md            # Phase 3: 黄金规则定义
+└── schema_system_template.md # Phase 3: Schema 生成模板
 ```
 
 ## 4.2 Phase 1: 意图分析提示词
@@ -15,9 +16,7 @@ server/prompts/
 
 ### 角色定义
 
-```
-你是一个 **高级产品经理** 和 **资深 UI/UX 设计专家**。
-```
+> 你是一个 **高级产品经理** 和 **资深 UI/UX 设计专家**。
 
 ### 核心设计原则
 
@@ -26,18 +25,6 @@ server/prompts/
 | 禁止简单转译 | 不能将"登录页面"仅转换为账号+密码+按钮 |
 | 主动充实     | 必须补全 Logo、标题、注册链接等元素    |
 | 生产级标准   | 以真实产品为标准，而非最小 Demo        |
-
-### 关键指令
-
-```markdown
-## 关键原则：主动思考与补全 (The "Login Page" Principle)
-
-1. **禁止简单转译**：当用户只给出一个简单的词（比如 "登录页面"），
-   你 **不能** 只返回最基础的元素（如：账号、密码、登录按钮）。
-
-2. **主动充实**：你 **必须** 主动思考一个 "生产级别" 的页面 **应该**
-   包含哪些元素，并自动为用户补全。
-```
 
 ### 输出约束
 
@@ -49,9 +36,84 @@ server/prompts/
 }
 ```
 
-## 4.3 Phase 2: Schema 生成提示词
+## 4.3 Phase 2: 设计链提示词 (新增!)
 
-### 4.3.1 黄金规则 (`schema_role.md`)
+**文件**: `design_system.md`
+
+### 角色定义
+
+> 你是一个**高级 UI 设计师**，专注于创建美观、专业的页面视觉设计。
+
+### 核心任务
+
+基于用户需求和意图分析结果，输出页面的**视觉设计方案**：
+
+- 整体布局策略
+- 颜色方案
+- 排版层次（字体大小、粗细）
+- 间距规范
+- 关键组件的样式预设
+
+### 设计原则
+
+```markdown
+1. **现代简约**：使用干净的布局，充足的留白
+2. **视觉层次**：通过大小、颜色、粗细区分信息层级
+3. **一致性**：统一的颜色、间距、圆角
+4. **专业感**：避免花哨，追求商务/产品级别的质感
+```
+
+### 布局策略参考
+
+| 页面类型  | 推荐布局  | 容器宽度  | 背景              |
+| --------- | --------- | --------- | ----------------- |
+| 登录/注册 | 居中卡片  | 360-420px | 浅灰背景+白色卡片 |
+| 表单页    | 单列居中  | 600-800px | 白色背景          |
+| 仪表盘    | 网格布局  | 全宽      | 浅灰背景          |
+| 列表页    | 卡片/表格 | 全宽      | 白色背景          |
+| 详情页    | 两栏布局  | 1200px    | 白色背景          |
+
+### 颜色方案模板
+
+**商务蓝调**（默认）：
+
+| 用途     | 颜色值  |
+| -------- | ------- |
+| 主色     | #1677ff |
+| 页面背景 | #f5f5f5 |
+| 卡片背景 | #ffffff |
+| 标题文字 | #1f1f1f |
+| 正文文字 | #666666 |
+| 边框     | #e8e8e8 |
+
+### 输出格式
+
+```json
+{
+  "layoutStrategy": {
+    "type": "centered-card | full-width | sidebar | two-column",
+    "containerMaxWidth": "400px",
+    "containerPadding": "40px",
+    "containerBackground": "#ffffff",
+    "pageBackground": "#f5f5f5"
+  },
+  "colorScheme": {
+    "primary": "#1677ff",
+    "background": "#f5f5f5",
+    "surface": "#ffffff",
+    "text": "#1f1f1f",
+    "textSecondary": "#666666"
+  },
+  "componentStyles": {
+    "Container": { "maxWidth": "400px", "margin": "40px auto" },
+    "Button_primary": { "width": "100%", "height": "40px" }
+  }
+}
+```
+
+## 4.4 Phase 3: Schema 生成提示词
+
+### 4.4.1 黄金规则 (`schema_role.md`)
 
 **核心约束表**：
 
@@ -59,102 +121,91 @@ server/prompts/
 | -------- | ------------------------------------------------------- |
 | Rule 1   | 只能使用物料库中的组件                                  |
 | Rule 2   | 严禁捏造未定义的组件名                                  |
-| Rule 3   | 抽象概念必须映射到实际组件组合                          |
 | Rule 10  | **父子嵌套约束**：Form → FormItem, Grid → GridColumn 等 |
 | Rule 11  | **布局纠正**：Button 不能直接放在 Form 内               |
 
-**关键规则示例**：
-
-```markdown
-【[核心] 严格父子嵌套规则】：
-
-- `name: "Form"` 的 `children` 数组中 **只允许** 包含 `name: "FormItem"` 的组件。
-- `name: "Grid"` 的 `children` 数组中 **只允许** 包含 `name: "GridColumn"` 的组件。
-
-【[核心] 布局纠正（表单）】：
-
-- **错误做法**：`{ "name": "Form", "children": [ { "name": "Button" } ] }`
-- **正确做法**：Button 必须作为 Form 的**兄弟节点**，包裹在同一个父级 Container 中。
-```
-
-### 4.3.2 系统模板 (`schema_system_template.md`)
+### 4.4.2 系统模板 (`schema_system_template.md`)
 
 **思维链 (CoT) 引导**：
 
 ```markdown
 ## 思维链 (Chain of Thought)
 
-在生成 JSON 之前，请按以下步骤思考：
-
-1. **布局规划**：先确定页面的整体布局容器（Container、Grid）
-2. **区域划分**：根据意图中的 sections，规划每个区域的容器结构
-3. **组件填充**：在容器中填充原子组件（Button、Input、Typography 等）
+1. **布局规划**：先确定页面的整体布局容器
+2. **区域划分**：规划每个区域的容器结构
+3. **组件填充**：在容器中填充原子组件
 4. **约束检查**：检查父子关系是否符合规则
 ```
 
-**模板占位符**：
+### 4.4.3 设计规范注入
 
-```markdown
-## 黄金规则
+在 Phase 3 调用时，会动态注入 Phase 2 的设计结果：
 
-{{ROLE_DEFINITION}} <!-- 注入 schema_role.md 内容 -->
+```typescript
+const designContext = `
+## 设计规范（必须遵守）
 
-## 【可用物料库】
+### 布局策略
+- 类型：${design.layoutStrategy?.type || "centered-card"}
+- 容器最大宽度：${design.layoutStrategy?.containerMaxWidth || "400px"}
+- 页面背景色：${design.layoutStrategy?.pageBackground || "#f5f5f5"}
 
-{{MATERIALS_LIST}} <!-- 注入过滤后的物料 JSON -->
+### 颜色方案
+- 主色：${design.colorScheme?.primary || "#1677ff"}
+- 背景色：${design.colorScheme?.background || "#f5f5f5"}
+- 卡片背景：${design.colorScheme?.surface || "#ffffff"}
 
-## 【黄金标准范例】
+### 组件样式预设
+${JSON.stringify(design.componentStyles || {}, null, 2)}
 
-{{SCHEMA_EXAMPLE}} <!-- 预留，当前未使用 -->
+请在生成组件时，将上述样式应用到对应组件的 styles 字段中。
+`;
+
+// 组合最终 Prompt
+const schemaMessages = [
+  new SystemMessage(finalSchemaPrompt + "\n\n" + designContext),
+  new HumanMessage(...)
+];
 ```
 
-## 4.4 Prompt 组装流程
+## 4.5 Prompt 组装流程
 
 ```typescript
 function loadPrompts() {
   const intentSystemPrompt = read("server/prompts/intent_system.md");
+  const designSystemPrompt = read("server/prompts/design_system.md"); // 新增!
   const schemaRole = read("server/prompts/schema_role.md");
   const schemaSystemTemplate = read("server/prompts/schema_system_template.md");
 
-  // 占位符替换
   const schemaSystemPrompt = schemaSystemTemplate.replace(
     "{{ROLE_DEFINITION}}",
     schemaRole
   );
 
-  return { intentSystemPrompt, schemaSystemPrompt };
+  return { intentSystemPrompt, designSystemPrompt, schemaSystemPrompt };
 }
-
-// 运行时动态注入物料
-const finalSchemaPrompt = schemaSystemPrompt
-  .replace("{{MATERIALS_LIST}}", materialContext)
-  .replace("{{SCHEMA_EXAMPLE}}", "");
 ```
 
-## 4.5 Prompt 设计决策分析
+## 4.6 Prompt 设计决策分析
 
-### 4.5.1 为什么使用"登录页面原则"？
+### 4.6.1 为什么新增设计链？
 
-**问题**：LLM 倾向于最小化输出，用户说"登录页"只会生成 2-3 个组件。
+**问题**：v3 版本生成的页面样式单调、不专业
 
-**解决方案**：通过具体例子强化"生产级补全"的概念。
+**解决方案**：通过独立的设计阶段，让 AI 像真正的设计师一样思考：
 
-### 4.5.2 为什么需要 CoT 思维链？
+1. 先确定整体风格（布局类型、配色）
+2. 再决定具体样式（间距、圆角、阴影）
+3. 最后生成组件时应用这些样式
 
-**问题**：复杂页面容器嵌套容易出错。
+### 4.6.2 为什么设计模型温度更高？
 
-**解决方案**：强制 LLM 按"容器→区域→组件"的顺序思考。
+| 阶段        | Temperature | 理由                   |
+| ----------- | ----------- | ---------------------- |
+| 意图分析    | 0.3         | 需要准确理解用户意图   |
+| 设计链      | 0.4         | 允许更多创意和风格变化 |
+| Schema 生成 | 0.1         | 严格遵循结构，减少幻觉 |
 
-### 4.5.3 为什么黄金规则如此详细？
+### 4.6.3 设计规范如何传递到 Schema 生成？
 
-**问题**：即使 Linter 能修复，预防优于修复。
-
-**解决方案**：在 Prompt 层面就明确约束，减少后处理压力。
-
-## 4.6 待优化项
-
-| 问题           | 当前状态                  | 建议                     |
-| -------------- | ------------------------- | ------------------------ |
-| 范例注入       | `{{SCHEMA_EXAMPLE}}` 为空 | 添加 1-2 个高质量范例    |
-| 多语言支持     | 仅中文 Prompt             | 考虑英文 Prompt 效果对比 |
-| 布局类型未使用 | `layoutType` 未影响生成   | 引入布局模板             |
+通过 **Prompt 注入** 的方式，将设计链的输出格式化后拼接到 Schema 生成的系统提示词中，确保 generationModel 能够"看到"并遵循设计规范。

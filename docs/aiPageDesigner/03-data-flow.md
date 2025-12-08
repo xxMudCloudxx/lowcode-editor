@@ -24,7 +24,7 @@ interface ComponentNode {
   name: string; // 组件类型（如 "Button", "Form"）
   desc: string; // 组件描述
   props: Record<string, any>; // 组件属性
-  styles: Record<string, any>; // CSS 样式
+  styles: Record<string, any>; // CSS 样式（含设计链样式）
   parentId: number | null; // 父组件 ID
   children?: ComponentNode[]; // 子组件
 }
@@ -43,7 +43,7 @@ interface ErrorResponse {
 
 ```typescript
 const messages = [
-  new SystemMessage(intentSystemPrompt), // 产品经理角色定义
+  new SystemMessage(intentSystemPrompt),
   new HumanMessage(`请分析以下用户需求：\n\n"${text}"`),
   // 如果有图片
   new HumanMessage({
@@ -55,30 +55,14 @@ const messages = [
 ];
 ```
 
-### 输出 Schema
+### 输出
 
 ```typescript
-const IntentSchema = z.object({
-  description: z
-    .string()
-    .describe("对用户需求的简要技术摘要，描述页面的核心功能"),
-
-  suggestedComponents: z
-    .array(z.string())
-    .describe("预测实现该页面所需的组件列表，如 Button, Form, Table 等"),
-
-  layoutType: z.enum([
-    "Dashboard", // 仪表盘/数据看板
-    "Form", // 表单页面
-    "List", // 列表/表格页
-    "Detail", // 详情页
-    "Landing", // 着陆页/营销页
-    "Settings", // 设置页
-    "Empty", // 空白页
-  ]),
-});
-
-type IntentResult = z.infer<typeof IntentSchema>;
+interface IntentResult {
+  description: string; // 页面功能技术摘要
+  layoutType: string; // Dashboard | Form | List | Detail | Landing | Settings | Empty
+  suggestedComponents: string[]; // 预测所需组件列表
+}
 ```
 
 ### 示例输出
@@ -93,79 +77,121 @@ type IntentResult = z.infer<typeof IntentSchema>;
     "Input",
     "Button",
     "Typography",
-    "Container",
-    "Space"
+    "Container"
   ]
 }
 ```
 
-## 3.3 Phase 2: Schema 生成
+## 3.3 Phase 2: 设计链 (新增!)
 
-### 物料上下文构建
+### 输入
 
 ```typescript
-function getMaterialContext(suggestedComponents: string[]): string {
-  const activeNames = new Set([...CORE_COMPONENTS, ...suggestedComponents]);
-
-  const context = materialsAI
-    .filter((m) => activeNames.has(m.name))
-    .map((m) => ({
-      name: m.name,
-      desc: m.desc,
-      category: m.category,
-      parentTypes: m.parentTypes,
-      isContainer: m.isContainer,
-      defaultProps: m.defaultProps,
-      props: m.props?.slice(0, 5), // 仅保留前5个属性，节省 Token
-    }));
-
-  return JSON.stringify(context, null, 2);
-}
+const designMessages = [
+  new SystemMessage(designSystemPrompt),
+  new HumanMessage(
+    `页面需求：${intent.description}\n\n` +
+      `页面类型：${intent.layoutType}\n\n` +
+      `请输出视觉设计方案 JSON。`
+  ),
+];
 ```
 
-### 输出 Schema
+### 输出
 
 ```typescript
-const ComponentSchema: z.ZodType<ComponentNodeType> = z
-  .object({
-    name: ComponentNameEnum,
-    props: z.any(),
-    styles: z.any(),
-  })
-  .extend({
-    children: z.lazy(() => z.array(ComponentSchema)),
-  });
-
-const PageSchema = z.object({
-  reasoning: z
-    .string()
-    .describe("生成布局的思维链：先思考容器结构，再填充组件"),
-  root: ComponentSchema.describe("页面根节点，通常 name 为 Page"),
-});
+interface DesignResult {
+  layoutStrategy: {
+    type: string; // centered-card | full-width | sidebar | two-column
+    containerMaxWidth?: string; // 如 "400px"
+    containerPadding?: string; // 如 "40px"
+    containerBackground?: string; // 如 "#ffffff"
+    containerBorderRadius?: string; // 如 "8px"
+    containerShadow?: string; // 如 "0 2px 8px rgba(0,0,0,0.08)"
+    pageBackground?: string; // 如 "#f5f5f5"
+  };
+  colorScheme: {
+    primary: string; // 主色
+    background: string; // 页面背景
+    surface: string; // 卡片/容器背景
+    text: string; // 主文字色
+    textSecondary: string; // 次要文字色
+    border: string; // 边框色
+  };
+  typography: Record<string, any>; // 排版规范
+  spacing: Record<string, string>; // 间距规范
+  componentStyles: Record<string, Record<string, string>>; // 组件样式预设
+}
 ```
 
 ### 示例输出
 
 ```json
 {
-  "reasoning": "1. 创建 Page 容器作为根节点 2. 添加 Container 用于居中表单区域 3. 添加 Typography 标题 4. 创建 Form，内含 FormItem + Input 5. 添加登录按钮和注册链接",
-  "root": {
-    "name": "Page",
-    "props": {},
-    "styles": {},
-    "children": [
-      {
-        "name": "Container",
-        "props": {},
-        "styles": { "maxWidth": "400px", "margin": "0 auto" },
-        "children": [...]
-      }
-    ]
+  "layoutStrategy": {
+    "type": "centered-card",
+    "containerMaxWidth": "400px",
+    "containerPadding": "40px",
+    "pageBackground": "#f5f5f5"
+  },
+  "colorScheme": {
+    "primary": "#1677ff",
+    "background": "#f5f5f5",
+    "surface": "#ffffff",
+    "text": "#1f1f1f"
+  },
+  "componentStyles": {
+    "Container": {
+      "maxWidth": "400px",
+      "margin": "40px auto",
+      "backgroundColor": "#ffffff",
+      "borderRadius": "8px"
+    },
+    "Button_primary": {
+      "width": "100%",
+      "height": "40px"
+    }
   }
 }
 ```
 
-## 3.4 Phase 3: Linter 后处理
+## 3.4 Phase 3: Schema 生成
+
+### 设计规范注入
+
+设计链的输出会被格式化后注入到 Schema 生成的 Prompt 中：
+
+```typescript
+const designContext = `
+## 设计规范（必须遵守）
+
+### 布局策略
+- 类型：${design.layoutStrategy?.type}
+- 容器最大宽度：${design.layoutStrategy?.containerMaxWidth}
+- 页面背景色：${design.layoutStrategy?.pageBackground}
+
+### 颜色方案
+- 主色：${design.colorScheme?.primary}
+- 背景色：${design.colorScheme?.background}
+- 卡片背景：${design.colorScheme?.surface}
+
+### 组件样式预设
+${JSON.stringify(design.componentStyles, null, 2)}
+
+请在生成组件时，将上述样式应用到对应组件的 styles 字段中。
+`;
+```
+
+### 输出
+
+```typescript
+interface PageResult {
+  reasoning?: string; // 可选的推理过程
+  root: LinterNode; // 组件树根节点
+}
+```
+
+## 3.5 Phase 4: Linter 后处理
 
 ### 输入输出转换
 
@@ -186,67 +212,62 @@ interface ComponentNode extends LinterNode {
 }
 ```
 
-### 修正示例
+### 页面级样式应用
 
-**修正前（AI 直接输出，违反约束）**：
-
-```json
-{
-  "name": "Form",
-  "children": [{ "name": "Input", "props": { "label": "用户名" } }]
+```typescript
+// 在 Linter 阶段应用 Design Chain 的页面样式
+if (design.layoutStrategy?.pageBackground) {
+  rootNode.styles.backgroundColor = design.layoutStrategy.pageBackground;
+  rootNode.styles.minHeight = "100vh";
 }
 ```
 
-**修正后（Linter 处理）**：
-
-```json
-{
-  "name": "Form",
-  "children": [
-    {
-      "name": "FormItem",
-      "props": { "label": "用户名" },
-      "children": [{ "name": "Input", "props": {} }]
-    }
-  ]
-}
-```
-
-## 3.5 完整数据流图
+## 3.6 完整数据流图
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Input
         A[text: string]
         B[image?: base64]
     end
 
     subgraph Phase1["Phase 1: 意图分析"]
-        C[IntentSchema Validation]
+        C[visionModel temp=0.3]
         D[IntentResult]
     end
 
-    subgraph Phase2["Phase 2: Schema 生成"]
-        E[动态物料筛选]
-        F[Prompt 组装]
-        G[PageSchema Validation]
-        H[PageResult]
+    subgraph Phase2["Phase 2: 设计链 🆕"]
+        E[designModel temp=0.4]
+        F[DesignResult]
     end
 
-    subgraph Phase3["Phase 3: Linter"]
-        I[fixComponentTree]
-        J[convertToComponentTree]
-        K[ComponentNode[]]
+    subgraph Phase3["Phase 3: Schema 生成"]
+        G[动态物料筛选]
+        H[设计规范注入]
+        I[generationModel temp=0.1]
+        J[PageResult]
+    end
+
+    subgraph Phase4["Phase 4: Linter"]
+        K[fixComponentTree]
+        L[应用页面样式]
+        M[convertToComponentTree]
+        N[ComponentNode[]]
     end
 
     A --> C
     B --> C
     C --> D
-    D -->|suggestedComponents| E
+    D -->|layoutType, description| E
     E --> F
-    F --> G
-    G --> H
-    H -->|root| I
+    D -->|suggestedComponents| G
+    F -->|colorScheme, componentStyles| H
+    G --> I
+    H --> I
     I --> J
-    J --> K
+    J -->|root| K
+    F -->|pageBackground| L
+    K --> L
+    L --> M
+    M --> N
 ```
