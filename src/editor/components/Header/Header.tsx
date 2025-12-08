@@ -216,99 +216,101 @@ export function Header() {
         </div>
 
         {/* ========== 中区：Workbench Controls ========== */}
-        {mode === "edit" && (
-          <div className="flex items-center justify-center gap-4">
-            {/* 撤销/重做 */}
-            <div className="flex items-center bg-neutral-100 rounded-lg p-1 gap-1">
-              <Tooltip title="撤销 (Ctrl+Z)">
-                <Button
-                  onClick={() => undo()}
-                  disabled={!past.length}
-                  size="small"
-                  icon={<UndoOutlined />}
-                  type="text"
-                />
-              </Tooltip>
-              <Tooltip title="重做 (Ctrl+Shift+Z)">
-                <Button
-                  onClick={() => redo()}
-                  disabled={!future.length}
-                  size="small"
-                  icon={<RedoOutlined />}
-                  type="text"
-                />
-              </Tooltip>
-            </div>
-            {/* 画布尺寸切换 */}
-            <Segmented
-              size="small"
-              value={canvasSize.mode}
-              onChange={(v) =>
-                setCanvasPreset(v as "desktop" | "tablet" | "mobile")
-              }
-              options={[
-                { value: "desktop", icon: <DesktopOutlined /> },
-                { value: "tablet", icon: <TabletOutlined /> },
-                { value: "mobile", icon: <MobileOutlined /> },
-              ]}
-            />
-
-            {/* 画布尺寸输入 - 仅在非 desktop 模式显示 */}
-            {canvasSize.mode !== "desktop" && (
-              <div className="flex items-center gap-1 text-sm">
-                <input
-                  type="number"
-                  value={
-                    typeof canvasSize.width === "number"
-                      ? canvasSize.width
-                      : 375
-                  }
-                  onChange={(e) => {
-                    const width = parseInt(e.target.value) || 375;
-                    setCanvasSize({ ...canvasSize, width });
-                  }}
-                  className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
-                  min={200}
-                  max={2000}
-                />
-                <span className="text-gray-400">×</span>
-                <input
-                  type="number"
-                  value={
-                    typeof canvasSize.height === "number"
-                      ? canvasSize.height
-                      : 667
-                  }
-                  onChange={(e) => {
-                    const height = parseInt(e.target.value) || 667;
-                    setCanvasSize({ ...canvasSize, height });
-                  }}
-                  className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
-                  min={200}
-                  max={3000}
-                />
+        <div className="flex items-center justify-center gap-4">
+          {mode === "edit" && (
+            <>
+              {/* 撤销/重做 */}
+              <div className="flex items-center bg-neutral-100 rounded-lg p-1 gap-1">
+                <Tooltip title="撤销 (Ctrl+Z)">
+                  <Button
+                    onClick={() => undo()}
+                    disabled={!past.length}
+                    size="small"
+                    icon={<UndoOutlined />}
+                    type="text"
+                  />
+                </Tooltip>
+                <Tooltip title="重做 (Ctrl+Shift+Z)">
+                  <Button
+                    onClick={() => redo()}
+                    disabled={!future.length}
+                    size="small"
+                    icon={<RedoOutlined />}
+                    type="text"
+                  />
+                </Tooltip>
               </div>
-            )}
-
-            {/* 快捷键指南 */}
-            <Popover
-              content={shortcutsContent}
-              title={
-                <Title level={5} className="mb-2!">
-                  快捷键指南
-                </Title>
-              }
-              trigger="click"
-              placement="bottom"
-            >
-              <Button
-                icon={<QuestionCircleOutlined />}
+              {/* 画布尺寸切换 */}
+              <Segmented
                 size="small"
-                type="text"
+                value={canvasSize.mode}
+                onChange={(v) =>
+                  setCanvasPreset(v as "desktop" | "tablet" | "mobile")
+                }
+                options={[
+                  { value: "desktop", icon: <DesktopOutlined /> },
+                  { value: "tablet", icon: <TabletOutlined /> },
+                  { value: "mobile", icon: <MobileOutlined /> },
+                ]}
               />
-            </Popover>
-          </div>
-        )}
+
+              {/* 画布尺寸输入 - 仅在非 desktop 模式显示 */}
+              {canvasSize.mode !== "desktop" && (
+                <div className="flex items-center gap-1 text-sm">
+                  <input
+                    type="number"
+                    value={
+                      typeof canvasSize.width === "number"
+                        ? canvasSize.width
+                        : 375
+                    }
+                    onChange={(e) => {
+                      const width = parseInt(e.target.value) || 375;
+                      setCanvasSize({ ...canvasSize, width });
+                    }}
+                    className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                    min={200}
+                    max={2000}
+                  />
+                  <span className="text-gray-400">×</span>
+                  <input
+                    type="number"
+                    value={
+                      typeof canvasSize.height === "number"
+                        ? canvasSize.height
+                        : 667
+                    }
+                    onChange={(e) => {
+                      const height = parseInt(e.target.value) || 667;
+                      setCanvasSize({ ...canvasSize, height });
+                    }}
+                    className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                    min={200}
+                    max={3000}
+                  />
+                </div>
+              )}
+
+              {/* 快捷键指南 */}
+              <Popover
+                content={shortcutsContent}
+                title={
+                  <Title level={5} className="mb-2!">
+                    快捷键指南
+                  </Title>
+                }
+                trigger="click"
+                placement="bottom"
+              >
+                <Button
+                  icon={<QuestionCircleOutlined />}
+                  size="small"
+                  type="text"
+                />
+              </Popover>
+            </>
+          )}
+        </div>
 
         {/* ========== 右区：Meta Actions ========== */}
         <Space size="middle">
