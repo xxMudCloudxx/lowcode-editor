@@ -43,6 +43,7 @@ function SelectedMask({
     height: 0,
     labelTop: 0,
     labelLeft: 0,
+    labelFlipToRight: false, // 当标签会被左侧遮挡时，翻转到右侧
   });
 
   const { components, deleteComponent, pasteComponents } = useComponentsStore();
@@ -107,18 +108,27 @@ function SelectedMask({
       container.getBoundingClientRect();
 
     let labelTop = top - containerTop + container.scrollTop;
-    const labelLeft = left - containerLeft + width;
     if (labelTop <= 0) {
       labelTop += 20;
     }
 
+    // 计算组件左边缘相对于容器的位置
+    const componentLeft = left - containerLeft + container.scrollLeft;
+    // 标签工具栏宽度约 180px，如果组件左边缘距离容器左边缘不足 180px，则标签会被遮挡
+    const labelFlipToRight = componentLeft < 180;
+    // 根据是否翻转，设置标签的左侧位置
+    const labelLeft = labelFlipToRight
+      ? componentLeft // 组件左边缘
+      : componentLeft + width; // 组件右边缘
+
     setPosition({
       top: top - containerTop + container.scrollTop,
-      left: left - containerLeft + container.scrollLeft,
+      left: componentLeft,
       width,
       height,
       labelLeft,
       labelTop,
+      labelFlipToRight,
     });
   }
 
@@ -200,7 +210,10 @@ function SelectedMask({
           fontSize: "14px",
           zIndex: 13,
           display: !position.width || position.width < 10 ? "none" : "inline",
-          transform: "translate(-100%, -100%)",
+          // 正常：标签在组件右上角向左延伸；翻转后：标签在组件左上角向右延伸
+          transform: position.labelFlipToRight
+            ? "translate(0, -100%)" // 不水平偏移，只向上偏移
+            : "translate(-100%, -100%)", // 向左上偏移
         }}
       >
         <Space>
