@@ -34,7 +34,11 @@ const FormElement = ({ setting, ...restProps }: FormElementProps) => {
 
   if (type === "select") {
     // 将 value, onChange 等所有未知属性展开传递给 Select
-    return <Select options={options} {...restProps} />;
+    // 规范化 options：将 string[] 转换为 { label, value }[] 格式
+    const normalizedOptions = options?.map((opt) =>
+      typeof opt === "string" ? { label: opt, value: opt } : opt
+    );
+    return <Select options={normalizedOptions} {...restProps} />;
   } else if (type === "input") {
     return <Input {...restProps} />;
   } else if (type === "inputNumber") {
@@ -72,7 +76,13 @@ const OtherSetter = (props: OtherSetterProps) => {
         wrapperCol={{ span: 14 }}
       >
         {componentConfig[curComponent.name]?.styleSetter?.map((setter) => (
-          <Form.Item key={setter.name} name={setter.name} label={setter.label}>
+          <Form.Item
+            key={
+              Array.isArray(setter.name) ? setter.name.join(".") : setter.name
+            }
+            name={setter.name}
+            label={setter.label}
+          >
             <FormElement setting={setter} />
           </Form.Item>
         ))}

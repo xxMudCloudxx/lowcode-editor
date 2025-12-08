@@ -43,6 +43,7 @@ function SelectedMask({
     height: 0,
     labelTop: 0,
     labelLeft: 0,
+    labelFlipToRight: false, // 当标签会被左侧遮挡时，翻转到右侧
   });
 
   const { components, deleteComponent, pasteComponents } = useComponentsStore();
@@ -85,10 +86,12 @@ function SelectedMask({
   }, [containerClassName, componentId]);
 
   // 将定位逻辑放在 useLayoutEffect 中，确保在 DOM 更新之后、浏览器绘制之前执行
+  // 注意：不依赖 components 对象，因为 props/desc 等非结构性变化不应触发位置更新
+  // 只在 componentId 变化或撤销/重做时更新位置
   useLayoutEffect(() => {
     updatePosition();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentId, components, past, future]);
+  }, [componentId, past, future]);
 
   /**
    * 计算并更新遮罩层的位置和大小
@@ -99,9 +102,7 @@ function SelectedMask({
     const container = document.querySelector(`.${containerClassName}`);
     if (!container) return;
 
-    const node = document.querySelector(
-      `[data-component-id="${componentId}"]`
-    );
+    const node = document.querySelector(`[data-component-id="${componentId}"]`);
     if (!node) return;
 
     const { top, left, width, height } = node.getBoundingClientRect();
@@ -109,18 +110,27 @@ function SelectedMask({
       container.getBoundingClientRect();
 
     let labelTop = top - containerTop + container.scrollTop;
-    const labelLeft = left - containerLeft + width;
     if (labelTop <= 0) {
       labelTop += 20;
     }
 
+    // 计算组件左边缘相对于容器的位置
+    const componentLeft = left - containerLeft + container.scrollLeft;
+    // 标签工具栏宽度约 180px，如果组件左边缘距离容器左边缘不足 180px，则标签会被遮挡
+    const labelFlipToRight = componentLeft < 180;
+    // 根据是否翻转，设置标签的左侧位置
+    const labelLeft = labelFlipToRight
+      ? componentLeft // 组件左边缘
+      : componentLeft + width; // 组件右边缘
+
     setPosition({
       top: top - containerTop + container.scrollTop,
-      left: left - containerLeft + container.scrollLeft,
+      left: componentLeft,
       width,
       height,
       labelLeft,
       labelTop,
+      labelFlipToRight,
     });
   }
 
@@ -182,7 +192,7 @@ function SelectedMask({
           position: "absolute",
           left: position.left,
           top: position.top,
-          backgroundColor: "rgba(0, 0, 255, 0.1)",
+          backgroundColor: "rgba(0, 0, 255, 0.05)",
           border: "1px dashed blue",
           pointerEvents: "none",
           width: position.width,
@@ -202,7 +212,10 @@ function SelectedMask({
           fontSize: "14px",
           zIndex: 13,
           display: !position.width || position.width < 10 ? "none" : "inline",
-          transform: "translate(-100%, -100%)",
+          // 正常：标签在组件右上角向左延伸；翻转后：标签在组件左上角向右延伸
+          transform: position.labelFlipToRight
+            ? "translate(0, -100%)" // 不水平偏移，只向上偏移
+            : "translate(-100%, -100%)", // 向左上偏移
         }}
       >
         <Space>
@@ -301,4 +314,3 @@ function buildClipboardTree(
 }
 
 export default SelectedMask;
-

@@ -1,14 +1,38 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Button/meta.tsx
+ * @description Button 组件协议配置
+ *
+ * 使用新的 ComponentProtocol 格式，包含：
+ * - 身份层：name, desc, category
+ * - 渲染层：component, defaultProps
+ * - 编辑层：editor, setter, events
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_GENERAL } from "../../containerTypes";
 
-export default {
+const ButtonProtocol: ComponentProtocol = {
+  // ===== 身份层 =====
   name: "Button",
   desc: "按钮",
   category: "基础",
+
+  // ===== 渲染层 =====
+  component: lazy(() => import("./index")),
   defaultProps: {
     type: "primary",
     text: "按钮",
   },
+
+  // ===== 编辑层 =====
+  editor: {
+    isContainer: false,
+    parentTypes: PT_GENERAL,
+    // 编辑时点击不触发按钮，只选中
+    interactiveInEditor: false,
+    display: "inline-block",
+  },
+
   setter: [
     {
       name: "type",
@@ -41,27 +65,11 @@ export default {
     },
     { name: "text", label: "文本", type: "input" },
   ],
-  styleSetter: [
-    // {
-    //   name: "width",
-    //   label: "宽度",
-    //   type: "inputNumber",
-    // },
-    // {
-    //   name: "height",
-    //   label: "高度",
-    //   type: "inputNumber",
-    // },
-  ],
+
   events: [
-    {
-      name: "onClick",
-      label: "点击事件",
-    },
-    {
-      name: "onDoubleClick",
-      label: "双击事件",
-    },
+    { name: "onClick", label: "点击事件" },
+    { name: "onDoubleClick", label: "双击事件" },
   ],
-  parentTypes: PT_GENERAL,
-} as Omit<ComponentConfig, "dev" | "prod">; // 使用 Omit 排除 dev 和 prod
+};
+
+export default ButtonProtocol;

@@ -1,4 +1,12 @@
 // src/editor/components/Setting/ComponentAttr/index.tsx
+/**
+ * 组件属性设置面板
+ *
+ * 布局特点：
+ * - 所有项目采用水平表格式布局（标签左 + 控件右）
+ * - 标签列固定宽度(80px)，控件列填满剩余空间，保证对齐
+ * - 紧凑间距，高信息密度
+ */
 
 import { Form, Input } from "antd";
 import { useMemo } from "react";
@@ -15,11 +23,10 @@ import { useComponentAttrForm } from "../../../hooks/useComponentAttrForm";
 import FormItem from "antd/es/form/FormItem";
 
 export function ComponentAttr() {
-  const { components } = useComponentsStore();
+  const { components, updateComponentDesc } = useComponentsStore();
   const curComponentId = useUIStore((s) => s.curComponentId);
   const { componentConfig } = useComponentConfigStore();
 
-  // 在 UI 层按需派生当前选中组件
   const curComponent = useMemo<Component | null>(
     () =>
       curComponentId != null
@@ -28,7 +35,6 @@ export function ComponentAttr() {
     [curComponentId, components]
   );
 
-  // 调用 Hook，获取表单实例和事件处理逻辑
   const { form, handleValuesChange } = useComponentAttrForm(curComponent);
 
   const meta = useMemo(
@@ -42,33 +48,94 @@ export function ComponentAttr() {
     <Form
       form={form}
       onValuesChange={handleValuesChange}
-      labelCol={{ span: 6 }}
-      wrapperCol={{ span: 18 }}
-      className="overflow-y-auto h-full w-[90%] absolute overscroll-y-contain pb-90"
+      size="small"
+      className="h-full w-full pb-24 overflow-y-auto custom-scrollbar"
     >
-      {/* 固定的只读信息 */}
-      <FormItem label="组件id">
-        <Input value={curComponent.id} disabled />
-      </FormItem>
-      <FormItem label="组件描述">
-        <Input value={curComponent.desc} disabled />
-      </FormItem>
+      {/* 基本信息分组 */}
+      <div className="px-3 py-2 bg-neutral-50 text-neutral-500 text-xs font-medium border-b border-neutral-100">
+        基本
+      </div>
 
-      {/* 根据组件“蓝图”中的 setter 配置，动态生成表单项 */}
-      {meta.setter?.map((setter) => {
-        const valuePropName = getValuePropNameFor(setter.type);
-        return (
-          <FormItem
-            key={setter.name}
-            name={setter.name}
-            label={setter.label}
-            valuePropName={valuePropName}
-          >
-            {/* 调用独立的渲染器组件 */}
-            <FormElementRenderer setting={setter} />
-          </FormItem>
-        );
-      })}
+      <div className="px-3 py-2">
+        {/* 组件 ID */}
+        <div className="flex items-center min-h-8 mb-1">
+          <span className="text-neutral-500 text-sm shrink-0 w-20">组件ID</span>
+          <div className="flex-1 min-w-0">
+            <Input
+              value={curComponent.id}
+              disabled
+              variant="borderless"
+              className="text-neutral-400"
+            />
+          </div>
+        </div>
+
+        {/* 组件名 */}
+        <div className="flex items-center min-h-8 mb-1">
+          <span className="text-neutral-600 text-sm shrink-0 w-20">组件名</span>
+          <div className="flex-1 min-w-0">
+            <Input
+              value={curComponent.name}
+              disabled
+              variant="borderless"
+              className="text-neutral-600"
+            />
+          </div>
+        </div>
+
+        {/* 组件描述 - 可编辑，会更新大纲树节点名称 */}
+        <div className="flex items-center min-h-8 mb-1">
+          <span className="text-neutral-600 text-sm shrink-0 w-20">
+            组件描述
+          </span>
+          <div className="flex-1 min-w-0">
+            <Input
+              value={curComponent.desc}
+              className="text-neutral-600"
+              onChange={(e) => {
+                if (curComponentId != null) {
+                  updateComponentDesc(curComponentId, e.target.value);
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 属性设置分组 */}
+      <div className="px-3 py-2 bg-neutral-50 text-neutral-500 text-xs font-medium border-y border-neutral-100">
+        属性
+      </div>
+
+      <div className="px-3 py-2">
+        {meta.setter?.map((setter) => {
+          const valuePropName = getValuePropNameFor(setter.type);
+          const itemKey = Array.isArray(setter.name)
+            ? setter.name.join(".")
+            : setter.name;
+
+          return (
+            <div key={itemKey} className="flex items-start min-h-8 mb-2">
+              {/* 标签列 - 固定宽度保证对齐 */}
+              <span className="text-neutral-600 text-sm shrink-0 w-20 leading-8">
+                {setter.label}
+              </span>
+
+              {/* 控件列 */}
+              <div className="flex-1 min-w-0">
+                <FormItem
+                  name={setter.name}
+                  valuePropName={valuePropName}
+                  className="mb-0"
+                  style={{ marginBottom: 0 }}
+                >
+                  <FormElementRenderer setting={setter} />
+                </FormItem>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </Form>
   );
 }

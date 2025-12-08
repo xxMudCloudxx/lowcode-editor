@@ -1,10 +1,17 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Dropdown/meta.tsx
+ * @description Dropdown 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_NAVIGATION } from "../../containerTypes";
 
-export default {
+const DropdownProtocol: ComponentProtocol = {
   name: "Dropdown",
   desc: "下拉菜单",
   category: "导航",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     menu: {
       items: [
@@ -15,14 +22,18 @@ export default {
     },
     buttonText: "鼠标悬浮",
   },
+
+  editor: {
+    isContainer: false,
+    parentTypes: PT_NAVIGATION,
+  },
+
   setter: [
     {
-      //  使用数组来指定要绑定的嵌套属性
       name: ["menu", "items"],
       label: "菜单项",
       type: "custom",
       component: "AttrListSetter",
-      // 为 ListSetter 提供 Dropdown items 的配置
       props: {
         itemProps: [
           { name: "key", label: "唯一标识" },
@@ -46,5 +57,6 @@ export default {
       ],
     },
   ],
-  parentTypes: PT_NAVIGATION,
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default DropdownProtocol;

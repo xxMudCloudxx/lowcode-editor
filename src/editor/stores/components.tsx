@@ -74,6 +74,11 @@ interface Action {
   ) => void;
 
   /**
+   * 更新组件描述（大纲树显示名称）
+   */
+  updateComponentDesc: (componentId: number, desc: string) => void;
+
+  /**
    * 重置组件树到初始状态
    */
   resetComponents: () => void;
@@ -229,6 +234,17 @@ const creator: StateCreator<ComponentsStore, [["zustand/immer", never]]> = (
       component.styles = replace
         ? { ...styles }
         : { ...component.styles, ...styles };
+    });
+  },
+
+  /**
+   * @description 更新指定组件的描述（大纲树节点名称）
+   */
+  updateComponentDesc: (componentId, desc) => {
+    set((state) => {
+      const component = state.components[componentId];
+      if (!component) return;
+      component.desc = desc;
     });
   },
 
@@ -553,50 +569,47 @@ const generateUniqueId = createIdGenerator();
  * 2. persist: 本地持久化
  */
 export const useComponentsStore = create<ComponentsStore>()(
-  persist(
-    undoMiddleware(creator),
-    {
-      name: "lowcode-store",
-      version: 2,
-      partialize: (state) => ({
-        components: state.components,
-        rootId: state.rootId,
-      }),
-      migrate: (persistedState: any) => {
-        // 没有任何持久化内容：退回初始状态
-        if (!persistedState || !persistedState.components) {
-          const initial = createInitialState();
-          return {
-            components: initial.components,
-            rootId: initial.rootId,
-          };
-        }
+  persist(undoMiddleware(creator), {
+    name: "lowcode-store",
+    version: 2,
+    partialize: (state) => ({
+      components: state.components,
+      rootId: state.rootId,
+    }),
+    migrate: (persistedState: any) => {
+      // 没有任何持久化内容：退回初始状态
+      if (!persistedState || !persistedState.components) {
+        const initial = createInitialState();
+        return {
+          components: initial.components,
+          rootId: initial.rootId,
+        };
+      }
 
-        // 旧版本：components 是数组（树）
-        if (Array.isArray(persistedState.components)) {
-          const { map, rootId } = normalizeComponentTree(
-            persistedState.components as ComponentTree[]
-          );
-          return {
-            ...persistedState,
-            components: map,
-            rootId: rootId ?? INITIAL_ROOT_ID,
-          };
-        }
+      // 旧版本：components 是数组（树）
+      if (Array.isArray(persistedState.components)) {
+        const { map, rootId } = normalizeComponentTree(
+          persistedState.components as ComponentTree[]
+        );
+        return {
+          ...persistedState,
+          components: map,
+          rootId: rootId ?? INITIAL_ROOT_ID,
+        };
+      }
 
-        // 新版本但 rootId 丢失
-        if (!persistedState.rootId) {
-          return {
-            ...persistedState,
-            rootId: INITIAL_ROOT_ID,
-          };
-        }
+      // 新版本但 rootId 丢失
+      if (!persistedState.rootId) {
+        return {
+          ...persistedState,
+          rootId: INITIAL_ROOT_ID,
+        };
+      }
 
-        // 默认保持原样
-        return persistedState;
-      },
-    }
-  )
+      // 默认保持原样
+      return persistedState;
+    },
+  })
 );
 
 // 向后兼容旧的拼写（避免一次性全量替换所有引用）

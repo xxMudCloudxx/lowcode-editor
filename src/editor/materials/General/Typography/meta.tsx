@@ -1,15 +1,32 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Typography/meta.tsx
+ * @description Typography 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_GENERAL } from "../../containerTypes";
 
-export default {
+const TypographyProtocol: ComponentProtocol = {
+  // ===== 身份层 =====
   name: "Typography",
   desc: "排版",
   category: "基础",
+
+  // ===== 渲染层 =====
+  component: lazy(() => import("./index")),
   defaultProps: {
     content: "默认文本",
     type: "Text",
   },
-  parentTypes: PT_GENERAL,
+
+  // ===== 编辑层 =====
+  editor: {
+    isContainer: false,
+    parentTypes: PT_GENERAL,
+    interactiveInEditor: false,
+    display: "block",
+  },
+
   setter: [
     {
       name: "content",
@@ -26,7 +43,6 @@ export default {
       name: "level",
       label: "标题等级",
       type: "select",
-      // 核心改动：将数字数组转换为对象数组
       options: [
         { label: "H1", value: 1 },
         { label: "H2", value: 2 },
@@ -51,4 +67,6 @@ export default {
       type: "switch",
     },
   ],
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default TypographyProtocol;

@@ -1,18 +1,33 @@
-// src/editor/materials/General/Icon/meta.tsx
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Icon/meta.tsx
+ * @description Icon 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_GENERAL } from "../../containerTypes";
 
-export default {
+const IconProtocol: ComponentProtocol = {
+  // ===== 身份层 =====
   name: "Icon",
   desc: "图标",
   category: "基础",
+
+  // ===== 渲染层 =====
+  component: lazy(() => import("./index")),
   defaultProps: {
     icon: "HomeOutlined",
     spin: false,
     rotate: 0,
   },
-  // 可以被放置在绝大多数容器中
-  parentTypes: PT_GENERAL,
+
+  // ===== 编辑层 =====
+  editor: {
+    isContainer: false,
+    parentTypes: PT_GENERAL,
+    interactiveInEditor: false,
+    display: "inline",
+  },
+
   setter: [
     {
       name: "icon",
@@ -40,4 +55,6 @@ export default {
       type: "inputNumber",
     },
   ],
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default IconProtocol;

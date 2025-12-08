@@ -44,8 +44,15 @@ interface HistoryAction {
   clear: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
+  /** 设置是否正在应用补丁（供 undo/redo 调用） */
   setApplyingPatches: (value: boolean) => void;
+  /** 设置是否正在应用远程补丁（供 WebSocket handler 调用） */
   setApplyingRemotePatch: (value: boolean) => void;
+  /**
+   * 应用来自远程协同者的补丁
+   * 会设置 isApplyingRemotePatch = true，确保不污染本地撤销栈
+   * @collaboration 未来 WebSocket 接收消息时调用此方法
+   */
   applyRemotePatch: (patches: Patch[]) => Promise<void>;
 }
 
@@ -84,10 +91,20 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
 
         set((state) => ({
           past: [...state.past, { patches, inversePatches }],
-          future: [],
+          future: [], // 新操作会清空 future
         }));
       },
 
+      /**
+       * 应用来自远程协同者的补丁
+       * 确保不会进入本地撤销栈
+       *
+       * @example
+       * // WebSocket 消息处理
+       * socket.on('remote_patch', (patches) => {
+       *   useHistoryStore.getState().applyRemotePatch(patches);
+       * });
+       */
       applyRemotePatch: async (patches) => {
         if (patches.length === 0) return;
 
@@ -124,6 +141,7 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
         try {
           const useComponentsStore = await getComponentsStore();
           useComponentsStore.setState((state) => {
+            // 只对 components 和 rootId 应用补丁
             const currentData = {
               components: state.components,
               rootId: state.rootId,
@@ -139,6 +157,7 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
             };
           });
 
+          // 更新历史栈
           set({
             past: newPast,
             future: [lastPatchGroup, ...future],

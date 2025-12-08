@@ -1,10 +1,17 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Menu/meta.tsx
+ * @description Menu 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_NAVIGATION } from "../../containerTypes";
 
-export default {
+const MenuProtocol: ComponentProtocol = {
   name: "Menu",
   desc: "导航菜单",
   category: "导航",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     mode: "horizontal",
     items: [
@@ -13,20 +20,23 @@ export default {
       { key: "app", label: "导航三" },
     ],
   },
+
+  editor: {
+    isContainer: false,
+    parentTypes: PT_NAVIGATION,
+  },
+
   setter: [
     {
       name: "items",
       label: "菜单项",
       type: "custom",
       component: "AttrListSetter",
-      // 为 AttrListSetter 提供它需要的配置
       props: {
-        // 定义每一项有两个字段：key 和 label
         itemProps: [
           { name: "key", label: "唯一标识" },
           { name: "label", label: "菜单名" },
         ],
-        // 定义新增一项时的默认数据结构
         defaultItem: { key: "new-item", label: "新菜单" },
       },
     },
@@ -37,5 +47,6 @@ export default {
       options: ["vertical", "horizontal", "inline"],
     },
   ],
-  parentTypes: PT_NAVIGATION,
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default MenuProtocol;

@@ -15,6 +15,7 @@ import {
   Dropdown,
   Avatar,
   Tooltip,
+  Segmented,
   type MenuProps,
 } from "antd";
 import {
@@ -24,8 +25,12 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   CodeOutlined,
-  MoreOutlined,
   UserOutlined,
+  ClearOutlined,
+  DeleteOutlined,
+  DesktopOutlined,
+  TabletOutlined,
+  MobileOutlined,
 } from "@ant-design/icons";
 
 const { Text, Title } = Typography;
@@ -97,11 +102,15 @@ export function Header() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<IGeneratedFile[]>([]);
-  // TODO: 实现画布切换功能
-  // const [canvasSize, setCanvasSize] = useState<"desktop" | "mobile">("desktop");
-
   const { resetComponents } = useComponentsStore();
-  const { mode, setMode, setCurComponentId } = useUIStore();
+  const {
+    mode,
+    setMode,
+    setCurComponentId,
+    canvasSize,
+    setCanvasSize,
+    setCanvasPreset,
+  } = useUIStore();
   const { undo, redo, clear, past, future } = useHistoryStore();
 
   const handleReset = () => {
@@ -139,37 +148,37 @@ export function Header() {
     }
   };
 
-  // 更多菜单（危险操作折叠）
-  const moreMenuItems: MenuProps["items"] = [
-    {
-      key: "reset-history",
-      label: (
-        <Popconfirm
-          title="确认重置历史记录？"
-          description="此操作将清空所有撤销/重做历史，且无法恢复。"
-          onConfirm={clear}
-          okText="确认"
-          cancelText="取消"
-        >
-          <span className="text-red-500">重置历史记录</span>
-        </Popconfirm>
-      ),
-    },
-    {
-      key: "reset-canvas",
-      label: (
-        <Popconfirm
-          title="确认清空画布？"
-          description="此操作将清空所有组件，且无法撤销。"
-          onConfirm={handleReset}
-          okText="确认"
-          cancelText="取消"
-        >
-          <span className="text-red-500">清空画布</span>
-        </Popconfirm>
-      ),
-    },
-  ];
+  // // 更多菜单（危险操作折叠）
+  // const moreMenuItems: MenuProps["items"] = [
+  //   {
+  //     key: "reset-history",
+  //     label: (
+  //       <Popconfirm
+  //         title="确认重置历史记录？"
+  //         description="此操作将清空所有撤销/重做历史，且无法恢复。"
+  //         onConfirm={clear}
+  //         okText="确认"
+  //         cancelText="取消"
+  //       >
+  //         <span className="text-red-500">重置历史记录</span>
+  //       </Popconfirm>
+  //     ),
+  //   },
+  //   {
+  //     key: "reset-canvas",
+  //     label: (
+  //       <Popconfirm
+  //         title="确认清空画布？"
+  //         description="此操作将清空所有组件，且无法撤销。"
+  //         onConfirm={handleReset}
+  //         okText="确认"
+  //         cancelText="取消"
+  //       >
+  //         <span className="text-red-500">清空画布</span>
+  //       </Popconfirm>
+  //     ),
+  //   },
+  // ];
 
   // 用户菜单
   const userMenuItems: MenuProps["items"] = [
@@ -181,7 +190,8 @@ export function Header() {
 
   return (
     <div className="w-full h-full">
-      <div className="h-full flex justify-between items-center">
+      {/* 使用 CSS Grid 实现三区布局，中间真正居中 */}
+      <div className="h-full grid grid-cols-[auto_1fr_auto] items-center">
         {/* ========== 左区：Brand & Context ========== */}
         <div className="flex items-center gap-3">
           <svg
@@ -207,7 +217,7 @@ export function Header() {
 
         {/* ========== 中区：Workbench Controls ========== */}
         {mode === "edit" && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center gap-4">
             {/* 撤销/重做 */}
             <div className="flex items-center bg-neutral-100 rounded-lg p-1 gap-1">
               <Tooltip title="撤销 (Ctrl+Z)">
@@ -229,18 +239,56 @@ export function Header() {
                 />
               </Tooltip>
             </div>
-
             {/* 画布尺寸切换 */}
-            {/* TODO: 实现画布切换功能 */}
-            {/* <Segmented
+            <Segmented
               size="small"
-              value={canvasSize}
-              onChange={(v) => setCanvasSize(v as "desktop" | "mobile")}
+              value={canvasSize.mode}
+              onChange={(v) =>
+                setCanvasPreset(v as "desktop" | "tablet" | "mobile")
+              }
               options={[
                 { value: "desktop", icon: <DesktopOutlined /> },
+                { value: "tablet", icon: <TabletOutlined /> },
                 { value: "mobile", icon: <MobileOutlined /> },
               ]}
-            /> */}
+            />
+
+            {/* 画布尺寸输入 - 仅在非 desktop 模式显示 */}
+            {canvasSize.mode !== "desktop" && (
+              <div className="flex items-center gap-1 text-sm">
+                <input
+                  type="number"
+                  value={
+                    typeof canvasSize.width === "number"
+                      ? canvasSize.width
+                      : 375
+                  }
+                  onChange={(e) => {
+                    const width = parseInt(e.target.value) || 375;
+                    setCanvasSize({ ...canvasSize, width });
+                  }}
+                  className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                  min={200}
+                  max={2000}
+                />
+                <span className="text-gray-400">×</span>
+                <input
+                  type="number"
+                  value={
+                    typeof canvasSize.height === "number"
+                      ? canvasSize.height
+                      : 667
+                  }
+                  onChange={(e) => {
+                    const height = parseInt(e.target.value) || 667;
+                    setCanvasSize({ ...canvasSize, height });
+                  }}
+                  className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                  min={200}
+                  max={3000}
+                />
+              </div>
+            )}
 
             {/* 快捷键指南 */}
             <Popover
@@ -266,10 +314,34 @@ export function Header() {
         <Space size="middle">
           {mode === "edit" && (
             <>
-              {/* 更多菜单 */}
-              <Dropdown menu={{ items: moreMenuItems }} placement="bottomRight">
-                <Button icon={<MoreOutlined />} size="middle" />
-              </Dropdown>
+              {/* 重置按钮组 */}
+              <div className="flex gap-2">
+                <Popconfirm
+                  title="确认重置历史记录？"
+                  description="此操作将清空所有撤销/重做历史，且无法恢复。"
+                  onConfirm={clear}
+                  okText="确认重置"
+                  cancelText="取消"
+                  placement="bottomRight"
+                >
+                  <Button size="middle" icon={<ClearOutlined />} danger>
+                    重置历史
+                  </Button>
+                </Popconfirm>
+
+                <Popconfirm
+                  title="确认重置画布？"
+                  description="此操作将清空所有组件，且无法撤销。"
+                  onConfirm={handleReset}
+                  okText="确认重置"
+                  cancelText="取消"
+                  placement="bottomRight"
+                >
+                  <Button size="middle" icon={<DeleteOutlined />} danger>
+                    重置画布
+                  </Button>
+                </Popconfirm>
+              </div>
               {/* 出码 */}
               <Button
                 onClick={handleOpenCodePreview}

@@ -1,15 +1,26 @@
-// src/editor/materials/Navigation/TabPane/meta.tsx
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file TabPane/meta.tsx
+ * @description TabPane 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 
-export default {
+const TabPaneProtocol: ComponentProtocol = {
   name: "TabPane",
   desc: "标签项",
   category: "导航",
+
+  component: lazy(() => import("./index")),
   defaultProps: {
     tab: "标签项",
   },
-  // 关键：声明自己只能是 Tabs 的子组件
-  parentTypes: ["Tabs"],
+
+  editor: {
+    isContainer: true,
+    // TabPane 只能放在 Tabs 内
+    parentTypes: ["Tabs"],
+  },
+
   setter: [
     {
       name: "tab",
@@ -17,4 +28,6 @@ export default {
       type: "input",
     },
   ],
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default TabPaneProtocol;

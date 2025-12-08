@@ -1,18 +1,34 @@
-import type { ComponentConfig } from "../../../stores/component-config";
+/**
+ * @file Space/meta.tsx
+ * @description Space 组件协议配置
+ */
+import { lazy } from "react";
+import type { ComponentProtocol } from "../../../types/component-protocol";
 import { PT_LAYOUT } from "../../containerTypes";
 
-export default {
+const SpaceProtocol: ComponentProtocol = {
+  // ===== 身份层 =====
   name: "Space",
   desc: "间距",
   category: "布局",
+
+  // ===== 渲染层 =====
+  component: lazy(() => import("./index")),
   defaultProps: {
     direction: "horizontal",
     size: "small",
     align: "center",
     wrap: false,
   },
-  // Space 组件自身也是一个容器，可以放置在其他布局容器中
-  parentTypes: PT_LAYOUT,
+
+  // ===== 编辑层 =====
+  editor: {
+    isContainer: true,
+    parentTypes: PT_LAYOUT,
+    interactiveInEditor: false,
+    display: "inline-block",
+  },
+
   setter: [
     {
       name: "direction",
@@ -47,4 +63,6 @@ export default {
       type: "switch",
     },
   ],
-} as Omit<ComponentConfig, "dev" | "prod">;
+};
+
+export default SpaceProtocol;
