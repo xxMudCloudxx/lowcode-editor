@@ -285,3 +285,30 @@ body {
 .edit-area [data-component-type="Table"]:empty::before {
   content: "拖拽表格列到这里";
 }
+
+/*
+ * AI 按钮加载中的辉光/脉冲效果
+ * 对应 Header.tsx 中的 "ai-loading-button" 类
+ */
+.ai-loading-button.ant-btn {
+  border-color: #1677ff;
+  box-shadow: 0 0 8px rgba(22, 119, 255, 0.6);
+  animation: ai-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+/* * 如果不想要 AntD 默认的旋转 icon，可以隐藏它
+ * .ai-loading-button.ant-btn .ant-btn-icon {
+ * display: none;
+ * }
+ */
+
+@keyframes ai-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
