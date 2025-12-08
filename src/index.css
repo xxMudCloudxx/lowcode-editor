@@ -1,21 +1,91 @@
 @import "tailwindcss";
 
-/* 现代简约风格全局样式 */
-:root {
-  --primary-color: #6366f1;
-  --primary-hover: #4f46e5;
-  --secondary-color: #f8fafc;
-  --accent-color: #10b981;
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --border-color: #e5e7eb;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+/**
+ * Tailwind CSS v4 主题配置
+ * 
+ * ⚠️ 技术债务：这些值必须与 src/theme/tokens.ts 手动同步。
+ * 如果在 tokens.ts 中修改颜色，请同时更新此文件。
+ */
+@theme {
+  /* 字体 */
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* =========================================================================
+     中性色板 - 温暖的石灰色 (50-900)
+     ========================================================================= */
+  --color-neutral-50: #fafaf9;
+  --color-neutral-100: #f5f5f4;
+  --color-neutral-200: #e7e5e4;
+  --color-neutral-300: #d6d3d1;
+  --color-neutral-400: #a8a29e;
+  --color-neutral-500: #78716c;
+  --color-neutral-600: #57534e;
+  --color-neutral-700: #44403c;
+  --color-neutral-800: #292524;
+  --color-neutral-900: #1c1917;
+
+  /* =========================================================================
+     强调色板 - 精致的石板蓝 (50-900)
+     ========================================================================= */
+  --color-accent-50: #f8fafc;
+  --color-accent-100: #f1f5f9;
+  --color-accent-200: #e2e8f0;
+  --color-accent-300: #cbd5e1;
+  --color-accent-400: #94a3b8;
+  --color-accent-500: #64748b;
+  --color-accent-600: #475569;
+  --color-accent-700: #334155;
+  --color-accent-800: #1e293b;
+  --color-accent-900: #0f172a;
+
+  /* =========================================================================
+     状态颜色 (柔和配色以保持高级感)
+     ========================================================================= */
+  --color-success-50: #f0fdf4;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+
+  /* =========================================================================
+     语义化别名
+     ========================================================================= */
+  --color-surface: var(--color-neutral-50);
+  --color-surface-elevated: #ffffff;
+  --color-surface-sunken: var(--color-neutral-100);
+
+  --color-text-primary: var(--color-neutral-900);
+  --color-text-secondary: var(--color-neutral-500);
+  --color-text-tertiary: var(--color-neutral-400);
+
+  --color-border: var(--color-neutral-200);
+  --color-border-subtle: var(--color-neutral-100);
+  --color-border-focus: var(--color-accent-500);
+
+  /* =========================================================================
+     阴影
+     ========================================================================= */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-md:
+    0 2px 4px -1px rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
   --shadow-lg:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+    0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+
+  /* =========================================================================
+     圆角
+     ========================================================================= */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 }
 
 /* =============================================================================
@@ -27,15 +97,9 @@
 }
 
 body {
-  font-family:
-    "Inter",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Roboto",
-    sans-serif;
-  color: var(--text-primary);
-  background-color: #fafbfc;
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -228,30 +292,67 @@ body {
   outline-offset: -2px;
 }
 
-.ant-input,
-.ant-input-number,
-.ant-select-selector {
-  @apply rounded-lg border-gray-200 hover:border-indigo-300 focus:border-indigo-500;
-  @apply transition-all duration-200;
+/* Card 和 Table 拖拽悬停特权规则：用 ::after 覆盖层 */
+.edit-area [data-component-type="Card"][data-is-over="true"],
+.edit-area [data-component-type="Table"][data-is-over="true"] {
+  outline: none !important;
 }
 
-.ant-input:focus,
-.ant-input-number:focus,
-.ant-select-focused .ant-select-selector {
-  @apply shadow-sm;
+.edit-area [data-component-type="Card"][data-is-over="true"]::after,
+.edit-area [data-component-type="Table"][data-is-over="true"]::after {
+  border: 2px solid var(--ant-color-primary, #1677ff);
+  z-index: 999;
 }
 
-/* 卡片和面板阴影 */
-.custom-shadow {
-  box-shadow:
-    0 1px 3px 0 rgba(0, 0, 0, 0.1),
-    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+/* 容器悬浮时高亮边框（排除 Card 和 Table，上面已用 ::after 处理） */
+.edit-area [data-component-type="Container"]:hover,
+.edit-area [data-component-type="Grid"]:hover,
+.edit-area [data-component-type="GridColumn"]:hover,
+.edit-area [data-component-type="Space"]:hover,
+.edit-area [data-component-type="List"]:hover,
+.edit-area [data-component-type="Form"]:hover,
+.edit-area [data-component-type="ListItem"]:hover {
+  outline-color: var(--color-accent-400);
 }
 
-.custom-shadow-lg {
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+/* 空容器占位提示 - 使用 :empty 伪类 */
+.edit-area [data-component-type="Container"]:empty::before,
+.edit-area [data-component-type="Grid"]:empty::before,
+.edit-area [data-component-type="GridColumn"]:empty::before,
+.edit-area [data-component-type="Form"]:empty::before,
+.edit-area [data-component-type="ListItem"]:empty::before,
+.edit-area [data-component-type="List"]:empty::before,
+.edit-area [data-component-type="Card"]:empty::before,
+.edit-area [data-component-type="Table"]:empty::before,
+.edit-area [data-component-type="Space"]:empty::before {
+  content: "拖拽组件到这里";
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 60px;
+  color: var(--color-neutral-400);
+  font-size: 16px;
+  background-color: var(--color-neutral-100);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* GridColumn 和 Space 特殊提示 */
+.edit-area [data-component-type="GridColumn"]:empty::before {
+  content: "拖拽组件到此列";
+}
+
+.edit-area [data-component-type="Grid"]:empty::before {
+  content: "拖拽栅格列到这里";
+}
+
+.edit-area [data-component-type="Space"]:empty::before {
+  content: "拖拽组件到间距内";
+}
+.edit-area [data-component-type="Container"]:empty::before {
+  content: "拖拽组件到容器内";
 }
 
 /* Card、List、ListItem 需要选择 Antd 组件内部元素，因为 wrapper div 内始终有内容 */
@@ -284,31 +385,4 @@ body {
 
 .edit-area [data-component-type="Table"]:empty::before {
   content: "拖拽表格列到这里";
-}
-
-/*
- * AI 按钮加载中的辉光/脉冲效果
- * 对应 Header.tsx 中的 "ai-loading-button" 类
- */
-.ai-loading-button.ant-btn {
-  border-color: #1677ff;
-  box-shadow: 0 0 8px rgba(22, 119, 255, 0.6);
-  animation: ai-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
-}
-/* * 如果不想要 AntD 默认的旋转 icon，可以隐藏它
- * .ai-loading-button.ant-btn .ant-btn-icon {
- * display: none;
- * }
- */
-
-@keyframes ai-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
 }
