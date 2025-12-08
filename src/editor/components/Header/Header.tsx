@@ -15,6 +15,7 @@ import {
   Dropdown,
   Avatar,
   Tooltip,
+  Segmented,
   type MenuProps,
 } from "antd";
 import {
@@ -27,6 +28,9 @@ import {
   UserOutlined,
   ClearOutlined,
   DeleteOutlined,
+  DesktopOutlined,
+  TabletOutlined,
+  MobileOutlined,
 } from "@ant-design/icons";
 
 const { Text, Title } = Typography;
@@ -98,11 +102,15 @@ export function Header() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<IGeneratedFile[]>([]);
-  // TODO: 实现画布切换功能
-  // const [canvasSize, setCanvasSize] = useState<"desktop" | "mobile">("desktop");
-
   const { resetComponents } = useComponentsStore();
-  const { mode, setMode, setCurComponentId } = useUIStore();
+  const {
+    mode,
+    setMode,
+    setCurComponentId,
+    canvasSize,
+    setCanvasSize,
+    setCanvasPreset,
+  } = useUIStore();
   const { undo, redo, clear, past, future } = useHistoryStore();
 
   const handleReset = () => {
@@ -182,7 +190,8 @@ export function Header() {
 
   return (
     <div className="w-full h-full">
-      <div className="h-full flex justify-between items-center">
+      {/* 使用 CSS Grid 实现三区布局，中间真正居中 */}
+      <div className="h-full grid grid-cols-[auto_1fr_auto] items-center">
         {/* ========== 左区：Brand & Context ========== */}
         <div className="flex items-center gap-3">
           <svg
@@ -208,7 +217,7 @@ export function Header() {
 
         {/* ========== 中区：Workbench Controls ========== */}
         {mode === "edit" && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center gap-4">
             {/* 撤销/重做 */}
             <div className="flex items-center bg-neutral-100 rounded-lg p-1 gap-1">
               <Tooltip title="撤销 (Ctrl+Z)">
@@ -230,18 +239,56 @@ export function Header() {
                 />
               </Tooltip>
             </div>
-
             {/* 画布尺寸切换 */}
-            {/* TODO: 实现画布切换功能 */}
-            {/* <Segmented
+            <Segmented
               size="small"
-              value={canvasSize}
-              onChange={(v) => setCanvasSize(v as "desktop" | "mobile")}
+              value={canvasSize.mode}
+              onChange={(v) =>
+                setCanvasPreset(v as "desktop" | "tablet" | "mobile")
+              }
               options={[
                 { value: "desktop", icon: <DesktopOutlined /> },
+                { value: "tablet", icon: <TabletOutlined /> },
                 { value: "mobile", icon: <MobileOutlined /> },
               ]}
-            /> */}
+            />
+
+            {/* 画布尺寸输入 - 仅在非 desktop 模式显示 */}
+            {canvasSize.mode !== "desktop" && (
+              <div className="flex items-center gap-1 text-sm">
+                <input
+                  type="number"
+                  value={
+                    typeof canvasSize.width === "number"
+                      ? canvasSize.width
+                      : 375
+                  }
+                  onChange={(e) => {
+                    const width = parseInt(e.target.value) || 375;
+                    setCanvasSize({ ...canvasSize, width });
+                  }}
+                  className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                  min={200}
+                  max={2000}
+                />
+                <span className="text-gray-400">×</span>
+                <input
+                  type="number"
+                  value={
+                    typeof canvasSize.height === "number"
+                      ? canvasSize.height
+                      : 667
+                  }
+                  onChange={(e) => {
+                    const height = parseInt(e.target.value) || 667;
+                    setCanvasSize({ ...canvasSize, height });
+                  }}
+                  className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                  min={200}
+                  max={3000}
+                />
+              </div>
+            )}
 
             {/* 快捷键指南 */}
             <Popover

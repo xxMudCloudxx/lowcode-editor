@@ -7,10 +7,10 @@
  * - 通过事件委托（捕获阶段）处理画布的鼠标悬浮和点击事件
  * - 条件性地渲染 HoverMask / SelectedMask 来提供视觉反馈
  *
- * v2 架构变更：
- * - 使用 onClickCapture 替代 onClick，确保编辑器选中逻辑最高优先级
- * - 支持新协议格式（ComponentProtocol）和旧格式（dev/prod）
- * - 使用 DraggableNode 注入拖拽能力，零额外 DOM
+ * v3 架构变更：
+ * - 新增 Simulator Container 隔离画布尺寸
+ * - 解决组件 100% 宽高参照视口而非画布的问题
+ * - 支持切换 desktop/mobile 画布模式
  *
  * @module Components/EditArea
  */
@@ -21,6 +21,7 @@ import React, {
   useState,
   useCallback,
   type MouseEventHandler,
+  type CSSProperties,
 } from "react";
 import { ConfigProvider } from "antd";
 import { useComponentsStore } from "../../stores/components";
@@ -34,11 +35,56 @@ import { isProtocolConfig } from "../../types/component-protocol";
 
 export function EditArea() {
   const { components, rootId } = useComponentsStore();
-  const { curComponentId, setCurComponentId } = useUIStore();
+  const { curComponentId, setCurComponentId, canvasSize } = useUIStore();
   const { componentConfig } = useComponentConfigStore();
 
   // 使用 state 追踪当前鼠标悬浮在其上的组件 ID
   const [hoverComponentId, setHoverComponentId] = useState<number>();
+
+  /**
+   * 计算 Simulator Container 的样式
+   * 根据 canvasSize 模式决定固定尺寸或自适应
+   */
+  const simulatorStyle = useMemo<CSSProperties>(() => {
+    const isDesktop = canvasSize.mode === "desktop";
+
+    return {
+      width: isDesktop ? "100%" : canvasSize.width,
+      height: isDesktop ? "100%" : canvasSize.height,
+      minHeight: isDesktop ? "100%" : undefined,
+      // 建立新的定位上下文（包含块）
+      position: "relative",
+      // 隔离溢出内容
+      overflow: isDesktop ? "visible" : "hidden",
+      // 视觉样式
+      backgroundColor: "#fff",
+      boxShadow: isDesktop ? "none" : "0 4px 24px rgba(0, 0, 0, 0.12)",
+      borderRadius: isDesktop ? 0 : 8,
+      // 过渡动画：只对视觉属性进行过渡，避免 width/height 过渡导致的奇怪效果
+      transition: "box-shadow 0.3s ease, border-radius 0.3s ease",
+    };
+  }, [canvasSize]);
+
+  /**
+   * 工作台样式：根据画布模式调整布局
+   */
+  const workspaceStyle = useMemo<CSSProperties>(() => {
+    const isDesktop = canvasSize.mode === "desktop";
+
+    return {
+      display: "flex",
+      justifyContent: isDesktop ? "stretch" : "center",
+      alignItems: isDesktop ? "stretch" : "flex-start",
+      padding: isDesktop ? 0 : 24,
+      // 背景
+      background: `
+        radial-gradient(circle at 25px 25px, rgba(156, 163, 175, 0.08) 2px, transparent 0),
+        radial-gradient(circle at 75px 75px, rgba(156, 163, 175, 0.04) 2px, transparent 0),
+        linear-gradient(135deg, #fefefe 0%, #f9fafb 100%)
+      `,
+      backgroundSize: "50px 50px, 100px 100px, 100% 100%",
+    };
+  }, [canvasSize]);
 
   /**
    * @description 鼠标悬浮事件处理器。
@@ -214,49 +260,54 @@ export function EditArea() {
 
   return (
     <div
-      className="h-full edit-area overflow-y-auto relative p-6 overflow-x-auto w-full"
-      onMouseOver={handleMouseOver}
-      onMouseLeave={() => {
-        setHoverComponentId(undefined);
-      }}
-      // 关键：使用捕获阶段处理点击事件，确保编辑器选中逻辑最高优先级
-      onClickCapture={handleClickCapture}
-      style={{
-        background: `
-          radial-gradient(circle at 25px 25px, rgba(156, 163, 175, 0.08) 2px, transparent 0),
-          radial-gradient(circle at 75px 75px, rgba(156, 163, 175, 0.04) 2px, transparent 0),
-          linear-gradient(135deg, #fefefe 0%, #f9fafb 100%)
-        `,
-        backgroundSize: "50px 50px, 100px 100px, 100% 100%",
-      }}
+      className="h-full edit-area overflow-auto relative"
+      style={workspaceStyle}
     >
-      {/* 重置 Antd 主题为默认，让画布中的组件使用默认颜色 */}
-      <ConfigProvider theme={{ inherit: false }}>
-        {componentTree}
-      </ConfigProvider>
+      {/* ========== Simulator Container ========== */}
+      {/* 
+        这是"模拟器"容器，建立新的包含块（Containing Block）
+        - 所有子组件的 width: 100% 将相对于此容器计算
+        - position: absolute 的组件将相对于此容器定位
+        - overflow: hidden 防止内容溢出
+      */}
+      <div
+        className="simulator-container"
+        style={simulatorStyle}
+        onMouseOver={handleMouseOver}
+        onMouseLeave={() => {
+          setHoverComponentId(undefined);
+        }}
+        // 关键：使用捕获阶段处理点击事件，确保编辑器选中逻辑最高优先级
+        onClickCapture={handleClickCapture}
+      >
+        {/* 重置 Antd 主题为默认，让画布中的组件使用默认颜色 */}
+        <ConfigProvider theme={{ inherit: false }}>
+          {componentTree}
+        </ConfigProvider>
 
-      {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
-      {hoverComponentId &&
-        hoverComponentId !== curComponentId &&
-        hoverComponentId !== 1 && (
-          <HoverMask
+        {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
+        {hoverComponentId &&
+          hoverComponentId !== curComponentId &&
+          hoverComponentId !== 1 && (
+            <HoverMask
+              portalWrapperClassName="portal-wrapper"
+              containerClassName="simulator-container"
+              componentId={hoverComponentId}
+            />
+          )}
+
+        {/* 当有选中组件时，显示选中遮罩 */}
+        {curComponentId && (
+          <SelectedMask
             portalWrapperClassName="portal-wrapper"
-            containerClassName="edit-area"
-            componentId={hoverComponentId}
+            containerClassName="simulator-container"
+            componentId={curComponentId}
           />
         )}
 
-      {/* 当有选中组件时，显示选中遮罩 */}
-      {curComponentId && (
-        <SelectedMask
-          portalWrapperClassName="portal-wrapper"
-          containerClassName="edit-area"
-          componentId={curComponentId}
-        />
-      )}
-
-      {/* 这个 div 是给 HoverMask 和 SelectedMask 的 React Portal 准备的目标挂载点 */}
-      <div className="portal-wrapper"></div>
+        {/* 这个 div 是给 HoverMask 和 SelectedMask 的 React Portal 准备的目标挂载点 */}
+        <div className="portal-wrapper"></div>
+      </div>
     </div>
   );
 }
