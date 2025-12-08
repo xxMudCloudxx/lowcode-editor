@@ -117,8 +117,11 @@ export function Preview() {
       // 判断配置格式：新协议 vs 旧格式
       const isProtocol = isProtocolConfig(config);
 
-      // 新协议用 component，旧格式用 prod
-      const ComponentToRender = isProtocol ? config.component : config.prod;
+      // 新协议优先使用 runtimeComponent（如 Modal），否则用 component
+      // 旧格式使用 prod
+      const ComponentToRender = isProtocol
+        ? config.runtimeComponent || config.component
+        : config.prod;
 
       if (!ComponentToRender) return null;
 

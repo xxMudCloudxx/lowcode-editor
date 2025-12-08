@@ -121,14 +121,32 @@ export interface ComponentProtocol {
 
   // ===== 渲染层 =====
   /**
-   * 组件实现（纯净 UI 组件）
+   * 组件实现（编辑器用）
    *
-   * @important 必须使用 forwardRef 包裹，否则拖拽功能失效！
-   *
-   * 可以是 lazy 加载的组件
+   * - 用于编辑器画布渲染
+   * - 必须使用 forwardRef 包裹，否则拖拽功能失效！
+   * - 可以是 lazy 加载的组件
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: ComponentType<any> | React.LazyExoticComponent<ComponentType<any>>;
+
+  /**
+   * 运行时组件实现（可选）
+   *
+   * - 用于预览/生产环境渲染
+   * - 仅当编辑态和运行态表现形式不同时使用（如 Modal）
+   * - 如果不指定，预览模式会使用 component
+   *
+   * @example
+   * // Modal: 编辑态是平铺容器，运行态是真正的弹窗
+   * component: lazy(() => import("./index")),  // 编辑态
+   * runtimeComponent: lazy(() => import("./runtime")),  // 运行态
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  runtimeComponent?:
+    | ComponentType<any>
+    | React.LazyExoticComponent<ComponentType<any>>;
+
   /** 默认 props */
   defaultProps: Record<string, unknown>;
 

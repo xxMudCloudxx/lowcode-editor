@@ -37,8 +37,11 @@ const CellScopeContext = createContext<CellScope | null>(null);
  * Hook: 获取当前单元格的数据作用域
  * 供表达式引擎或 MaterialWrapper 使用，实现数据绑定
  */
-export const useCellScope = <T = Record<string, unknown>,>() =>
-  useContext(CellScopeContext) as CellScope<T> | null;
+export function useCellScope<
+  T = Record<string, unknown>,
+>(): CellScope<T> | null {
+  return useContext(CellScopeContext) as CellScope<T> | null;
+}
 
 // 继承 Antd Table Props，但排除我们接管的 columns 和 dataSource
 export interface TableProps
@@ -93,7 +96,7 @@ const Table = forwardRef<HTMLDivElement, TableProps>(
 
           const scope: CellScope = { text, record, rowIndex };
 
-          // ✅ Context 自动透传给所有子孙节点，无需手动 clone
+          // Context 自动透传给所有子孙节点，无需手动 clone
           return (
             <CellScopeContext.Provider value={scope}>
               {cellTemplate}
