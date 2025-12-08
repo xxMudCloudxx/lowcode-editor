@@ -86,10 +86,12 @@ function SelectedMask({
   }, [containerClassName, componentId]);
 
   // 将定位逻辑放在 useLayoutEffect 中，确保在 DOM 更新之后、浏览器绘制之前执行
+  // 注意：不依赖 components 对象，因为 props/desc 等非结构性变化不应触发位置更新
+  // 只在 componentId 变化或撤销/重做时更新位置
   useLayoutEffect(() => {
     updatePosition();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentId, components, past, future]);
+  }, [componentId, past, future]);
 
   /**
    * 计算并更新遮罩层的位置和大小

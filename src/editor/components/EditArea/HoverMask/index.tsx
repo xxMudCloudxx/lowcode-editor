@@ -41,11 +41,12 @@ function HoverMask({
     setPortalEl(el);
   }, [portalWrapperClassName]);
 
-  // 当目标组件 ID 或组件树发生变化时，重新计算位置
+  // 当目标组件 ID 变化时，重新计算位置
+  // 注意：不依赖 components 对象，因为 props/desc 变化不应触发位置更新
   useEffect(() => {
     updatePosition();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentId, components]);
+  }, [componentId]);
 
   /**
    * @description 核心函数：计算并更新遮罩层的位置和大小。
