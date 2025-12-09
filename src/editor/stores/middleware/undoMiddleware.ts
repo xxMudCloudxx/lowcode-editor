@@ -10,14 +10,125 @@
  * - isApplyingRemotePatch: 远程协同补丁不记录到本地历史
  *
  * 这确保了用户 A 撤销时，不会撤销用户 B 的操作。
+ *
+ * @patchEmitter
+ * 支持通过 setPatchEmitter 注册回调函数，当有新的本地变更时：
+ * 1. 生成 RFC 6902 JSON Patch 格式的补丁
+ * 2. 调用注册的回调函数（例如发送到 WebSocket）
+ * 3. 开发模式下自动输出日志，便于测试
  */
 
 import type { StateCreator } from "zustand";
+import type { Patch } from "immer";
 import { produceWithPatches, enablePatches } from "immer";
 import { useHistoryStore } from "../historyStore";
 
 // 启用 Immer patches 功能
 enablePatches();
+
+/**
+ * RFC 6902 JSON Patch 操作类型
+ * @see https://datatracker.ietf.org/doc/html/rfc6902
+ */
+export interface JSONPatchOp {
+  op: "add" | "remove" | "replace" | "move" | "copy" | "test";
+  path: string;
+  value?: unknown;
+  from?: string;
+}
+
+/**
+ * Patch 发射器回调类型
+ * 当本地操作产生 patches 时调用
+ */
+export type PatchEmitter = (patches: JSONPatchOp[]) => void;
+
+/**
+ * 全局 patch 发射器实例
+ * 可通过 setPatchEmitter 设置
+ */
+let patchEmitter: PatchEmitter | null = null;
+
+/**
+ * 开发日志开关
+ * Vite 使用 import.meta.env.DEV 检测开发模式
+ */
+let enablePatchLogging = import.meta.env?.DEV ?? true;
+
+/**
+ * 设置 Patch 发射器回调
+ * 用于 WebSocket 集成，当本地操作产生 patches 时调用此回调
+ *
+ * @example
+ * ```typescript
+ * // 在 WebSocket 连接建立后设置
+ * import { setPatchEmitter } from './undoMiddleware';
+ *
+ * const socket = new WebSocket('ws://...');
+ * setPatchEmitter((patches) => {
+ *   socket.send(JSON.stringify({
+ *     type: 'op-patch',
+ *     senderId: 'user_xxx',
+ *     payload: { patches, version: currentVersion },
+ *     ts: Date.now()
+ *   }));
+ * });
+ *
+ * // 断开连接时清除
+ * setPatchEmitter(null);
+ * ```
+ */
+export function setPatchEmitter(emitter: PatchEmitter | null): void {
+  patchEmitter = emitter;
+}
+
+/**
+ * 启用/禁用 Patch 日志输出
+ * @param enable 是否启用日志
+ */
+export function setEnablePatchLogging(enable: boolean): void {
+  enablePatchLogging = enable;
+}
+
+/**
+ * 将 Immer Patch 转换为 RFC 6902 JSON Patch 格式
+ *
+ * Immer Patch 格式:
+ * { op: 'replace', path: ['components', 1, 'desc'], value: '新描述' }
+ *
+ * RFC 6902 JSON Patch 格式:
+ * { op: 'replace', path: '/components/1/desc', value: '新描述' }
+ *
+ * @param immerPatches Immer 生成的 patches 数组
+ * @returns RFC 6902 格式的 JSON Patch 数组
+ */
+export function convertToJSONPatch(immerPatches: Patch[]): JSONPatchOp[] {
+  return immerPatches.map((patch) => {
+    // 将 path 数组转换为 JSON Pointer 格式
+    // ['components', 1, 'desc'] -> '/components/1/desc'
+    const path =
+      "/" +
+      patch.path
+        .map((segment) => {
+          // RFC 6901: JSON Pointer 需要对 '~' 和 '/' 进行转义
+          const str = String(segment);
+          return str.replace(/~/g, "~0").replace(/\//g, "~1");
+        })
+        .join("/");
+
+    const result: JSONPatchOp = {
+      op: patch.op as JSONPatchOp["op"],
+      path,
+    };
+
+    // add 和 replace 需要 value
+    if (patch.op === "add" || patch.op === "replace") {
+      result.value = patch.value;
+    }
+
+    return result;
+  });
+}
 
 /**
  * undoMiddleware: 包装 set 函数，捕获 immer 变更并记录 patches
@@ -65,7 +176,29 @@ export const undoMiddleware =
             !isApplyingPatches && !isApplyingRemotePatch && patches.length > 0;
 
           if (shouldRecordPatch) {
+            // 记录到历史栈（用于 undo/redo）
             useHistoryStore.getState().addPatch(patches, inversePatches);
+
+            // 转换为 RFC 6902 JSON Patch 格式
+            const jsonPatches = convertToJSONPatch(patches);
+
+            // 开发模式下输出日志（便于前端团队测试）
+            if (enablePatchLogging) {
+              console.log(
+                "%c[Patch] RFC 6902 JSON Patch:",
+                "color: #4CAF50; font-weight: bold;"
+              );
+              console.log(JSON.stringify(jsonPatches, null, 2));
+            }
+
+            // 调用 patch 发射器（例如发送到 WebSocket）
+            if (patchEmitter) {
+              try {
+                patchEmitter(jsonPatches);
+              } catch (error) {
+                console.error("[undoMiddleware] Error in patchEmitter:", error);
+              }
+            }
           }
 
           // 使用原始 set 应用新状态
