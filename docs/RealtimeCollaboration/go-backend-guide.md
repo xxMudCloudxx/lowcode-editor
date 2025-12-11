@@ -1,1097 +1,523 @@
-# Go 后端实时协同开发指南 (v3.0)
+# 📘 LowCode Backend Architecture Guide (v2.0)
 
-> **v3.0 重大更新**: 根据架构评审反馈，修正了数据结构设计、状态同步机制和安全鉴权方案。
->
-> 本文档基于您的低代码编辑器前端代码库，专门为 **Zustand + Immer + JSON Patch (RFC 6902)** 技术栈设计的 Go 后端架构指南。
+> **最后更新**: 2024-12-11  
+> **状态**: 架构稳定，Code Review 通过  
+> **参考**: [architecture-decisions.md](./architecture-decisions.md)
+
+---
 
 ## 目录
 
-1. [核心数据结构对应](#一-核心数据结构对应) ⚠️ **v3.0 重写**
-2. [后端 Patch 应用逻辑](#二-后端-patch-应用逻辑) 🆕 **v3.0 新增**
-3. [WebSocket 核心实现](#三-websocket-核心实现) ⚠️ **v3.0 重写**
-4. [安全的 WebSocket 鉴权](#四-安全的-websocket-鉴权) 🆕 **v3.0 新增**
-5. [前后端对接方案](#五-前后端对接方案)
-6. [Gin API 路由设计](#六-gin-api-路由设计)
-7. [并发处理深度解析](#七-并发处理深度解析)
+1. [全局架构蓝图](#1-全局架构蓝图-global-architecture-blueprint)
+2. [静态架构：分层设计](#2-静态架构分层设计-layered-design)
+3. [动态架构：协同引擎](#3-动态架构协同引擎-collaboration-engine)
+4. [扩展性架构：集群部署](#4-扩展性架构集群部署-scaling-strategy)
+5. [工程规范与构建](#5-工程规范与构建-engineering--build)
+6. [开发阶段规划](#6-开发阶段规划-development-phases)
 
 ---
 
-## 一、核心数据结构对应
+## 1. 全局架构蓝图 (Global Architecture Blueprint)
 
-### 1.1 前端 Schema 结构分析
+本系统不仅仅是一个简单的 CRUD 后端，而是一个**混合态（Hybrid State）系统**。它同时具备：
 
-根据您的 `src/editor/interface.ts` 和 `src/editor/stores/components.tsx`，前端使用 **范式化 Map 结构**：
+- **无状态（Stateless）** 的 REST API 能力
+- **有状态（Stateful）** 的实时协同能力
 
-```typescript
-// 前端 Store State (components.tsx L25-36)
-interface State {
-  components: Record<number, Component>; // 扁平化 Map
-  rootId: number; // 根节点 ID
-}
+### 1.1 系统层级鸟瞰图
 
-// 单个组件节点 (interface.ts L15-25)
-interface Component {
-  id: number;
-  name: string;
-  props: any;
-  desc: string;
-  parentId?: number | null;
-  children?: number[]; // 只存子节点 ID
-  styles?: CSSProperties;
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         负载均衡 (Nginx / K8s Ingress)                │
+│                    hash $arg_pageId consistent                       │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+              ▼                             ▼
+┌─────────────────────────┐   ┌─────────────────────────┐
+│     HTTP 流量 (REST)     │   │   WebSocket 流量 (WS)    │
+│       无状态服务          │   │      有状态服务           │
+└─────────────────────────┘   └─────────────────────────┘
+              │                             │
+              ▼                             ▼
+┌─────────────────────────┐   ┌─────────────────────────┐
+│      Gin Router         │   │      Hub (Actor)        │
+│      Controller         │   │      Room (State)       │
+│      UseCase            │   │      Client (Conn)      │
+│      Repository         │   │                         │
+└─────────────────────────┘   └─────────────────────────┘
+              │                             │
+              └──────────────┬──────────────┘
+                             │
+                             ▼
+              ┌─────────────────────────────┐
+              │   PostgreSQL (JSONB)        │
+              │   Clerk (Auth)              │
+              └─────────────────────────────┘
+```
+
+**流量分流规则：**
+
+| 协议          | 用途                 | 架构模式           | 状态管理        |
+| ------------- | -------------------- | ------------------ | --------------- |
+| **HTTP**      | 页面管理、预览、鉴权 | Clean Architecture | 数据库          |
+| **WebSocket** | 协同编辑、光标同步   | Actor Model        | 内存 (Hub/Room) |
+
+### 1.2 核心设计哲学
+
+#### 双数据源仲裁 (Dual Source of Truth)
+
+```
+┌────────────────────────────────────────────────────────┐
+│                     GetPage 读取逻辑                    │
+├────────────────────────────────────────────────────────┤
+│  1. 先问 Hub (内存) → Room 存在？                       │
+│     ├── 是 → 返回内存快照 (热数据，最新)                 │
+│     └── 否 → 继续下一步                                 │
+│  2. 读数据库 (冷数据，已持久化)                          │
+└────────────────────────────────────────────────────────┘
+```
+
+| 数据类型   | 存储位置        | 权威性       | 场景             |
+| ---------- | --------------- | ------------ | ---------------- |
+| **热数据** | 内存 (Hub/Room) | 协同的权威   | 正在被编辑的页面 |
+| **冷数据** | PostgreSQL      | 持久化的权威 | 无人编辑的页面   |
+
+#### 洋葱架构 (Onion Architecture)
+
+```
+          ┌─────────────────────────────────────┐
+          │          Drivers (外部)              │
+          │  Gin, WebSocket, PostgreSQL, Clerk  │
+          ├─────────────────────────────────────┤
+          │     Interface Adapters (适配器)      │
+          │   Controller, Repository 实现       │
+          ├─────────────────────────────────────┤
+          │        Use Cases (业务逻辑)          │
+          │         PageUseCase                 │
+          ├─────────────────────────────────────┤
+          │      Domain (核心领域)               │
+          │  Entity, Repository 接口, Errors    │
+          └─────────────────────────────────────┘
+                         ↑
+               依赖方向：外 → 内
+```
+
+**关键规则**：
+
+- `domain/` 不依赖任何外部框架（Gin, GORM）
+- 外部依赖通过接口注入 (Dependency Injection)
+- 业务逻辑与基础设施解耦
+
+#### 零信任输入 (Zero Trust Input)
+
+> **ADR-002**: WebSocket 连接建立前必须经过严格的数据库存在性校验，杜绝"幽灵页面"。
+
+```go
+// 错误做法 ❌
+state = []byte(`{"rootId":1,"components":{}}`)  // 伪造默认值
+
+// 正确做法 ✅
+if page == nil {
+    return nil, 0, domainErrors.ErrPageNotFound  // 拒绝连接
 }
 ```
 
-### 1.2 Go 后端数据结构定义 (v3.0 重写)
+---
 
-> [!CAUTION]
-> **v2.0 的致命问题**
->
-> 使用 `map[string]interface{}` 存储 Props/Styles 会导致：
->
-> 1. **性能问题**: Go 需要反射解析嵌套结构，开销极大
-> 2. **Patch 应用困难**: 无法用标准库处理 `/props/style/color` 这样的路径
->
-> **v3.0 核心改变**: 后端 **不解析** 业务字段，只 **存储和转发** JSON 字节流。
+## 2. 静态架构：分层设计 (Layered Design)
+
+采用严格的**单向依赖原则**：`Drivers → Interface Adapters → Use Cases → Domain`
+
+### 2.1 项目目录结构
+
+```
+lowercode-go-server/
+├── cmd/
+│   └── main.go                     # 应用入口 + 优雅停机
+├── api/                            # API 层 (接收请求)
+│   ├── controller/
+│   │   ├── page_controller.go      # HTTP 页面接口
+│   │   ├── ws_handler.go           # WebSocket 升级处理
+│   │   └── webhook_controller.go   # Clerk Webhook
+│   ├── route/
+│   │   └── route.go                # 路由配置
+│   └── middleware/
+│       └── clerk_auth.go           # Clerk JWT 双模式鉴权
+├── bootstrap/                      # 启动配置 (依赖注入)
+│   ├── database.go                 # PostgreSQL 连接
+│   └── env.go                      # 环境变量
+├── domain/                         # 领域层 (核心定义) ⭐
+│   ├── entity/
+│   │   ├── page.go                 # Page 实体 + PageSchema + NewDefaultSchema
+│   │   └── user.go                 # User 实体 (Clerk 同步)
+│   ├── repository/
+│   │   └── page_repository.go      # Repository 接口
+│   └── errors/
+│       └── errors.go               # 统一领域错误定义
+├── usecase/                        # 用例层 (业务逻辑)
+│   └── page_usecase.go             # 注入 Hub，解决数据双源
+├── repository/                     # Repository 实现
+│   └── page_repository.go          # GORM 实现 + 乐观锁
+└── internal/ws/                    # WebSocket 服务 (Actor Model)
+    ├── hub.go                      # 房间管理 (生死仲裁者)
+    ├── room.go                     # 状态管理 + 定时刷盘
+    ├── client.go                   # 客户端连接 + 心跳
+    └── message.go                  # 消息协议 + 错误码
+```
+
+### 2.2 Domain Layer (核心域)
+
+**职责**: 定义数据结构 (Entity) 和行为接口 (Repository Interface)
+
+**关键文件**:
+
+| 文件                                   | 职责                                                |
+| -------------------------------------- | --------------------------------------------------- |
+| `domain/entity/page.go`                | `PageSchema` 结构体 + `NewDefaultSchema()` 工厂方法 |
+| `domain/repository/page_repository.go` | 数据访问接口定义                                    |
+| `domain/errors/errors.go`              | 统一的业务错误定义                                  |
+
+**规则**: 纯 Go 代码，无 `github.com/gin-gonic/gin` 或数据库驱动
 
 ```go
-// internal/model/schema.go
+// domain/entity/page.go - 强类型 Schema 定义
 
-package model
-
-import (
-    "encoding/json"
-    "time"
-)
-
-// Component 对应前端的 Component interface
-// ⚠️ 关键变化：使用 json.RawMessage 存储 Props 和 Styles
-type Component struct {
-    ID       int             `json:"id"`
-    Name     string          `json:"name"`
-    Desc     string          `json:"desc"`
-    ParentID *int            `json:"parentId,omitempty"`
-    Children []int           `json:"children,omitempty"`
-
-    // ✅ json.RawMessage: Go 不解析内部结构，直接当字节数组存取
-    // 性能好 + 完美支持任意嵌套结构
-    Props  json.RawMessage `json:"props,omitempty"`
-    Styles json.RawMessage `json:"styles,omitempty"`
-}
-
-// PageSchema 对应前端的完整页面快照
 type PageSchema struct {
-    RootID     int                  `json:"rootId"`
+    RootID     int64                `json:"rootId"`
     Components map[string]Component `json:"components"`
 }
 
-// Page 数据库模型（GORM）
-type Page struct {
-    ID        uint      `gorm:"primaryKey"`
-    PageID    string    `gorm:"uniqueIndex;size:64"`
-    Schema    string    `gorm:"type:jsonb"`           // PostgreSQL JSONB
-    Version   int64     `gorm:"default:0"`            // 乐观锁版本号
-    CreatedAt time.Time
-    UpdatedAt time.Time
+func NewDefaultSchema() *PageSchema {
+    return &PageSchema{
+        RootID: 1,
+        Components: map[string]Component{
+            "1": {ID: 1, Name: "Page", Desc: "页面根节点"},
+        },
+    }
 }
 ```
-
-> [!TIP]
-> **json.RawMessage 的优势**
->
-> ```go
-> // 前端传来的 Props 可能是任意结构
-> props := `{"style":{"color":"red","fontSize":14},"onClick":{"type":"navigate"}}`
->
-> // ❌ map[string]interface{} 需要反射解析每一层
-> // ✅ json.RawMessage 直接存储字节，零解析开销
-> component.Props = json.RawMessage(props)
-> ```
-
----
-
-## 二、后端 Patch 应用逻辑 (v3.0 新增)
-
-> [!IMPORTANT]
-> **v2.0 的致命遗漏：新用户加入问题**
->
-> 用户 A 和 B 已经产生了 500 个 Patch，此时用户 C 加入房间：
->
-> - ❌ 方案 A: 发送数据库老版本 → C 看到的与 A/B 不一致
-> - ❌ 方案 B: 发送老版本 + 500 个 Patch → C 的浏览器卡死
-> - ✅ **方案 C**: 后端内存维护"最新快照"，直接发给 C
-
-### 2.1 核心依赖：json-patch 库
-
-```bash
-go get github.com/evanphx/json-patch/v5
-```
-
-**这个库能做什么？**
 
 ```go
-import jsonpatch "github.com/evanphx/json-patch/v5"
+// domain/errors/errors.go - 统一错误定义
 
-// 原始 JSON (内存中的最新状态)
-original := []byte(`{"components":{"1":{"id":1,"name":"Page","props":{"title":"Hello"}}}}`)
-
-// 前端发来的 Patch (RFC 6902 格式)
-patchBytes := []byte(`[
-    {"op":"replace","path":"/components/1/props/title","value":"World"}
-]`)
-
-// 解析并应用 Patch
-patch, _ := jsonpatch.DecodePatch(patchBytes)
-modified, err := patch.Apply(original)
-
-// modified = `{"components":{"1":{"id":1,"name":"Page","props":{"title":"World"}}}}`
+var ErrPageNotFound = errors.New("page not found in database")
+var ErrOptimisticLock = errors.New("optimistic lock error")
 ```
 
-### 2.2 Room 结构体：维护实时状态
+### 2.3 UseCase Layer (业务逻辑层)
 
-> [!CAUTION]
-> **生产环境警告 #1：数据持久化的"真空期"风险**
->
-> 当前逻辑是"房间没人时才保存到数据库"。如果有人挂机不关浏览器，数据就一直只在内存里。
->
-> **灾难场景**: 服务器崩溃/重启 → 这几天产生的所有协同修改全部丢失！
->
-> **解决方案**: 定时刷盘 + 阈值刷盘（每 30 秒或每 50 个 Patch 刷一次）
+**职责**: 编排业务流程，连接 HTTP 和 WebSocket 世界的桥梁
+
+**关键文件**: `usecase/page_usecase.go`
+
+**核心逻辑**:
 
 ```go
-// internal/ws/room.go
-
-package ws
-
-import (
-    "fmt"
-    "log"
-    "sync"
-    "time"
-
-    jsonpatch "github.com/evanphx/json-patch/v5"
-)
-
-// Room 代表一个协同编辑房间
-// 核心职责：维护最新的页面状态快照
-type Room struct {
-    ID           string
-    CurrentState []byte            // 内存中的最新状态
-    Version      int64             // 乐观锁版本号
-    Clients      map[*Client]bool
-    mu           sync.RWMutex
-    LastActive   time.Time
-
-    // ✅ v3.1 新增：定时刷盘机制
-    lastPersistedVersion int64         // 上次持久化的版本
-    dirtyPatchCount      int           // 脏数据计数器
-    flushTicker          *time.Ticker  // 定时刷盘
-    stopFlush            chan struct{} // 停止信号
-    pageService          PageService   // 数据库服务
+// GetPage: 智能路由读取（解决观察者效应 ADR-003）
+func (uc *PageUseCase) GetPage(pageID string) (*entity.Page, error) {
+    // ⚠️ 使用 GetRoom 而非 GetOrCreateRoom，避免 HTTP GET 触发房间创建
+    if room := uc.hub.GetRoom(pageID); room != nil {
+        snapshot, version := room.GetSnapshot()
+        return &entity.Page{Schema: snapshot, Version: version}, nil
+    }
+    return uc.repo.GetByPageID(pageID)
 }
 
-// 刷盘配置
-const (
-    FlushInterval  = 30 * time.Second  // 每 30 秒刷一次
-    FlushThreshold = 50                // 每 50 个 Patch 刷一次
-)
-
-// NewRoom 创建新房间 + 启动定时刷盘
-func NewRoom(id string, initialState []byte, pageService PageService) *Room {
-    r := &Room{
-        ID:                   id,
-        CurrentState:         initialState,
-        Version:              1,
-        lastPersistedVersion: 1,
-        Clients:              make(map[*Client]bool),
-        LastActive:           time.Now(),
-        flushTicker:          time.NewTicker(FlushInterval),
-        stopFlush:            make(chan struct{}),
-        pageService:          pageService,
-    }
-
-    // 启动定时刷盘 Goroutine
-    go r.flushLoop()
-
-    return r
+// CreatePage: 使用强类型初始化（避免硬编码 JSON ADR-005）
+func (uc *PageUseCase) CreatePage(pageID, creatorID string) (*entity.Page, error) {
+    defaultSchema := entity.NewDefaultSchema()
+    schemaBytes, _ := defaultSchema.ToBytes()
+    // ...
 }
+```
 
-// flushLoop 定时刷盘循环
-func (r *Room) flushLoop() {
-    for {
-        select {
-        case <-r.flushTicker.C:
-            r.flushToDB("定时")
-        case <-r.stopFlush:
-            r.flushToDB("销毁前")
-            return
-        }
+### 2.4 Interface Layer (接口适配层)
+
+| 子层                                | 职责                                                        |
+| ----------------------------------- | ----------------------------------------------------------- |
+| **Repositories** (`repository/`)    | 实现 domain 定义的接口，处理 SQL 细节、乐观锁、JSONB 序列化 |
+| **Controllers** (`api/controller/`) | 解析 HTTP 请求，验证参数，调用 UseCase                      |
+
+```go
+// repository/page_repository.go - 乐观锁实现
+
+func (r *pageRepository) UpdateSchema(pageID string, schema []byte, oldVersion int64) error {
+    result := r.db.Model(&entity.Page{}).
+        Where("page_id = ? AND version = ?", pageID, oldVersion).
+        Updates(map[string]interface{}{
+            "schema":  string(schema),
+            "version": oldVersion + 1,
+        })
+
+    if result.RowsAffected == 0 {
+        return domainErrors.ErrOptimisticLock
     }
-}
-
-// flushToDB 将当前状态刷写到数据库
-func (r *Room) flushToDB(reason string) {
-    r.mu.RLock()
-    if r.Version == r.lastPersistedVersion {
-        r.mu.RUnlock()
-        return // 没有新修改
-    }
-
-    snapshot := make([]byte, len(r.CurrentState))
-    copy(snapshot, r.CurrentState)
-    version := r.Version
-    r.mu.RUnlock()
-
-    // 异步写入（不持有锁）
-    if err := r.pageService.SavePageState(r.ID, snapshot, version); err != nil {
-        log.Printf("[Room %s] ⚠️ %s刷盘失败: %v", r.ID, reason, err)
-        return
-    }
-
-    r.mu.Lock()
-    r.lastPersistedVersion = version
-    r.dirtyPatchCount = 0
-    r.mu.Unlock()
-
-    log.Printf("[Room %s] ✅ %s刷盘, 版本: %d", r.ID, reason, version)
-}
-
-// Stop 停止定时刷盘 (房间销毁时调用)
-func (r *Room) Stop() {
-    r.flushTicker.Stop()
-    close(r.stopFlush)
-}
-
-// ApplyPatch 应用 Patch 并更新内存状态
-func (r *Room) ApplyPatch(patchBytes []byte) error {
-    r.mu.Lock()
-    defer r.mu.Unlock()
-
-    patch, err := jsonpatch.DecodePatch(patchBytes)
-    if err != nil {
-        return fmt.Errorf("patch 解析失败: %w", err)
-    }
-
-    modified, err := patch.Apply(r.CurrentState)
-    if err != nil {
-        return fmt.Errorf("patch 应用失败: %w", err)
-    }
-
-    r.CurrentState = modified
-    r.Version++
-    r.LastActive = time.Now()
-    r.dirtyPatchCount++
-
-    // ✅ 超过阈值立即触发异步刷盘
-    if r.dirtyPatchCount >= FlushThreshold {
-        go r.flushToDB("阈值触发")
-    }
-
     return nil
 }
-
-// GetSnapshot 获取当前快照（用于新用户加入）
-func (r *Room) GetSnapshot() ([]byte, int64) {
-    r.mu.RLock()
-    defer r.mu.RUnlock()
-
-    snapshot := make([]byte, len(r.CurrentState))
-    copy(snapshot, r.CurrentState)
-
-    return snapshot, r.Version
-}
 ```
 
-### 2.3 新用户加入流程
+### 2.5 Infrastructure Layer (基础设施层)
 
-```mermaid
-sequenceDiagram
-    participant C as 用户 C (新加入)
-    participant Hub as Hub
-    participant Room as Room
-    participant DB as 数据库
-
-    C->>Hub: WebSocket 连接
-    Hub->>Hub: 查找 Room
-
-    alt Room 存在 (有人在编辑)
-        Hub->>Room: GetSnapshot()
-        Room-->>Hub: 最新状态 + 版本号
-    else Room 不存在 (C 是第一个)
-        Hub->>DB: 查询 Page
-        DB-->>Hub: 数据库快照
-        Hub->>Hub: 创建 Room
-    end
-
-    Hub->>C: sync 消息 (最新状态)
-    Note over C: C 获得的是实时状态，<br/>与 A/B 看到的完全一致
-```
-
-### 2.4 Patch 处理完整流程
-
-```go
-// client.go 中的 handleOpPatch 重写
-
-func (c *Client) handleOpPatch(message []byte) {
-    var wsMsg WSMessage
-    json.Unmarshal(message, &wsMsg)
-
-    var patchPayload struct {
-        Patches json.RawMessage `json:"patches"`  // RFC 6902 格式的 Patch 数组
-        Version int64           `json:"version"`
-    }
-    json.Unmarshal(wsMsg.Payload, &patchPayload)
-
-    // 1. 获取房间
-    room := c.Hub.GetRoom(c.RoomID)
-    if room == nil {
-        return
-    }
-
-    // 2. 版本冲突检测（乐观锁）
-    if patchPayload.Version != room.Version {
-        // 版本不一致，拒绝或尝试合并
-        c.sendError("版本冲突，请刷新")
-        return
-    }
-
-    // 3. ✅ 核心：应用 Patch 到内存状态
-    if err := room.ApplyPatch(patchPayload.Patches); err != nil {
-        log.Printf("[Client] Patch 应用失败: %v", err)
-        c.sendError(err.Error())
-        return
-    }
-
-    // 4. 广播给房间内其他人
-    c.Hub.Broadcast(c.RoomID, message, c)
-
-    log.Printf("[Client] ✅ 用户 [%s] Patch 已应用，新版本: %d",
-        c.UserInfo.UserName, room.Version)
-}
-```
+| 组件             | 技术选型                     |
+| ---------------- | ---------------------------- |
+| Web Framework    | Gin                          |
+| Database         | PostgreSQL + GORM            |
+| WebSocket Engine | Gorilla WebSocket + 自研 Hub |
+| Authentication   | Clerk JWT + Webhook          |
 
 ---
 
-## 三、WebSocket 核心实现 (v3.0 重写)
+## 3. 动态架构：协同引擎 (Collaboration Engine)
 
-### 3.1 消息协议定义
+这是系统的"心脏"，处理高并发的实时编辑。
+
+### 3.1 Actor 模型 (Hub & Rooms)
+
+不使用传统的锁机制来管理状态，而是采用**类 Actor 模型**：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                           Hub                                │
+│                     (生死仲裁者, 全局单例)                     │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  rooms map[string]*Room                              │    │
+│  │  idleRoom chan *Room  ← Room 空闲时发送销毁请求       │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  职责：                                                       │
+│  • GetRoom(): 只读获取，不创建（解决观察者效应）               │
+│  • GetOrCreateRoom(): 创建房间（验证 DB 存在性）              │
+│  • handleIdleRoom(): 双重检查后销毁房间                       │
+└─────────────────────────────────────────────────────────────┘
+                             │
+                             │ 管理多个
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                          Room                                │
+│                    (执行者, 每页面一个)                        │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  CurrentState []byte   ← 内存中的最新 Schema          │    │
+│  │  Version      int64    ← 乐观锁版本号                  │    │
+│  │  clients      map[*Client]bool                        │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  职责：                                                       │
+│  • ApplyPatch(): 应用 JSON Patch + Version++                │
+│  • Broadcast(): 广播给房间内所有 Client                       │
+│  • 定时/阈值刷盘到数据库                                       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 数据流转 (Data Flow)
+
+**场景：用户 A 编辑页面**
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ 1. Inbound                                                        │
+│    Client 发送 op-patch 消息                                       │
+│    {"type":"op-patch","payload":{"patches":[...],"version":10}}   │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ 2. Processing                                                     │
+│    消息进入 ws.Client 的 ReadPump                                  │
+│    ├── 版本检查: payload.version == room.Version?                  │
+│    ├── 应用 Patch: room.ApplyPatch(patches)                       │
+│    └── Version++                                                  │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ 3. Outbound                                                       │
+│    Room 将 Patch 广播给房间内所有 Client 的 send channel            │
+│    (阻塞时断开连接，保证消息不丢失)                                  │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ 4. Persistence (Async)                                            │
+│    Room 定期 (30s) 或达到阈值 (50 Patch) 时调用                     │
+│    Repository.UpdateSchema 落库                                   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 3.3 消息协议
 
 ```go
 // internal/ws/message.go
 
-package ws
-
-import "encoding/json"
-
-// MessageType 消息类型枚举
-type MessageType string
-
 const (
-    // 核心协同消息
-    TypeOpPatch    MessageType = "op-patch"      // 增量编辑补丁
-    TypeCursorMove MessageType = "cursor-move"   // 光标位置同步
-
-    // 系统消息
-    TypeUserJoin   MessageType = "user-join"     // 用户加入房间
-    TypeUserLeave  MessageType = "user-leave"    // 用户离开房间
-    TypeSync       MessageType = "sync"          // 全量同步（用于新用户加入）
-    TypeAck        MessageType = "ack"           // 确认消息
-    TypeError      MessageType = "error"         // 错误消息
+    TypeOpPatch    MessageType = "op-patch"     // 增量编辑补丁 (关键)
+    TypeCursorMove MessageType = "cursor-move"  // 光标位置 (非关键)
+    TypeUserJoin   MessageType = "user-join"    // 用户加入
+    TypeUserLeave  MessageType = "user-leave"   // 用户离开
+    TypeSync       MessageType = "sync"         // 全量同步
+    TypeError      MessageType = "error"        // 错误消息
 )
 
-// WSMessage 统一的 WebSocket 消息结构
-type WSMessage struct {
-    Type      MessageType     `json:"type"`
-    SenderID  string          `json:"senderId"`
-    Payload   json.RawMessage `json:"payload"`
-    Timestamp int64           `json:"ts"`
-}
-
-// SyncPayload sync 消息的 payload（新用户加入时发送）
-type SyncPayload struct {
-    Schema  json.RawMessage `json:"schema"`  // 最新的完整 Schema
-    Version int64           `json:"version"` // 当前版本号
-    Users   []UserInfo      `json:"users"`   // 房间内其他用户
-}
-
-// UserInfo 用户基础信息
-type UserInfo struct {
-    UserID   string `json:"userId"`
-    UserName string `json:"userName"`
-    Color    string `json:"color,omitempty"`
-}
-```
-
-### 3.2 Hub 房间管理器 (v3.0 重写)
-
-> [!WARNING]
-> **生产环境警告 #2：Hub 的单点压力**
->
-> 当前 Hub 是单 Goroutine 处理所有 `register/unregister/broadcast` 事件。
->
-> - **现状**: 几百个并发连接完全没问题
-> - **未来风险**: 10,000+ 并发连接时，Hub 的 `select` 循环会成为瓶颈
->
-> **解决方案 (未来)**: Sharded Hub（分片 Hub）
->
-> - `Hub[0]` 管理房间 ID 尾号为 0 的房间
-> - `Hub[1]` 管理尾号为 1 的房间
-> - 以此类推...
->
-> **当前阶段**: 保持简单，现有架构足够支撑 MVP。
-
-```go
-// internal/ws/hub.go
-
-package ws
-
-import (
-    "encoding/json"
-    "log"
-    "time"
+// 错误码定义
+const (
+    ErrVersionConflict ErrorCode = "VERSION_CONFLICT"
+    ErrPatchFailed     ErrorCode = "PATCH_FAILED"
+    ErrPageNotFound    ErrorCode = "PAGE_NOT_FOUND"
+    ErrInternalError   ErrorCode = "INTERNAL_ERROR"
 )
-
-// Hub 维护所有活跃房间和客户端连接
-type Hub struct {
-    // ✅ v3.0: 房间映射改为 map[string]*Room
-    // 每个 Room 维护自己的 CurrentState
-    rooms map[string]*Room
-
-    // Channel 事件通道
-    register   chan *Client
-    unregister chan *Client
-    broadcast  chan *BroadcastMessage
-
-    // 数据库服务（用于加载初始状态）
-    pageService PageService
-}
-
-// PageService 接口，用于数据库操作
-type PageService interface {
-    GetPageState(pageID string) ([]byte, int64, error)
-    SavePageState(pageID string, state []byte, version int64) error
-}
-
-// NewHub 创建 Hub 实例
-func NewHub(pageService PageService) *Hub {
-    return &Hub{
-        rooms:       make(map[string]*Room),
-        register:    make(chan *Client),
-        unregister:  make(chan *Client),
-        broadcast:   make(chan *BroadcastMessage, 256),
-        pageService: pageService,
-    }
-}
-
-// Run 启动 Hub 事件循环
-func (h *Hub) Run() {
-    log.Println("[Hub] 🚀 Hub 事件循环已启动")
-
-    for {
-        select {
-        case client := <-h.register:
-            h.handleRegister(client)
-
-        case client := <-h.unregister:
-            h.handleUnregister(client)
-
-        case msg := <-h.broadcast:
-            h.handleBroadcast(msg)
-        }
-    }
-}
-
-// handleRegister 处理客户端加入 (v3.0 重写)
-func (h *Hub) handleRegister(client *Client) {
-    roomID := client.RoomID
-
-    room, exists := h.rooms[roomID]
-    if !exists {
-        // 房间不存在，从数据库加载初始状态
-        initialState, version, err := h.pageService.GetPageState(roomID)
-        if err != nil {
-            log.Printf("[Hub] ⚠️ 加载页面失败: %v", err)
-            // 使用空状态
-            initialState = []byte(`{"rootId":1,"components":{}}`)
-            version = 1
-        }
-
-        room = NewRoom(roomID, initialState)
-        room.Version = version
-        h.rooms[roomID] = room
-        log.Printf("[Hub] 🏠 创建新房间: %s", roomID)
-    }
-
-    // 将客户端加入房间
-    room.Clients[client] = true
-    client.Room = room  // 客户端持有 Room 引用
-
-    log.Printf("[Hub] ✅ 用户 [%s] 加入房间 [%s]，当前人数: %d",
-        client.UserInfo.UserName, roomID, len(room.Clients))
-
-    // ✅ 核心：发送最新快照给新用户
-    h.sendSyncMessage(client, room)
-
-    // 广播用户加入消息
-    h.broadcastUserJoin(client, room)
-}
-
-// sendSyncMessage 发送全量同步消息给新用户
-func (h *Hub) sendSyncMessage(client *Client, room *Room) {
-    snapshot, version := room.GetSnapshot()
-
-    // 收集房间内其他用户信息
-    users := make([]UserInfo, 0)
-    for c := range room.Clients {
-        if c != client {
-            users = append(users, c.UserInfo)
-        }
-    }
-
-    syncPayload := SyncPayload{
-        Schema:  snapshot,
-        Version: version,
-        Users:   users,
-    }
-
-    payload, _ := json.Marshal(syncPayload)
-    msg := WSMessage{
-        Type:      TypeSync,
-        SenderID:  "server",
-        Payload:   payload,
-        Timestamp: time.Now().UnixMilli(),
-    }
-
-    data, _ := json.Marshal(msg)
-    client.send <- data
-
-    log.Printf("[Hub] 📤 已发送 Sync 消息给 [%s], 版本: %d",
-        client.UserInfo.UserName, version)
-}
-
-// handleUnregister 处理客户端离开
-func (h *Hub) handleUnregister(client *Client) {
-    room := client.Room
-    if room == nil {
-        return
-    }
-
-    if _, ok := room.Clients[client]; ok {
-        delete(room.Clients, client)
-        close(client.send)
-
-        log.Printf("[Hub] 🚪 用户 [%s] 离开房间 [%s]",
-            client.UserInfo.UserName, room.ID)
-
-        h.broadcastUserLeave(client, room)
-
-        // 房间空了，保存状态到数据库并清理
-        if len(room.Clients) == 0 {
-            snapshot, version := room.GetSnapshot()
-            if err := h.pageService.SavePageState(room.ID, snapshot, version); err != nil {
-                log.Printf("[Hub] ⚠️ 保存状态失败: %v", err)
-            }
-
-            delete(h.rooms, room.ID)
-            log.Printf("[Hub] 🗑️ 房间 [%s] 已保存并清理", room.ID)
-        }
-    }
-}
-
-// GetRoom 获取房间（供 Client 使用）
-func (h *Hub) GetRoom(roomID string) *Room {
-    return h.rooms[roomID]
-}
-
-// handleBroadcast 处理广播消息
-func (h *Hub) handleBroadcast(msg *BroadcastMessage) {
-    room := h.rooms[msg.RoomID]
-    if room == nil {
-        return
-    }
-
-    for client := range room.Clients {
-        if msg.Sender != nil && client == msg.Sender {
-            continue
-        }
-
-        select {
-        case client.send <- msg.Message:
-        default:
-            close(client.send)
-            delete(room.Clients, client)
-        }
-    }
-}
-
-// Broadcast 外部调用接口
-func (h *Hub) Broadcast(roomID string, message []byte, sender *Client) {
-    h.broadcast <- &BroadcastMessage{
-        RoomID:  roomID,
-        Message: message,
-        Sender:  sender,
-    }
-}
-
-// BroadcastMessage 广播消息结构
-type BroadcastMessage struct {
-    RoomID  string
-    Message []byte
-    Sender  *Client
-}
 ```
 
-### 3.3 Client 结构体更新
+### 3.4 关键安全机制
 
-```go
-// internal/ws/client.go (v3.0 更新)
-
-type Client struct {
-    Hub      *Hub
-    Conn     *websocket.Conn
-    RoomID   string
-    UserInfo UserInfo
-    Room     *Room  // ✅ 新增：持有 Room 引用，方便访问
-    send     chan []byte
-}
-
-// ReadPump 和 WritePump 保持不变...
-
-// handleOpPatch v3.0 重写
-func (c *Client) handleOpPatch(message []byte) {
-    if c.Room == nil {
-        return
-    }
-
-    var wsMsg WSMessage
-    json.Unmarshal(message, &wsMsg)
-
-    var patchPayload struct {
-        Patches json.RawMessage `json:"patches"`
-        Version int64           `json:"version"`
-    }
-    json.Unmarshal(wsMsg.Payload, &patchPayload)
-
-    // 版本冲突检测
-    if patchPayload.Version != c.Room.Version {
-        c.sendError("版本冲突")
-        return
-    }
-
-    // 应用 Patch 到内存状态
-    if err := c.Room.ApplyPatch(patchPayload.Patches); err != nil {
-        log.Printf("[Client] Patch 应用失败: %v", err)
-        c.sendError(err.Error())
-        return
-    }
-
-    // 广播给其他人
-    c.Hub.Broadcast(c.RoomID, message, c)
-}
-
-// sendError 发送错误消息
-func (c *Client) sendError(message string) {
-    errPayload, _ := json.Marshal(map[string]string{"message": message})
-    msg := WSMessage{
-        Type:      TypeError,
-        SenderID:  "server",
-        Payload:   errPayload,
-        Timestamp: time.Now().UnixMilli(),
-    }
-    data, _ := json.Marshal(msg)
-    c.send <- data
-}
-```
+| 问题           | 解决方案 (ADR)                                           |
+| -------------- | -------------------------------------------------------- |
+| 幽灵页面       | `GetOrCreateRoom` 验证 DB 存在性，不存在则拒绝 (ADR-002) |
+| 观察者效应     | `GetPage` 使用只读 `GetRoom`，不创建房间 (ADR-003)       |
+| 数据竞态       | 乐观锁 (version 检查) + 单 Room 串行处理                 |
+| Goroutine 泄漏 | `Room.Stop()` 阻塞等待 `flushToDB` 完成                  |
 
 ---
 
-## 四、安全的 WebSocket 鉴权 (v3.0 新增)
+## 4. 扩展性架构：集群部署 (Scaling Strategy)
 
-> [!CAUTION]
-> **v2.0 的安全漏洞**
->
-> ```
-> ws://host/ws/:pageId?userId=abc&token=xxx
-> ```
->
-> URL 参数会记录在服务器的 Access Log 中，任何能看日志的人都能劫持会话！
+> **ADR-001**: 为了从单机迈向集群（Kubernetes），我们采用 **Sticky Sessions** 策略。
 
-### 4.1 方案 A：Cookie 鉴权（同域推荐）
+### 4.1 问题背景
 
-```go
-// internal/api/handler/ws_handler.go
+WebSocket 是有状态的长连接。如果用户 A 连到 Pod 1，用户 B 连到 Pod 2，他们将无法协同（脑裂）。
 
-func (h *WSHandler) ServeWS(c *gin.Context) {
-    pageID := c.Param("pageId")
+```
+用户 A ──► Pod 1 (Room 1, v10)
+                                  ← 互相看不见！
+用户 B ──► Pod 2 (Room 1, v10)
+```
 
-    // ✅ 从 Cookie 读取 Token（浏览器自动带上）
-    tokenCookie, err := c.Cookie("auth_token")
-    if err != nil {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
-        return
-    }
+### 4.2 解决方案：一致性哈希 (Consistent Hashing)
 
-    // 验证 Token
-    claims, err := validateJWT(tokenCookie)
-    if err != nil {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "Token 无效"})
-        return
-    }
+**核心原理**：同一 `pageId` 的所有连接始终路由到同一个 Pod
 
-    // 升级 WebSocket
-    conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-    // ...
+```
+WebSocket URL: wss://api.example.com/ws?pageId=abc123
+                                        ↑
+                              hash("abc123") % N → Pod X
+```
 
-    userInfo := UserInfo{
-        UserID:   claims.UserID,
-        UserName: claims.UserName,
-    }
+**Nginx 配置**:
 
-    client := NewClient(h.hub, conn, pageID, userInfo)
-    // ...
+```nginx
+upstream websocket_backend {
+    hash $arg_pageId consistent;  # 基于 pageId 一致性 Hash
+    server pod-a:8080;
+    server pod-b:8080;
+    server pod-c:8080;
+}
+
+location /ws {
+    proxy_pass http://websocket_backend;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
 }
 ```
 
-### 4.2 方案 B：Ticket 机制（跨域推荐）
+**K8s Ingress 配置**:
 
-```mermaid
-sequenceDiagram
-    participant Browser as 浏览器
-    participant API as HTTP API
-    participant Redis as Redis
-    participant WS as WebSocket
-
-    Browser->>API: POST /api/ws/ticket<br/>Authorization: Bearer xxx
-    API->>API: 验证 JWT
-    API->>Redis: 存储 ticket (TTL=10s)
-    API-->>Browser: { ticket: "abc123" }
-
-    Browser->>WS: ws://host/ws/pageId?ticket=abc123
-    WS->>Redis: 验证 ticket
-    Redis-->>WS: 用户信息
-    WS->>Redis: 删除 ticket (一次性)
-    WS-->>Browser: 连接成功
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$arg_pageId"
+spec:
+  rules:
+    - host: api.example.com
+      http:
+        paths:
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: lowcode-backend
+                port:
+                  number: 8080
 ```
 
-```go
-// internal/api/handler/ticket_handler.go
+### 4.3 为什么不用 Redis Pub/Sub？
 
-// 生成临时 Ticket
-func (h *TicketHandler) CreateTicket(c *gin.Context) {
-    // 从 Authorization Header 获取 Token
-    authHeader := c.GetHeader("Authorization")
-    if !strings.HasPrefix(authHeader, "Bearer ") {
-        c.JSON(401, gin.H{"error": "未授权"})
-        return
-    }
+> **关键洞察**：Sticky Sessions 保证了 **Single Source of Truth**，这是协同编辑的核心要求。
 
-    token := strings.TrimPrefix(authHeader, "Bearer ")
-    claims, err := validateJWT(token)
-    if err != nil {
-        c.JSON(401, gin.H{"error": "Token 无效"})
-        return
-    }
+```
+Redis Pub/Sub 的问题：
 
-    // 生成随机 Ticket
-    ticket := generateRandomString(32)
-
-    // 存入 Redis，10 秒过期
-    ticketData, _ := json.Marshal(claims)
-    h.redis.Set(c, "ws_ticket:"+ticket, ticketData, 10*time.Second)
-
-    c.JSON(200, gin.H{"ticket": ticket})
-}
-
-// WebSocket 连接时验证 Ticket
-func (h *WSHandler) ServeWS(c *gin.Context) {
-    pageID := c.Param("pageId")
-    ticket := c.Query("ticket")
-
-    if ticket == "" {
-        c.JSON(400, gin.H{"error": "需要 ticket"})
-        return
-    }
-
-    // 从 Redis 获取并删除 Ticket（一次性）
-    ticketData, err := h.redis.GetDel(c, "ws_ticket:"+ticket).Result()
-    if err != nil {
-        c.JSON(401, gin.H{"error": "Ticket 无效或已过期"})
-        return
-    }
-
-    var claims TokenClaims
-    json.Unmarshal([]byte(ticketData), &claims)
-
-    // 升级 WebSocket...
-}
+Pod A 收到 op1 (t=100ms)
+Pod B 收到 op2 (t=101ms)
+    ↓
+两个 Pod 同时广播到 Redis
+    ↓
+Pod A 看到: op1 → op2
+Pod B 看到: op2 → op1  ← 💥 时序冲突！
 ```
 
-### 4.3 前端对接（Ticket 模式）
+要解决这个问题，必须引入**中心定序器**或**分布式锁**，复杂度指数级上升。
 
-```typescript
-// src/editor/hooks/useCollaboration.ts
+Sticky Sessions 直接绕开了这个问题：
 
-async function connect() {
-  // 1. 先获取临时 Ticket
-  const response = await fetch("/api/ws/ticket", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${getAuthToken()}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("获取 Ticket 失败");
-  }
-
-  const { ticket } = await response.json();
-
-  // 2. 用 Ticket 连接 WebSocket
-  const ws = new WebSocket(`ws://localhost:8080/ws/${pageId}?ticket=${ticket}`);
-
-  // ...
-}
 ```
+同一个 PageID 的所有操作 → 同一个 Pod 处理 → 天然有序
+```
+
+### 4.4 故障恢复
+
+| 阶段              | 处理                                  |
+| ----------------- | ------------------------------------- |
+| 1. 客户端感知断线 | WebSocket `onclose` 事件              |
+| 2. 客户端自动重连 | 指数退避 (1s → 2s → 4s → 8s...)       |
+| 3. 重新路由       | 一致性 Hash 分配到其他 Pod            |
+| 4. 房间重建       | 新 Pod 从数据库加载最新 Schema        |
+| 5. 数据丢失范围   | 最多「上次落库到 Pod 挂掉之间」的编辑 |
+
+### 4.5 升级触发条件
+
+| 条件                    | 升级方案                   |
+| ----------------------- | -------------------------- |
+| 单页面并发 > 50 人      | Redis Pub/Sub + 中心定序器 |
+| 需要跨 Pod 实时用户列表 | Redis Pub/Sub              |
+| Pod 故障恢复 < 5s       | 热备 + 状态同步            |
 
 ---
 
-## 五、前后端对接方案
+## 5. 工程规范与构建 (Engineering & Build)
 
-### 5.1 前端 WebSocket 连接管理 (v3.0 更新)
+### 5.1 数据库设计
 
-```typescript
-// src/editor/hooks/useCollaboration.ts
+**Schema**: 使用 PostgreSQL JSONB 存储页面结构
 
-import { useEffect, useRef, useCallback, useState } from "react";
-import { useHistoryStore } from "../stores/historyStore";
-import { useComponentsStore } from "../stores/components";
-import type { Patch } from "immer";
+```sql
+CREATE TABLE pages (
+    id SERIAL PRIMARY KEY,
+    page_id VARCHAR(64) UNIQUE NOT NULL,
+    schema JSONB NOT NULL,
+    version BIGINT DEFAULT 1,
+    creator_id VARCHAR(64) REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
 
-interface WSMessage {
-  type:
-    | "op-patch"
-    | "cursor-move"
-    | "user-join"
-    | "user-leave"
-    | "sync"
-    | "error";
-  senderId: string;
-  payload: any;
-  ts: number;
-}
-
-interface CollaborationState {
-  isConnected: boolean;
-  users: { userId: string; userName: string; color: string }[];
-  version: number;
-}
-
-export function useCollaboration(pageId: string) {
-  const wsRef = useRef<WebSocket | null>(null);
-  const [state, setState] = useState<CollaborationState>({
-    isConnected: false,
-    users: [],
-    version: 0,
-  });
-
-  const applyRemotePatch = useHistoryStore((s) => s.applyRemotePatch);
-  const setComponents = useComponentsStore((s) => s.setComponents);
-
-  const connect = useCallback(async () => {
-    // 1. 获取 Ticket
-    const ticketRes = await fetch("/api/ws/ticket", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${getAuthToken()}` },
-    });
-    const { ticket } = await ticketRes.json();
-
-    // 2. 建立 WebSocket 连接
-    const ws = new WebSocket(
-      `ws://localhost:8080/ws/${pageId}?ticket=${ticket}`
-    );
-
-    ws.onopen = () => {
-      setState((s) => ({ ...s, isConnected: true }));
-      console.log("[Collaboration] ✅ 连接成功");
-    };
-
-    ws.onmessage = (event) => {
-      const message: WSMessage = JSON.parse(event.data);
-
-      switch (message.type) {
-        case "sync":
-          // ✅ 新增：处理全量同步（新用户加入时收到）
-          handleSync(message.payload);
-          break;
-
-        case "op-patch":
-          handleRemotePatch(message.payload.patches);
-          break;
-
-        case "user-join":
-          setState((s) => ({
-            ...s,
-            users: [...s.users, message.payload],
-          }));
-          break;
-
-        case "user-leave":
-          setState((s) => ({
-            ...s,
-            users: s.users.filter((u) => u.userId !== message.payload.userId),
-          }));
-          break;
-
-        case "error":
-          console.error("[Collaboration] 错误:", message.payload.message);
-          break;
-      }
-    };
-
-    wsRef.current = ws;
-  }, [pageId]);
-
-  // ✅ 新增：处理全量同步
-  const handleSync = useCallback(
-    (payload: { schema: any; version: number; users: any[] }) => {
-      console.log("[Collaboration] 📥 收到全量同步, 版本:", payload.version);
-
-      // 直接替换整个 Store 状态
-      const { rootId, components } = payload.schema;
-
-      // 将 components 对象转换为树形结构后设置
-      // 这里假设后端返回的是范式化的 Map 结构
-      useComponentsStore.setState({
-        components,
-        rootId,
-      });
-
-      setState((s) => ({
-        ...s,
-        version: payload.version,
-        users: payload.users,
-      }));
-    },
-    []
-  );
-
-  const handleRemotePatch = useCallback(
-    async (patches: Patch[]) => {
-      if (!patches || patches.length === 0) return;
-      await applyRemotePatch(patches);
-    },
-    [applyRemotePatch]
-  );
-
-  // ...其他代码
-
-  return { ...state, connect };
-}
+CREATE INDEX idx_pages_creator ON pages(creator_id);
 ```
 
-### 5.2 发送本地 Patch
-
-```typescript
-// undoMiddleware.ts 中的修改
-
-if (shouldRecordPatch) {
-  useHistoryStore.getState().addPatch(patches, inversePatches);
-
-  // 发送给协同服务器
-  if (collaborationSender) {
-    // ✅ 发送当前版本号，用于乐观锁检测
-    const version = useCollaborationStore.getState().version;
-    collaborationSender(patches, version);
-  }
-}
-```
-
----
-
-## 六、Gin API 路由设计
+**乐观锁**: 所有更新操作必须带上 version 条件
 
 ```go
-// internal/api/router.go
-
-func SetupRouter(hub *ws.Hub) *gin.Engine {
-    r := gin.Default()
-
-    r.Use(corsMiddleware())
-
-    // RESTful API
-    v1 := r.Group("/api/v1")
-    {
-        pageHandler := handler.NewPageHandler()
-        v1.GET("/pages/:pageId", pageHandler.GetPage)
-        v1.POST("/pages/:pageId/save", pageHandler.SavePage)
-
-        // ✅ 新增：Ticket 接口
-        ticketHandler := handler.NewTicketHandler()
-        v1.POST("/ws/ticket", authMiddleware(), ticketHandler.CreateTicket)
-    }
-
-    // WebSocket
-    wsHandler := handler.NewWSHandler(hub)
-    r.GET("/ws/:pageId", wsHandler.ServeWS)
-
-    return r
-}
+WHERE page_id = ? AND version = ?
 ```
 
----
-
-## 七、并发处理深度解析
-
-### 7.1 Goroutine 生命周期图
-
-```mermaid
-graph TD
-    subgraph "Main Goroutine"
-        A[main.go 启动]
-    end
-
-    subgraph "Hub Goroutine"
-        B[hub.Run 事件循环]
-        B --> |select| C{事件类型?}
-        C -->|register| D[处理注册 + 发送 Sync]
-        C -->|unregister| E[处理注销 + 保存 DB]
-        C -->|broadcast| F[处理广播]
-    end
-
-    subgraph "Room 状态"
-        G[CurrentState: []byte]
-        H[Version: int64]
-        I[Clients: map]
-    end
-
-    D --> G
-    F --> G
-```
-
-### 7.2 读写锁使用场景
-
-```go
-// Room 的 ApplyPatch: 需要写锁
-func (r *Room) ApplyPatch(patchBytes []byte) error {
-    r.mu.Lock()        // 写锁
-    defer r.mu.Unlock()
-    // 修改 CurrentState
-}
-
-// Room 的 GetSnapshot: 只需读锁
-func (r *Room) GetSnapshot() ([]byte, int64) {
-    r.mu.RLock()       // 读锁
-    defer r.mu.RUnlock()
-    // 读取 CurrentState
-}
-```
-
----
-
-## 附录：依赖安装
+### 5.2 依赖安装
 
 ```bash
-# 初始化项目
-go mod init your-project
+# 初始化
+go mod init lowercode-go-server
 
 # 核心依赖
 go get github.com/gin-gonic/gin
@@ -1099,38 +525,130 @@ go get github.com/gorilla/websocket
 go get github.com/evanphx/json-patch/v5
 go get gorm.io/gorm
 go get gorm.io/driver/postgres
+go get gorm.io/datatypes
+go get github.com/clerk/clerk-sdk-go/v2
+go get github.com/joho/godotenv
+```
 
-# 可选依赖
-go get github.com/redis/go-redis/v9
-go get github.com/golang-jwt/jwt/v5
+### 5.3 环境变量 (.env)
+
+```env
+# 数据库
+DATABASE_URL=postgres://user:password@localhost:5432/lowercode?sslmode=disable
+
+# Clerk
+CLERK_SECRET_KEY=sk_test_xxxxx
+
+# 服务器
+PORT=8080
+```
+
+### 5.4 构建流水线
+
+**Local Dev**:
+
+```bash
+# 启动数据库
+docker-compose up -d postgres
+
+# 运行服务
+go run cmd/main.go
+```
+
+**Production**:
+
+```dockerfile
+# Multi-stage Dockerfile
+FROM golang:1.21-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -o server cmd/main.go
+
+FROM alpine:3.18
+COPY --from=builder /app/server /server
+CMD ["/server"]
+```
+
+**K8s Deployment**:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lowcode-backend
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: app
+          image: lowcode-backend:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: url
 ```
 
 ---
 
-## 常见问题
+## 6. 开发阶段规划 (Development Phases)
 
-### Q1: 为什么用 json.RawMessage 而不是 map[string]interface{}?
+### Phase 1: 基础设施 ✅
 
-**性能**: json.RawMessage 是 `[]byte` 的别名，Go 不解析内部结构，直接存储字节。
+| 任务                                    | 状态    |
+| --------------------------------------- | ------- |
+| 项目初始化 + Clean Architecture 目录    | ✅ 完成 |
+| PostgreSQL 连接 + GORM 配置             | ✅ 完成 |
+| Domain 层定义 (Entity, Repository 接口) | ✅ 完成 |
+| 统一领域错误定义                        | ✅ 完成 |
 
-**兼容性**: 前端的 Props 可能是任意嵌套结构，json.RawMessage 完美保留原始格式。
+### Phase 2: WebSocket 协同引擎 ✅
 
-**Patch 应用**: json-patch 库需要操作原始 JSON 字节，用 struct 反而增加序列化开销。
+| 任务                     | 状态    |
+| ------------------------ | ------- |
+| Hub + Room + Client 实现 | ✅ 完成 |
+| JSON Patch 应用逻辑      | ✅ 完成 |
+| 定时/阈值刷盘机制        | ✅ 完成 |
+| 幽灵页面防护 (ADR-002)   | ✅ 完成 |
+| 观察者效应修复 (ADR-003) | ✅ 完成 |
+| Actor Model 重构         | ✅ 完成 |
 
-### Q2: 新用户加入会卡顿吗?
+### Phase 3: API 层 🔄
 
-**不会**。新用户收到的是 `sync` 消息，包含：
+| 任务                   | 状态      |
+| ---------------------- | --------- |
+| Clerk JWT 鉴权中间件   | ✅ 完成   |
+| REST API (CRUD)        | 🔄 进行中 |
+| WebSocket Handler      | 🔄 进行中 |
+| Clerk Webhook 用户同步 | ⏳ 待开始 |
 
-- 完整的最新 Schema（已应用所有历史 Patch）
-- 当前版本号
-- 房间内其他用户信息
+### Phase 4: 前后端联调 ⏳
 
-**无需回放历史**，直接拿到最新状态。
+| 任务                    | 状态      |
+| ----------------------- | --------- |
+| 前端 WebSocket SDK 适配 | ⏳ 待开始 |
+| 协同编辑集成测试        | ⏳ 待开始 |
+| 错误处理与重连逻辑      | ⏳ 待开始 |
 
-### Q3: URL 参数里的 Ticket 也会被日志记录吗?
+### Phase 5: 部署上线 ⏳
 
-**会**，但 Ticket 是一次性的（10 秒过期 + 使用后立即删除），即使被记录也无法重用。
+| 任务                                    | 状态      |
+| --------------------------------------- | --------- |
+| Dockerfile 编写                         | ⏳ 待开始 |
+| K8s 配置 (Deployment, Service, Ingress) | ⏳ 待开始 |
+| Sticky Sessions 配置                    | ⏳ 待开始 |
+| 监控与日志                              | ⏳ 待开始 |
 
 ---
 
-_文档结束 - v3.0_
+## 附录：相关文档
+
+- [architecture-decisions.md](./architecture-decisions.md) - 架构决策记录 (ADR)
+- [websocket-architecture-retrospective.md](./websocket-architecture-retrospective.md) - WebSocket 架构回顾
+- [development-phases.md](./development-phases.md) - 详细开发计划
