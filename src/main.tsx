@@ -16,7 +16,10 @@ if (!PUBLISHABLE_KEY) {
 // 使用 Dnd 作为拖拽逻辑实现的方法
 createRoot(document.getElementById("root")!).render(
   <DndProvider backend={HTML5Backend}>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY || ""}>
+    <ClerkProvider
+      publishableKey={PUBLISHABLE_KEY || ""}
+      afterSignOutUrl="/lowcode-editor"
+    >
       <BrowserRouter basename="/lowcode-editor">
         <App />
       </BrowserRouter>

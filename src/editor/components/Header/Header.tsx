@@ -302,9 +302,35 @@ export function Header() {
             <Title level={5} className="mb-0! text-neutral-800 font-semibold">
               低代码编辑器
             </Title>
-            <Text className="text-xs text-neutral-400">
-              {mode === "edit" ? "编辑中" : "预览模式"}
-            </Text>
+            {/* 联机模式连接状态 */}
+            {isLiveMode ? (
+              <Tooltip
+                title={isConnected ? "已连接" : connectionError || "连接中..."}
+              >
+                <Badge
+                  status={isConnected ? "success" : "processing"}
+                  text={
+                    <span className="text-sm">
+                      {isConnected ? (
+                        <>
+                          <WifiOutlined className="mr-1" />
+                          已连接
+                        </>
+                      ) : (
+                        <>
+                          <DisconnectOutlined className="mr-1" />
+                          连接中...
+                        </>
+                      )}
+                    </span>
+                  }
+                />
+              </Tooltip>
+            ) : (
+              <Text className="text-xs text-neutral-400">
+                {mode === "edit" ? "编辑中" : "预览模式"}
+              </Text>
+            )}
           </div>
         </div>
 
@@ -464,6 +490,39 @@ export function Header() {
                 >
                   预览
                 </Button>
+                {/* 协同按钮 - 始终显示 */}
+                {!isLiveMode ? (
+                  // 本地模式：显示 "开启协同" 按钮
+                  isSignedIn ? (
+                    <Button
+                      onClick={handleGoLive}
+                      loading={isGoingLive}
+                      disabled={isGoingLive}
+                      icon={<CloudUploadOutlined />}
+                      type="primary"
+                      ghost
+                    >
+                      <span className="hidden sm:inline">
+                        {isGoingLive ? "上传中..." : "开启协同"}
+                      </span>
+                    </Button>
+                  ) : (
+                    <SignInButton mode="modal">
+                      <Button
+                        icon={<CloudUploadOutlined />}
+                        type="primary"
+                        ghost
+                      >
+                        <span className="hidden sm:inline">开启协同</span>
+                      </Button>
+                    </SignInButton>
+                  )
+                ) : (
+                  // 联机模式：显示复制链接按钮（连接状态已移到左区）
+                  <Button onClick={handleCopyLink} icon={<LinkOutlined />}>
+                    <span className="hidden sm:inline">复制链接</span>
+                  </Button>
+                )}
               </div>
 
               {/* ===== 小屏幕：下拉菜单 ===== */}
@@ -518,66 +577,9 @@ export function Header() {
                 files={generatedFiles}
                 onClose={() => setIsDrawerVisible(false)}
               />
-
-              {/* 协同按钮 - 始终显示 */}
-              {!isLiveMode ? (
-                // 本地模式：显示 "开启协同" 按钮
-                isSignedIn ? (
-                  <Button
-                    onClick={handleGoLive}
-                    loading={isGoingLive}
-                    disabled={isGoingLive}
-                    icon={<CloudUploadOutlined />}
-                    type="primary"
-                    ghost
-                  >
-                    <span className="hidden sm:inline">
-                      {isGoingLive ? "上传中..." : "开启协同"}
-                    </span>
-                  </Button>
-                ) : (
-                  <SignInButton mode="modal">
-                    <Button icon={<CloudUploadOutlined />} type="primary" ghost>
-                      <span className="hidden sm:inline">开启协同</span>
-                    </Button>
-                  </SignInButton>
-                )
-              ) : (
-                // 联机模式：显示连接状态和复制链接
-                <Space>
-                  <Tooltip
-                    title={
-                      isConnected ? "已连接" : connectionError || "连接中..."
-                    }
-                  >
-                    <Badge
-                      status={isConnected ? "success" : "processing"}
-                      text={
-                        <span className="text-sm hidden sm:inline">
-                          {isConnected ? (
-                            <>
-                              <WifiOutlined className="mr-1" />
-                              已连接
-                            </>
-                          ) : (
-                            <>
-                              <DisconnectOutlined className="mr-1" />
-                              连接中...
-                            </>
-                          )}
-                        </span>
-                      }
-                    />
-                  </Tooltip>
-                  <Button onClick={handleCopyLink} icon={<LinkOutlined />}>
-                    <span className="hidden sm:inline">复制链接</span>
-                  </Button>
-                </Space>
-              )}
-
               {/* 用户头像 - 始终显示 */}
               {isSignedIn ? (
-                <UserButton afterSignOutUrl="/lowcode-editor/" />
+                <UserButton />
               ) : (
                 <SignInButton mode="modal">
                   <Button type="text" size="small">
