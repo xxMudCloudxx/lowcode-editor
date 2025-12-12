@@ -26,8 +26,10 @@ const ContainerList: Set<string> = new Set([
 /**
  * 为编辑器提供全局快捷键功能的 Hook。
  * 在顶层组件中调用一次即可生效。
+ *
+ * @param isLiveMode 是否为联机协同模式，联机模式下禁用撤销/重做
  */
-export function useShortcutKeys() {
+export function useShortcutKeys(isLiveMode: boolean = false) {
   const { components, pasteComponents, deleteComponent } = useComponentsStore();
 
   // history store 中的撤销 / 重做能力
@@ -50,6 +52,15 @@ export function useShortcutKeys() {
       debounce((text: string) => {
         message.success(text);
       }, 300),
+    []
+  );
+
+  // 联机模式提示（防抖）
+  const debouncedLiveWarning = useMemo(
+    () =>
+      debounce(() => {
+        message.warning("联机模式下暂不支持撤销/重做");
+      }, 500),
     []
   );
 
@@ -106,16 +117,24 @@ export function useShortcutKeys() {
 
         // 撤销/重做
         case "z":
-          // 撤销：Cmd/Ctrl + Z
-          if (isCmdOrCtrl && past.length > 0 && !isShift) {
+          if (isCmdOrCtrl) {
             e.preventDefault();
-            undo();
-            debouncedMessage("撤销成功");
-            // 重做：Cmd/Ctrl + Shift + Z
-          } else if (isCmdOrCtrl && isShift && future.length > 0) {
-            e.preventDefault();
-            redo();
-            debouncedMessage("重做成功");
+
+            // 联机模式下禁用撤销/重做
+            if (isLiveMode) {
+              debouncedLiveWarning();
+              return;
+            }
+
+            // 撤销：Cmd/Ctrl + Z
+            if (!isShift && past.length > 0) {
+              undo();
+              debouncedMessage("撤销成功");
+              // 重做：Cmd/Ctrl + Shift + Z
+            } else if (isShift && future.length > 0) {
+              redo();
+              debouncedMessage("重做成功");
+            }
           }
           break;
 
@@ -154,6 +173,8 @@ export function useShortcutKeys() {
     past,
     future,
     debouncedMessage,
+    debouncedLiveWarning,
+    isLiveMode,
   ]);
 }
 
@@ -186,4 +207,3 @@ function buildClipboardTree(
     styles: node.styles,
   };
 }
-

@@ -12,11 +12,10 @@ import {
   Popconfirm,
   Typography,
   Popover,
-  Dropdown,
-  Avatar,
   Tooltip,
   Segmented,
-  type MenuProps,
+  message,
+  Badge,
 } from "antd";
 import {
   QuestionCircleOutlined,
@@ -25,13 +24,18 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   CodeOutlined,
-  UserOutlined,
   ClearOutlined,
   DeleteOutlined,
   DesktopOutlined,
   TabletOutlined,
   MobileOutlined,
+  CloudUploadOutlined,
+  LinkOutlined,
+  WifiOutlined,
+  DisconnectOutlined,
 } from "@ant-design/icons";
+import { SignInButton, UserButton, useUser, useAuth } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 
 const { Text, Title } = Typography;
 import {
@@ -40,6 +44,7 @@ import {
 } from "../../stores/components";
 import { useUIStore } from "../../stores/uiStore";
 import { useHistoryStore } from "../../stores/historyStore";
+import { useCollaborationContext } from "../../index";
 import { exportSourceCode } from "../../../code-generator";
 import type { IGeneratedFile, ISchema } from "../../../code-generator/types/ir";
 import { useState } from "react";
@@ -102,6 +107,8 @@ export function Header() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<IGeneratedFile[]>([]);
+  const [isGoingLive, setIsGoingLive] = useState(false);
+
   const { resetComponents } = useComponentsStore();
   const {
     mode,
@@ -113,8 +120,95 @@ export function Header() {
   } = useUIStore();
   const { undo, redo, clear, past, future } = useHistoryStore();
 
+  // Clerk 认证
+  const { isSignedIn } = useUser();
+  const { getToken } = useAuth();
+  const navigate = useNavigate();
+
+  // 协同上下文
+  const { isLiveMode, isConnected, connectionError } =
+    useCollaborationContext();
+
   const handleReset = () => {
     resetComponents();
+  };
+
+  /**
+   * F-01/F-02/F-03/F-04: 开启协同
+   * 1. 检查登录态
+   * 2. 上传当前 Schema 到后端
+   * 3. 重定向到协同编辑页面
+   */
+  const handleGoLive = async () => {
+    if (!isSignedIn) {
+      message.info("请先登录以开启协同编辑");
+      return;
+    }
+
+    setIsGoingLive(true);
+    try {
+      const token = await getToken();
+
+      // 调试：打印 Token 信息
+      console.log(
+        "[GoLive] Token received:",
+        token ? `${token.substring(0, 20)}...` : "NULL"
+      );
+
+      if (!token) {
+        message.error("获取认证 Token 失败，请重新登录");
+        return;
+      }
+
+      // 生成唯一的 pageId（使用时间戳 + 随机数）
+      const pageId = `page_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      console.log("[GoLive] Generated pageId:", pageId);
+
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+      console.log("[GoLive] Sending to:", `${apiUrl}/api/pages`);
+
+      // 后端 API 只接收 pageId，会创建默认空 Schema
+      // 前端当前的 Schema 将通过 WebSocket 连接后同步
+      const res = await fetch(`${apiUrl}/api/pages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pageId }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        console.error("[GoLive] Server error response:", error);
+        throw new Error(
+          error.details || error.message || error.error || "创建页面失败"
+        );
+      }
+
+      const data = await res.json();
+      message.success("协同模式已开启！");
+      navigate(`/editor/${data.pageId}`);
+    } catch (error) {
+      console.error("Go Live failed:", error);
+      message.error(
+        `开启协同失败: ${error instanceof Error ? error.message : "未知错误"}`
+      );
+    } finally {
+      setIsGoingLive(false);
+    }
+  };
+
+  /**
+   * F-07: 复制链接
+   */
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      message.success("链接已复制到剪贴板");
+    } catch (error) {
+      message.error("复制失败，请手动复制地址栏链接");
+    }
   };
 
   const handleOpenCodePreview = async () => {
@@ -180,13 +274,7 @@ export function Header() {
   //   },
   // ];
 
-  // 用户菜单
-  const userMenuItems: MenuProps["items"] = [
-    { key: "profile", label: "个人设置" },
-    { key: "projects", label: "我的项目" },
-    { type: "divider" },
-    { key: "logout", label: "退出登录", danger: true },
-  ];
+  // 用户菜单已由 Clerk UserButton 替代
 
   return (
     <div className="w-full h-full">
@@ -373,15 +461,69 @@ export function Header() {
                 预览
               </Button>
 
-              {/* 用户头像 */}
-              {/* TODO: 后面使用Clerk替代 */}
-              <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-                <Avatar
-                  size="small"
-                  icon={<UserOutlined />}
-                  className="cursor-pointer bg-accent-500"
-                />
-              </Dropdown>
+              {/* F-01/F-07: 协同按钮 */}
+              {!isLiveMode ? (
+                // 本地模式：显示 "开启协同" 按钮
+                isSignedIn ? (
+                  <Button
+                    onClick={handleGoLive}
+                    loading={isGoingLive}
+                    icon={<CloudUploadOutlined />}
+                    type="primary"
+                    ghost
+                  >
+                    {isGoingLive ? "上传中..." : "开启协同"}
+                  </Button>
+                ) : (
+                  <SignInButton mode="modal">
+                    <Button icon={<CloudUploadOutlined />} type="primary" ghost>
+                      开启协同
+                    </Button>
+                  </SignInButton>
+                )
+              ) : (
+                // 联机模式：显示连接状态和复制链接
+                <Space>
+                  <Tooltip
+                    title={
+                      isConnected ? "已连接" : connectionError || "连接中..."
+                    }
+                  >
+                    <Badge
+                      status={isConnected ? "success" : "processing"}
+                      text={
+                        <span className="text-sm">
+                          {isConnected ? (
+                            <>
+                              <WifiOutlined className="mr-1" />
+                              已连接
+                            </>
+                          ) : (
+                            <>
+                              <DisconnectOutlined className="mr-1" />
+                              连接中...
+                            </>
+                          )}
+                        </span>
+                      }
+                    />
+                  </Tooltip>
+                  <Button onClick={handleCopyLink} icon={<LinkOutlined />}>
+                    复制链接
+                  </Button>
+                </Space>
+              )}
+
+              {/* 用户头像 - Clerk UserButton */}
+              {isSignedIn ? (
+                <UserButton afterSignOutUrl="/lowcode-editor/" />
+              ) : (
+                <SignInButton mode="modal">
+                  <Button type="text" size="small">
+                    登录
+                  </Button>
+                </SignInButton>
+              )}
             </>
           )}
 

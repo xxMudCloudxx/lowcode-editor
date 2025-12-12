@@ -168,17 +168,24 @@ export const undoMiddleware =
             partial
           );
 
-          // 只有在以下条件都满足时才记录补丁：
+          // 只有在以下条件都满足时才记录补丁到历史：
           // 1. 不是 undo/redo 过程
           // 2. 不是远程协同补丁
           // 3. 有实际变更
-          const shouldRecordPatch =
+          const shouldRecordToHistory =
             !isApplyingPatches && !isApplyingRemotePatch && patches.length > 0;
 
-          if (shouldRecordPatch) {
+          // 发送到 WebSocket 的条件更宽松：
+          // - 只跳过远程协同补丁（防止回声）
+          // - Undo/Redo 也需要同步给其他用户！
+          const shouldEmitPatch = !isApplyingRemotePatch && patches.length > 0;
+
+          if (shouldRecordToHistory) {
             // 记录到历史栈（用于 undo/redo）
             useHistoryStore.getState().addPatch(patches, inversePatches);
+          }
 
+          if (shouldEmitPatch) {
             // 转换为 RFC 6902 JSON Patch 格式
             const jsonPatches = convertToJSONPatch(patches);
 
@@ -186,7 +193,8 @@ export const undoMiddleware =
             if (enablePatchLogging) {
               console.log(
                 "%c[Patch] RFC 6902 JSON Patch:",
-                "color: #4CAF50; font-weight: bold;"
+                "color: #4CAF50; font-weight: bold;",
+                isApplyingPatches ? "(from undo/redo)" : "(from local edit)"
               );
               console.log(JSON.stringify(jsonPatches, null, 2));
             }
