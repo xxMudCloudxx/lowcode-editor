@@ -317,7 +317,7 @@ export function Header() {
                 <Tooltip title="撤销 (Ctrl+Z)">
                   <Button
                     onClick={() => undo()}
-                    disabled={!past.length && isLiveMode}
+                    disabled={!past.length || isLiveMode}
                     size="small"
                     icon={<UndoOutlined />}
                     type="text"
@@ -326,7 +326,7 @@ export function Header() {
                 <Tooltip title="重做 (Ctrl+Shift+Z)">
                   <Button
                     onClick={() => redo()}
-                    disabled={!future.length && isLiveMode}
+                    disabled={!future.length || isLiveMode}
                     size="small"
                     icon={<RedoOutlined />}
                     type="text"
