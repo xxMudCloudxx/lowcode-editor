@@ -212,10 +212,10 @@ export function useCollaboration(): UseCollaborationResult {
       }
 
       case "ack":
-        // 服务器确认，可用于乐观更新回滚
-        // ⚠️ 本地操作成功后，版本号也会递增
-        versionRef.current++;
-        console.log("[WS] ACK received, version:", versionRef.current);
+        // 服务器确认，本地操作已成功应用
+        // 注意：发送 patch 时已经乐观递增了版本号，这里不需要再递增
+        // ACK 可用于：1) 确认操作成功 2) 未来实现回滚机制
+        console.log("[WS] ACK received, current version:", versionRef.current);
         break;
 
       default:
