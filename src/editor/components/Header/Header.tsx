@@ -133,7 +133,7 @@ export function Header() {
   };
 
   /**
-   * F-01/F-02/F-03/F-04: 开启协同
+   * 开启协同:
    * 1. 检查登录态
    * 2. 上传当前 Schema 到后端
    * 3. 重定向到协同编辑页面
@@ -163,18 +163,22 @@ export function Header() {
       const pageId = `page_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
       console.log("[GoLive] Generated pageId:", pageId);
 
+      // 获取当前画布的 schema
+      const { components, rootId } = useComponentsStore.getState();
+      const schema = buildComponentTree(components, rootId);
+      console.log("[GoLive] Schema to upload:", schema);
+
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
       console.log("[GoLive] Sending to:", `${apiUrl}/api/pages`);
 
-      // 后端 API 只接收 pageId，会创建默认空 Schema
-      // 前端当前的 Schema 将通过 WebSocket 连接后同步
+      // 上传 pageId 和当前 schema
       const res = await fetch(`${apiUrl}/api/pages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ pageId }),
+        body: JSON.stringify({ pageId, schema }),
       });
 
       if (!res.ok) {
@@ -199,7 +203,7 @@ export function Header() {
   };
 
   /**
-   * F-07: 复制链接
+   * 复制链接
    */
   const handleCopyLink = async () => {
     try {
@@ -460,13 +464,14 @@ export function Header() {
                 预览
               </Button>
 
-              {/* F-01/F-07: 协同按钮 */}
+              {/* 协同按钮 */}
               {!isLiveMode ? (
                 // 本地模式：显示 "开启协同" 按钮
                 isSignedIn ? (
                   <Button
                     onClick={handleGoLive}
                     loading={isGoingLive}
+                    disabled={isGoingLive}
                     icon={<CloudUploadOutlined />}
                     type="primary"
                     ghost

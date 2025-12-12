@@ -27,6 +27,7 @@ import { ConfigProvider } from "antd";
 import { useComponentsStore } from "../../stores/components";
 import { useComponentConfigStore } from "../../stores/component-config";
 import { useUIStore } from "../../stores/uiStore";
+import { useCollaborationStore } from "../../stores/collaborationStore";
 import HoverMask from "./HoverMask";
 import SelectedMask from "./SelectedMask";
 import LoadingPlaceholder from "../common/LoadingPlaceholder";
@@ -37,6 +38,10 @@ export function EditArea() {
   const { components, rootId } = useComponentsStore();
   const { curComponentId, setCurComponentId, canvasSize } = useUIStore();
   const { componentConfig } = useComponentConfigStore();
+  const { editorMode, isConnected, connectionError } = useCollaborationStore();
+
+  // 联机模式下断开连接时禁用编辑
+  const isDisabled = editorMode === "live" && !isConnected;
 
   // 使用 state 追踪当前鼠标悬浮在其上的组件 ID
   const [hoverComponentId, setHoverComponentId] = useState<number>();
@@ -249,12 +254,12 @@ export function EditArea() {
       <div
         className="simulator-container"
         style={simulatorStyle}
-        onMouseOver={handleMouseOver}
+        onMouseOver={isDisabled ? undefined : handleMouseOver}
         onMouseLeave={() => {
           setHoverComponentId(undefined);
         }}
         // 关键：使用捕获阶段处理点击事件，确保编辑器选中逻辑最高优先级
-        onClickCapture={handleClickCapture}
+        onClickCapture={isDisabled ? undefined : handleClickCapture}
       >
         {/* 重置 Antd 主题为默认，让画布中的组件使用默认颜色 */}
         <ConfigProvider theme={{ inherit: false }}>
@@ -262,7 +267,8 @@ export function EditArea() {
         </ConfigProvider>
 
         {/* 当有悬浮组件且该组件不是当前选中的组件时，显示悬浮遮罩 */}
-        {hoverComponentId &&
+        {!isDisabled &&
+          hoverComponentId &&
           hoverComponentId !== curComponentId &&
           hoverComponentId !== 1 && (
             <HoverMask
@@ -273,12 +279,50 @@ export function EditArea() {
           )}
 
         {/* 当有选中组件时，显示选中遮罩 */}
-        {curComponentId && (
+        {!isDisabled && curComponentId && (
           <SelectedMask
             portalWrapperClassName="portal-wrapper"
             containerClassName="simulator-container"
             componentId={curComponentId}
           />
+        )}
+
+        {/* 断开连接时显示禁用遮罩 */}
+        {isDisabled && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              backdropFilter: "blur(2px)",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "white",
+                padding: "24px 32px",
+                borderRadius: 12,
+                boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 48, marginBottom: 16 }}>📡</div>
+              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+                连接已断开
+              </div>
+              <div style={{ color: "#666", marginBottom: 16 }}>
+                {connectionError || "正在尝试重新连接..."}
+              </div>
+              <div style={{ fontSize: 12, color: "#999" }}>
+                编辑功能已暂时禁用
+              </div>
+            </div>
+          </div>
         )}
 
         {/* 这个 div 是给 HoverMask 和 SelectedMask 的 React Portal 准备的目标挂载点 */}

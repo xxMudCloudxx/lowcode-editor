@@ -5,9 +5,9 @@
  * 管理与后端的 WebSocket 连接、消息收发、自动重连。
  *
  * 核心功能：
- * - F-09: 本地操作通过 setPatchEmitter 发送到 WebSocket
- * - F-10: 远程操作通过 applyRemotePatch 应用，不触发二次发送
- * - F-11: 防御性更新，静默忽略失败的 patch
+ * - 本地操作通过 setPatchEmitter 发送到 WebSocket
+ * - 远程操作通过 applyRemotePatch 应用，不触发二次发送
+ * - 防御性更新，静默忽略失败的 patch
  *
  * @module Hooks/useCollaboration
  */
@@ -134,7 +134,7 @@ export function useCollaboration(): UseCollaborationResult {
 
   /**
    * 处理接收到的 WebSocket 消息
-   * F-10 核心逻辑：使用 applyRemotePatch 确保不触发回声
+   * 核心逻辑：使用 applyRemotePatch 确保不触发回声
    */
   const handleMessage = useCallback((msg: WSMessage) => {
     switch (msg.type) {
@@ -165,20 +165,21 @@ export function useCollaboration(): UseCollaborationResult {
       }
 
       case "op-patch": {
-        // F-10: 增量同步 - 核心防回声逻辑
+        // 增量同步 - 核心防回声逻辑
         console.log("[WS] Received op-patch from:", msg.senderId);
 
         // 解析 payload
         const patchPayload = msg.payload as OpPatchPayload;
 
-        // ⚠️ 更新本地版本号（其他人的操作也会使版本号递增）
-        versionRef.current++;
-        console.log("[WS] Version updated to:", versionRef.current);
+        // 使用 payload 中的版本号+1（发送者的 version 是应用前的，应用后是 version+1）
+        // 这比本地 ++ 更可靠，因为后端是版本的唯一真相源
+        versionRef.current = patchPayload.version + 1;
+        console.log("[WS] Version synced to:", versionRef.current);
 
         // 将 JSON Patch 转换为 Immer Patch 格式
         const immerPatches = jsonPatchToImmerPatch(patchPayload.patches);
 
-        // F-11: 使用 try-catch 防御性更新
+        // 使用 try-catch 防御性更新
         try {
           useHistoryStore.getState().applyRemotePatch(immerPatches);
         } catch (error) {
@@ -245,7 +246,7 @@ export function useCollaboration(): UseCollaborationResult {
         setConnectionError(null);
         setReconnectAttempts(0);
 
-        // F-09: 注册 patch 发射器
+        // 注册 patch 发射器
         // 当本地操作产生 patches 时，undoMiddleware 会调用这个回调
         setPatchEmitter((patches: JSONPatchOp[]) => {
           if (ws.readyState === WebSocket.OPEN) {
@@ -267,7 +268,7 @@ export function useCollaboration(): UseCollaborationResult {
             );
 
             // 乐观更新：本地操作成功后立即递增版本号
-            // 注意：如果后端返回版本冲突，需要回滚（MVP 暂不实现）
+            // TODO：如果后端返回版本冲突，需要回滚（MVP 暂不实现）
             versionRef.current++;
           }
         });

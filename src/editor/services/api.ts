@@ -70,7 +70,7 @@ async function authFetch(
 }
 
 /**
- * F-05: 获取页面数据
+ * 获取页面数据
  * 联机模式下从后端加载 Schema
  *
  * @param pageId 页面 ID
@@ -86,7 +86,7 @@ export async function getPage(
 }
 
 /**
- * F-03: 创建页面
+ * 创建页面
  * 将本地 Schema 上传到后端
  *
  * @param schema 组件 Schema

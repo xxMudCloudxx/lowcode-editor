@@ -1,7 +1,7 @@
 /**
  * @file /src/editor/hooks/useLivePageLoader.ts
  * @description
- * F-05: 联机模式页面数据加载 Hook。
+ * 联机模式页面数据加载 Hook。
  * 进入联机模式时从 API 加载 Schema，禁用 LocalStorage。
  *
  * @module Hooks/useLivePageLoader
