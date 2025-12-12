@@ -293,7 +293,7 @@ export function EditArea() {
             style={{
               position: "absolute",
               inset: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              backgroundColor: "rgba(0, 0, 0, 0.158)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",

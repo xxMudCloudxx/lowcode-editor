@@ -16,6 +16,7 @@ import {
   Segmented,
   message,
   Badge,
+  Dropdown,
 } from "antd";
 import {
   QuestionCircleOutlined,
@@ -33,6 +34,7 @@ import {
   LinkOutlined,
   WifiOutlined,
   DisconnectOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import { SignInButton, UserButton, useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
@@ -280,9 +282,9 @@ export function Header() {
   // 用户菜单已由 Clerk UserButton 替代
 
   return (
-    <div className="w-full h-full">
-      {/* 使用 CSS Grid 实现三区布局，中间真正居中 */}
-      <div className="h-full grid grid-cols-[auto_1fr_auto] items-center">
+    <div className="w-full h-full relative">
+      {/* 使用 CSS Grid + 绝对定位实现中区真正居中 */}
+      <div className="h-full flex items-center justify-between">
         {/* ========== 左区：Brand & Context ========== */}
         <div className="flex items-center gap-3">
           <svg
@@ -306,8 +308,8 @@ export function Header() {
           </div>
         </div>
 
-        {/* ========== 中区：Workbench Controls ========== */}
-        <div className="flex items-center justify-center gap-4">
+        {/* ========== 中区：Workbench Controls（绝对居中） ========== */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
           {mode === "edit" && (
             <>
               {/* 撤销/重做 */}
@@ -315,7 +317,7 @@ export function Header() {
                 <Tooltip title="撤销 (Ctrl+Z)">
                   <Button
                     onClick={() => undo()}
-                    disabled={!past.length}
+                    disabled={!past.length && isLiveMode}
                     size="small"
                     icon={<UndoOutlined />}
                     type="text"
@@ -324,30 +326,32 @@ export function Header() {
                 <Tooltip title="重做 (Ctrl+Shift+Z)">
                   <Button
                     onClick={() => redo()}
-                    disabled={!future.length}
+                    disabled={!future.length && isLiveMode}
                     size="small"
                     icon={<RedoOutlined />}
                     type="text"
                   />
                 </Tooltip>
               </div>
-              {/* 画布尺寸切换 */}
-              <Segmented
-                size="small"
-                value={canvasSize.mode}
-                onChange={(v) =>
-                  setCanvasPreset(v as "desktop" | "tablet" | "mobile")
-                }
-                options={[
-                  { value: "desktop", icon: <DesktopOutlined /> },
-                  { value: "tablet", icon: <TabletOutlined /> },
-                  { value: "mobile", icon: <MobileOutlined /> },
-                ]}
-              />
+              {/* 画布尺寸切换 - 小屏幕隐藏 */}
+              <div className="hidden xl:block">
+                <Segmented
+                  size="small"
+                  value={canvasSize.mode}
+                  onChange={(v) =>
+                    setCanvasPreset(v as "desktop" | "tablet" | "mobile")
+                  }
+                  options={[
+                    { value: "desktop", icon: <DesktopOutlined /> },
+                    { value: "tablet", icon: <TabletOutlined /> },
+                    { value: "mobile", icon: <MobileOutlined /> },
+                  ]}
+                />
+              </div>
 
-              {/* 画布尺寸输入 - 仅在非 desktop 模式显示 */}
+              {/* 画布尺寸输入 - 仅在非 desktop 模式且大屏幕显示 */}
               {canvasSize.mode !== "desktop" && (
-                <div className="flex items-center gap-1 text-sm">
+                <div className="hidden xl:flex items-center gap-1 text-sm">
                   <input
                     type="number"
                     value={
@@ -382,23 +386,25 @@ export function Header() {
                 </div>
               )}
 
-              {/* 快捷键指南 */}
-              <Popover
-                content={shortcutsContent}
-                title={
-                  <Title level={5} className="mb-2!">
-                    快捷键指南
-                  </Title>
-                }
-                trigger="click"
-                placement="bottom"
-              >
-                <Button
-                  icon={<QuestionCircleOutlined />}
-                  size="small"
-                  type="text"
-                />
-              </Popover>
+              {/* 快捷键指南 - 小屏幕隐藏 */}
+              <div className="hidden md:block">
+                <Popover
+                  content={shortcutsContent}
+                  title={
+                    <Title level={5} className="mb-2!">
+                      快捷键指南
+                    </Title>
+                  }
+                  trigger="click"
+                  placement="bottom"
+                >
+                  <Button
+                    icon={<QuestionCircleOutlined />}
+                    size="small"
+                    type="text"
+                  />
+                </Popover>
+              </div>
             </>
           )}
         </div>
@@ -407,8 +413,9 @@ export function Header() {
         <Space size="middle">
           {mode === "edit" && (
             <>
-              {/* 重置按钮组 */}
-              <div className="flex gap-2">
+              {/* ===== 大屏幕：完整按钮 ===== */}
+              <div className="hidden xl:flex items-center gap-2">
+                {/* 重置按钮组 */}
                 <Popconfirm
                   title="确认重置历史记录？"
                   description="此操作将清空所有撤销/重做历史，且无法恢复。"
@@ -434,16 +441,77 @@ export function Header() {
                     重置画布
                   </Button>
                 </Popconfirm>
+
+                {/* 出码 */}
+                <Button
+                  onClick={handleOpenCodePreview}
+                  loading={isExporting}
+                  icon={<CodeOutlined />}
+                  size="middle"
+                >
+                  {isExporting ? "生成中..." : "出码"}
+                </Button>
+
+                {/* 预览 */}
+                <Button
+                  onClick={() => {
+                    setMode("preview");
+                    setCurComponentId(null);
+                  }}
+                  type="primary"
+                  size="middle"
+                  icon={<EyeOutlined />}
+                >
+                  预览
+                </Button>
               </div>
-              {/* 出码 */}
-              <Button
-                onClick={handleOpenCodePreview}
-                loading={isExporting}
-                icon={<CodeOutlined />}
-                size="middle"
-              >
-                {isExporting ? "生成中..." : "出码"}
-              </Button>
+
+              {/* ===== 小屏幕：下拉菜单 ===== */}
+              <div className="xl:hidden">
+                <Dropdown
+                  menu={{
+                    items: [
+                      {
+                        key: "preview",
+                        icon: <EyeOutlined />,
+                        label: "预览",
+                        onClick: () => {
+                          setMode("preview");
+                          setCurComponentId(null);
+                        },
+                      },
+                      {
+                        key: "export",
+                        icon: <CodeOutlined />,
+                        label: isExporting ? "生成中..." : "出码",
+                        onClick: handleOpenCodePreview,
+                        disabled: isExporting,
+                      },
+                      { type: "divider" },
+                      {
+                        key: "clear-history",
+                        icon: <ClearOutlined />,
+                        label: "重置历史",
+                        danger: true,
+                        onClick: clear,
+                      },
+                      {
+                        key: "reset-canvas",
+                        icon: <DeleteOutlined />,
+                        label: "重置画布",
+                        danger: true,
+                        onClick: handleReset,
+                      },
+                    ],
+                  }}
+                  trigger={["click"]}
+                  placement="bottomRight"
+                >
+                  <Button icon={<MenuOutlined />} />
+                </Dropdown>
+              </div>
+
+              {/* CodePreviewDrawer 放在外面，两种模式共用 */}
               <CodePreviewDrawer
                 visible={isDrawerVisible}
                 loading={isExporting}
@@ -451,20 +519,7 @@ export function Header() {
                 onClose={() => setIsDrawerVisible(false)}
               />
 
-              {/* 预览（Primary Action） */}
-              <Button
-                onClick={() => {
-                  setMode("preview");
-                  setCurComponentId(null);
-                }}
-                type="primary"
-                size="middle"
-                icon={<EyeOutlined />}
-              >
-                预览
-              </Button>
-
-              {/* 协同按钮 */}
+              {/* 协同按钮 - 始终显示 */}
               {!isLiveMode ? (
                 // 本地模式：显示 "开启协同" 按钮
                 isSignedIn ? (
@@ -476,12 +531,14 @@ export function Header() {
                     type="primary"
                     ghost
                   >
-                    {isGoingLive ? "上传中..." : "开启协同"}
+                    <span className="hidden sm:inline">
+                      {isGoingLive ? "上传中..." : "开启协同"}
+                    </span>
                   </Button>
                 ) : (
                   <SignInButton mode="modal">
                     <Button icon={<CloudUploadOutlined />} type="primary" ghost>
-                      开启协同
+                      <span className="hidden sm:inline">开启协同</span>
                     </Button>
                   </SignInButton>
                 )
@@ -496,7 +553,7 @@ export function Header() {
                     <Badge
                       status={isConnected ? "success" : "processing"}
                       text={
-                        <span className="text-sm">
+                        <span className="text-sm hidden sm:inline">
                           {isConnected ? (
                             <>
                               <WifiOutlined className="mr-1" />
@@ -513,12 +570,12 @@ export function Header() {
                     />
                   </Tooltip>
                   <Button onClick={handleCopyLink} icon={<LinkOutlined />}>
-                    复制链接
+                    <span className="hidden sm:inline">复制链接</span>
                   </Button>
                 </Space>
               )}
 
-              {/* 用户头像 - Clerk UserButton */}
+              {/* 用户头像 - 始终显示 */}
               {isSignedIn ? (
                 <UserButton afterSignOutUrl="/lowcode-editor/" />
               ) : (
