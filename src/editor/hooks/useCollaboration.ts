@@ -17,6 +17,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { message } from "antd";
 import { useHistoryStore } from "../stores/historyStore";
 import { useComponentsStore } from "../stores/components";
+import { useCollaborationStore } from "../stores/collaborationStore";
 import {
   setPatchEmitter,
   type JSONPatchOp,
@@ -106,22 +107,27 @@ function jsonPatchToImmerPatch(jsonPatches: JSONPatchOp[]): Patch[] {
 
 /**
  * 协同编辑 Hook
+ * 直接从 store 读取 pageId 和 editorMode
  *
- * @param pageId 页面 ID，传入 null 则不建立连接（本地模式）
  * @returns 连接状态信息
  */
-export function useCollaboration(
-  pageId: string | null
-): UseCollaborationResult {
+export function useCollaboration(): UseCollaborationResult {
   const { getToken } = useAuth();
-  const [isConnected, setIsConnected] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+
+  const {
+    isConnected,
+    connectionError,
+    setConnected,
+    setConnectionError,
+    pageId,
+    editorMode,
+  } = useCollaborationStore();
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ⚠️ 关键：使用 ref 存储版本号，避免闭包问题
+  // ❗️ 关键：使用 ref 存储版本号，避免闭包问题
   const versionRef = useRef<number>(0);
 
   const maxReconnectAttempts = 5;
@@ -235,7 +241,7 @@ export function useCollaboration(
       ws.onopen = () => {
         console.log("[WS] Connected to", pageId);
         wsRef.current = ws;
-        setIsConnected(true);
+        setConnected(true);
         setConnectionError(null);
         setReconnectAttempts(0);
 
@@ -278,7 +284,7 @@ export function useCollaboration(
 
       ws.onclose = (event) => {
         console.log("[WS] Connection closed:", event.code, event.reason);
-        setIsConnected(false);
+        setConnected(false);
         setPatchEmitter(null);
 
         // 非正常关闭时尝试重连
@@ -307,7 +313,8 @@ export function useCollaboration(
    * 管理连接生命周期
    */
   useEffect(() => {
-    if (!pageId) {
+    // 本地模式或无 pageId，不建立连接
+    if (editorMode !== "live" || !pageId) {
       return;
     }
 
@@ -323,7 +330,7 @@ export function useCollaboration(
         wsRef.current = null;
       }
     };
-  }, [pageId]); // 只在 pageId 变化时重新连接
+  }, [pageId, editorMode]); // 只在 pageId 或 editorMode 变化时重新连接
 
   return {
     isConnected,

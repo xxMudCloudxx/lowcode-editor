@@ -44,7 +44,7 @@ import {
 } from "../../stores/components";
 import { useUIStore } from "../../stores/uiStore";
 import { useHistoryStore } from "../../stores/historyStore";
-import { useCollaborationContext } from "../../index";
+import { useCollaborationStore } from "../../stores/collaborationStore";
 import { exportSourceCode } from "../../../code-generator";
 import type { IGeneratedFile, ISchema } from "../../../code-generator/types/ir";
 import { useState } from "react";
@@ -125,9 +125,8 @@ export function Header() {
   const { getToken } = useAuth();
   const navigate = useNavigate();
 
-  // 协同上下文
-  const { isLiveMode, isConnected, connectionError } =
-    useCollaborationContext();
+  const { editorMode, isConnected, connectionError } = useCollaborationStore();
+  const isLiveMode = editorMode === "live";
 
   const handleReset = () => {
     resetComponents();

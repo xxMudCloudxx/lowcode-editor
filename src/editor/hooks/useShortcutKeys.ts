@@ -12,6 +12,7 @@ import { message } from "antd";
 import { useComponentsStore, getComponentById } from "../stores/components";
 import { useUIStore } from "../stores/uiStore";
 import { useHistoryStore } from "../stores/historyStore";
+import { useCollaborationStore } from "../stores/collaborationStore";
 import type { Component, ComponentTree } from "../interface";
 import { debounce } from "lodash-es";
 
@@ -27,10 +28,11 @@ const ContainerList: Set<string> = new Set([
  * 为编辑器提供全局快捷键功能的 Hook。
  * 在顶层组件中调用一次即可生效。
  *
- * @param isLiveMode 是否为联机协同模式，联机模式下禁用撤销/重做
  */
-export function useShortcutKeys(isLiveMode: boolean = false) {
+export function useShortcutKeys() {
   const { components, pasteComponents, deleteComponent } = useComponentsStore();
+  const { editorMode } = useCollaborationStore();
+  const isLiveMode = editorMode === "live";
 
   // history store 中的撤销 / 重做能力
   const { undo, redo, past, future } = useHistoryStore();

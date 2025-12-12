@@ -13,6 +13,7 @@ import { message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useComponentsStore } from "../stores/components";
 import { useHistoryStore } from "../stores/historyStore";
+import { useCollaborationStore } from "../stores/collaborationStore";
 import { getPage, ApiError } from "../services/api";
 
 interface UseLivePageLoaderResult {
@@ -33,24 +34,24 @@ interface UseLivePageLoaderResult {
  * 3. 使用 applyRemotePatch 方式设置状态（避免记录历史）
  * 4. 清空本地历史栈
  */
-export function useLivePageLoader(
-  pageId: string | null
-): UseLivePageLoaderResult {
+export function useLivePageLoader(): UseLivePageLoaderResult {
   const { getToken } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { setPageLoading, isPageLoading, pageId, editorMode } =
+    useCollaborationStore();
+
   useEffect(() => {
-    if (!pageId) {
-      // 本地模式，不加载
+    // 本地模式或无 pageId，不加载
+    if (editorMode !== "live" || !pageId) {
       return;
     }
 
     let cancelled = false;
 
     const loadPage = async () => {
-      setIsLoading(true);
+      setPageLoading(true);
       setError(null);
 
       try {
@@ -109,7 +110,7 @@ export function useLivePageLoader(
         message.error(`加载页面失败: ${errorMessage}`);
       } finally {
         if (!cancelled) {
-          setIsLoading(false);
+          setPageLoading(false);
         }
       }
     };
@@ -119,7 +120,7 @@ export function useLivePageLoader(
     return () => {
       cancelled = true;
     };
-  }, [pageId, getToken, navigate]);
+  }, [pageId, editorMode, getToken, navigate, setPageLoading]);
 
-  return { isLoading, error };
+  return { isLoading: isPageLoading, error };
 }
