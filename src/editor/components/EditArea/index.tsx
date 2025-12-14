@@ -27,18 +27,24 @@ import { ConfigProvider } from "antd";
 import { useComponentsStore } from "../../stores/components";
 import { useComponentConfigStore } from "../../stores/component-config";
 import { useUIStore } from "../../stores/uiStore";
-import { useCollaborationStore } from "../../stores/collaborationStore";
+import {
+  useCollaborationStore,
+  useCollaborators,
+} from "../../stores/collaborationStore";
+import { sendCursorPosition } from "../../hooks/useCollaboration";
 import HoverMask from "./HoverMask";
 import SelectedMask from "./SelectedMask";
+import CollaboratorCursor from "./CollaboratorCursor";
+import CollaboratorMask from "./CollaboratorMask";
 import LoadingPlaceholder from "../common/LoadingPlaceholder";
 import { DraggableNode } from "./DraggableNode";
-// isProtocolConfig remove
 
 export function EditArea() {
   const { components, rootId } = useComponentsStore();
   const { curComponentId, setCurComponentId, canvasSize } = useUIStore();
   const { componentConfig } = useComponentConfigStore();
   const { editorMode, isConnected, connectionError } = useCollaborationStore();
+  const collaborators = useCollaborators();
 
   // 联机模式下断开连接时禁用编辑
   const isDisabled = editorMode === "live" && !isConnected;
@@ -257,7 +263,23 @@ export function EditArea() {
         onMouseOver={isDisabled ? undefined : handleMouseOver}
         onMouseLeave={() => {
           setHoverComponentId(undefined);
+          // 鼠标离开画布时，发送隐藏光标的消息（使用 -1, -1 表示隐藏）
+          if (editorMode === "live") {
+            sendCursorPosition(-1, -1);
+          }
         }}
+        onMouseMove={
+          isDisabled || editorMode !== "live"
+            ? undefined
+            : (e) => {
+                // 发送光标位置（相对于 simulator-container）
+                const container = e.currentTarget;
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left + container.scrollLeft;
+                const y = e.clientY - rect.top + container.scrollTop;
+                sendCursorPosition(x, y);
+              }
+        }
         // 关键：使用捕获阶段处理点击事件，确保编辑器选中逻辑最高优先级
         onClickCapture={isDisabled ? undefined : handleClickCapture}
       >
@@ -324,6 +346,31 @@ export function EditArea() {
             </div>
           </div>
         )}
+
+        {/* ========== 协作者选中高亮 ========== */}
+        {editorMode === "live" &&
+          collaborators.map((collaborator) =>
+            collaborator.selectedComponentId ? (
+              <CollaboratorMask
+                key={`mask-${collaborator.userId}`}
+                collaborator={collaborator}
+                portalWrapperClassName="portal-wrapper"
+                containerClassName="simulator-container"
+              />
+            ) : null
+          )}
+
+        {/* ========== 协作者光标 ========== */}
+        {editorMode === "live" &&
+          collaborators.map((collaborator) =>
+            collaborator.cursorX !== undefined &&
+            collaborator.cursorY !== undefined ? (
+              <CollaboratorCursor
+                key={`cursor-${collaborator.userId}`}
+                collaborator={collaborator}
+              />
+            ) : null
+          )}
 
         {/* 这个 div 是给 HoverMask 和 SelectedMask 的 React Portal 准备的目标挂载点 */}
         <div className="portal-wrapper"></div>
