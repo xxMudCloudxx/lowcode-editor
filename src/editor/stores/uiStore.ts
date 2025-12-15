@@ -38,6 +38,8 @@ interface UIState {
   curComponentId: number | null;
   mode: "edit" | "preview";
   canvasSize: CanvasSize;
+  /** 本地缩放比例 - 由 EditArea 计算并同步到此 */
+  scale: number;
   // 剪切板仍使用树状结构，方便 regenerateIds 做递归处理
   clipboard: ComponentTree | null;
 }
@@ -48,6 +50,8 @@ interface UIActions {
   setCanvasSize: (size: CanvasSize) => void;
   setCanvasPreset: (preset: CanvasMode) => void;
   setClipboard: (component: ComponentTree | null) => void;
+  /** 由 EditArea 调用，同步缩放比例用于显示 */
+  setScale: (scale: number) => void;
 }
 
 export type UIStore = UIState & UIActions;
@@ -57,6 +61,7 @@ export const useUIStore = create<UIStore>()(
     curComponentId: null,
     mode: "edit",
     canvasSize: CANVAS_PRESETS.desktop, // 默认桌面模式
+    scale: 1, // 默认缩放比例
     clipboard: null,
 
     setCurComponentId: (id) => {
@@ -88,6 +93,12 @@ export const useUIStore = create<UIStore>()(
     setClipboard: (component) => {
       set((state) => {
         state.clipboard = component;
+      });
+    },
+
+    setScale: (scale) => {
+      set((state) => {
+        state.scale = scale;
       });
     },
   }))

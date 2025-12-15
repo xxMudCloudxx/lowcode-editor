@@ -12,241 +12,111 @@
  * - 解决组件 100% 宽高参照视口而非画布的问题
  * - 支持切换 desktop/mobile 画布模式
  *
+ * v4 重构：
+ * - 逻辑抽离为独立 hooks，提高可维护性
+ *
  * @module Components/EditArea
  */
 
-import React, {
-  Suspense,
-  useMemo,
-  useState,
-  useCallback,
-  type MouseEventHandler,
-  type CSSProperties,
-} from "react";
+import { useRef, useEffect } from "react";
 import { ConfigProvider } from "antd";
-import { useComponentsStore } from "../../stores/components";
-import { useComponentConfigStore } from "../../stores/component-config";
 import { useUIStore } from "../../stores/uiStore";
 import {
   useCollaborationStore,
   useCollaborators,
 } from "../../stores/collaborationStore";
-import { sendCursorPosition } from "../../hooks/useCollaboration";
 import HoverMask from "./HoverMask";
 import SelectedMask from "./SelectedMask";
 import CollaboratorCursor from "./CollaboratorCursor";
 import CollaboratorMask from "./CollaboratorMask";
-import LoadingPlaceholder from "../common/LoadingPlaceholder";
-import { DraggableNode } from "./DraggableNode";
+
+// 抽离的 hooks
+import {
+  useContainerResize,
+  useCanvasScale,
+  useSimulatorStyles,
+  useCanvasInteraction,
+  useRenderComponents,
+} from "./hooks";
 
 export function EditArea() {
-  const { components, rootId } = useComponentsStore();
-  const { curComponentId, setCurComponentId, canvasSize } = useUIStore();
-  const { componentConfig } = useComponentConfigStore();
-  const { editorMode, isConnected, connectionError } = useCollaborationStore();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const simulatorRef = useRef<HTMLDivElement>(null);
+
+  // 从 store 获取必要状态
+  const { curComponentId, canvasSize, setCanvasSize } = useUIStore();
+  const { editorMode, connectionError } = useCollaborationStore();
   const collaborators = useCollaborators();
 
-  // 联机模式下断开连接时禁用编辑
-  const isDisabled = editorMode === "live" && !isConnected;
+  // ========== 使用抽离的 hooks ==========
 
-  // 使用 state 追踪当前鼠标悬浮在其上的组件 ID
-  const [hoverComponentId, setHoverComponentId] = useState<number>();
+  // 1. 监听容器尺寸变化
+  const containerSize = useContainerResize(containerRef);
 
-  /**
-   * 计算 Simulator Container 的样式
-   * 根据 canvasSize 模式决定固定尺寸或自适应
-   */
-  const simulatorStyle = useMemo<CSSProperties>(() => {
-    const isDesktop = canvasSize.mode === "desktop";
+  // 初始化 Desktop 模式下的画布宽度（将 100% 转换为具体像素值）
+  // 核心逻辑：协同模式下，必须保证所有人的画布宽度一致（像素级对齐）
+  useEffect(() => {
+    if (
+      canvasSize.mode === "desktop" &&
+      containerSize.width > 0 &&
+      simulatorRef.current
+    ) {
+      // 获取内容的最大占用宽度
+      // scrollWidth 包含了溢出的内容宽度
+      const contentWidth = simulatorRef.current.scrollWidth;
 
-    return {
-      width: isDesktop ? "100%" : canvasSize.width,
-      height: isDesktop ? "100%" : canvasSize.height,
-      minHeight: isDesktop ? "100%" : undefined,
-      // 建立新的定位上下文（包含块）
-      position: "relative",
-      // 隔离溢出内容
-      overflow: isDesktop ? "visible" : "hidden",
-      // 视觉样式
-      backgroundColor: "#fff",
-      boxShadow: isDesktop ? "none" : "0 4px 24px rgba(0, 0, 0, 0.12)",
-      borderRadius: isDesktop ? 0 : 8,
-      // 过渡动画：只对视觉属性进行过渡，避免 width/height 过渡导致的奇怪效果
-      transition: "box-shadow 0.3s ease, border-radius 0.3s ease",
-    };
-  }, [canvasSize]);
+      // 取 容器宽度 和 内容宽度 的最大值，确保画布至少填满屏幕
+      const targetWidth = Math.max(
+        Math.floor(containerSize.width),
+        contentWidth
+      );
 
-  /**
-   * 工作台样式：根据画布模式调整布局
-   */
-  const workspaceStyle = useMemo<CSSProperties>(() => {
-    const isDesktop = canvasSize.mode === "desktop";
-
-    return {
-      display: "flex",
-      justifyContent: isDesktop ? "stretch" : "center",
-      alignItems: isDesktop ? "stretch" : "flex-start",
-      padding: isDesktop ? 0 : 24,
-      // 背景
-      background: `
-        radial-gradient(circle at 25px 25px, rgba(156, 163, 175, 0.08) 2px, transparent 0),
-        radial-gradient(circle at 75px 75px, rgba(156, 163, 175, 0.04) 2px, transparent 0),
-        linear-gradient(135deg, #fefefe 0%, #f9fafb 100%)
-      `,
-      backgroundSize: "50px 50px, 100px 100px, 100% 100%",
-    };
-  }, [canvasSize]);
-
-  /**
-   * @description 鼠标悬浮事件处理器。
-   * 采用事件委托模式，监听整个 EditArea 的 onMouseOver 事件。
-   * 通过 `e.nativeEvent.composedPath()` 向上追溯 DOM 树，
-   * 找到第一个带有 `data-component-id` 属性的元素，以确定悬浮的组件。
-   */
-  const handleMouseOver: MouseEventHandler = (e) => {
-    // composedPath() 返回一个包含事件路径上所有节点的数组（从目标到窗口）
-    const path = e.nativeEvent.composedPath();
-
-    for (let i = 0; i < path.length; i += 1) {
-      const ele = path[i] as HTMLElement;
-
-      const componentId = ele.dataset?.componentId;
-      if (componentId) {
-        // 找到最近的带 ID 的组件，更新 hover 状态并立即返回
-        setHoverComponentId(+componentId);
+      // 只在宽度发生变化时更新，避免死循环
+      // 对于 desktop 模式，我们期望宽度的变化能反应到 store 中（即使这会触发协同更新）
+      // 但是在 协同模式 (live) 下，为了保证各端一致性，我们只要初始化一次后，就不再跟随 Resize 变化
+      if (
+        typeof canvasSize.width === "number" &&
+        Math.abs(canvasSize.width - targetWidth) < 2
+      ) {
         return;
       }
-    }
-  };
 
-  /**
-   * @description 鼠标点击事件处理器（捕获阶段）
-   *
-   * 关键设计：使用 onClickCapture 而非 onClick
-   * - 捕获阶段 > 目标阶段 > 冒泡阶段
-   * - 即使业务组件内部调用了 e.stopPropagation()，也不会阻止编辑器的选中逻辑
-   * - 编辑器的"选中"行为拥有最高优先级
-   *
-   * 事件策略：
-   * - interactiveInEditor: false → 拦截事件（preventDefault + stopPropagation）
-   * - interactiveInEditor: true → 仅更新选中状态，不拦截事件
-   */
-  const handleClickCapture: MouseEventHandler = useCallback(
-    (e) => {
-      const path = e.nativeEvent.composedPath();
-
-      for (let i = 0; i < path.length; i++) {
-        const ele = path[i] as HTMLElement;
-        const componentId = ele.dataset?.componentId;
-
-        if (componentId) {
-          const id = +componentId;
-          const component = components[id];
-          if (!component) continue;
-
-          const config = componentConfig?.[component.name];
-          if (!config) continue;
-
-          // 判断是否允许编辑器内交互
-          const allowInteraction = config.editor.interactiveInEditor ?? false;
-
-          if (!allowInteraction) {
-            // 普通组件：拦截事件，仅做选中
-            // 阻止事件继续传播到目标和冒泡阶段
-            e.stopPropagation();
-            e.preventDefault();
-          }
-          // else: 交互组件（如 Tabs）：不拦截，让原生事件继续
-
-          // 无论如何都更新选中状态
-          if (curComponentId === id) {
-            setCurComponentId(null);
-          } else {
-            setCurComponentId(id);
-          }
-          return;
-        }
+      // 如果是 live 模式且已经初始化过（width 是数字），则不再更新
+      // 这实现了"冻结"画布宽度的效果
+      if (editorMode === "live" && typeof canvasSize.width === "number") {
+        return;
       }
-    },
-    [components, componentConfig, curComponentId, setCurComponentId]
-  );
 
-  /**
-   * 判断组件是否为容器
-   *
-   * 规则：
-   * 1. 新协议格式：读取 editor.isContainer
-   * 2. 旧格式：检查是否有其他组件的 parentTypes 包含此组件名
-   */
-  const isContainerComponent = useCallback(
-    (name: string): boolean => {
-      const config = componentConfig?.[name];
-      if (!config) return false;
+      // 如果 canvasSize.width 是 "100%"，或者数值有较大差异（且非 live），则更新
+      setCanvasSize({
+        ...canvasSize,
+        width: targetWidth,
+      });
+    }
+  }, [canvasSize, containerSize.width, setCanvasSize, editorMode]);
 
-      // 新协议格式：直接读取 editor.isContainer
-      return config.editor.isContainer ?? false;
-    },
-    [componentConfig]
-  );
+  // 2. 计算画布缩放比例
+  const scale = useCanvasScale(containerSize);
 
-  /**
-   * 基于范式化 Map 的递归渲染函数。
-   *
-   * v2 变更：
-   * - 支持新协议格式（component）和旧格式（dev）
-   * - 使用 DraggableNode 注入拖拽能力
-   */
-  const RenderNode = useCallback(
-    ({ id }: { id: number }) => {
-      const component = components[id];
-      if (!component) return null;
+  // 3. 计算样式
+  const { simulatorStyle, workspaceStyle } = useSimulatorStyles(scale);
 
-      const config = componentConfig?.[component.name];
-      if (!config) return null;
+  // 4. 画布交互事件处理
+  const {
+    hoverComponentId,
+    handleMouseOver,
+    handleMouseLeave,
+    handleMouseMove,
+    handleClickCapture,
+    isDisabled,
+  } = useCanvasInteraction(scale);
 
-      // 获取要渲染的组件
-      const ComponentToRender = config.component;
-
-      if (!ComponentToRender) return null;
-
-      // 判断是否为容器组件
-      const isContainer = isContainerComponent(component.name);
-
-      return (
-        <Suspense
-          key={component.id}
-          fallback={<LoadingPlaceholder componentDesc={config.desc} />}
-        >
-          <DraggableNode
-            id={component.id}
-            name={component.name}
-            isContainer={isContainer}
-          >
-            {React.createElement(
-              ComponentToRender,
-              {
-                // 通用属性
-                ...config.defaultProps,
-                ...component.props,
-                style: component.styles,
-              },
-              component.children?.map((childId) => (
-                <RenderNode key={childId} id={childId} />
-              ))
-            )}
-          </DraggableNode>
-        </Suspense>
-      );
-    },
-    [components, componentConfig, curComponentId, isContainerComponent]
-  );
-
-  const componentTree = useMemo(() => {
-    return rootId ? <RenderNode id={rootId} /> : null;
-  }, [rootId, RenderNode]);
+  // 5. 组件树渲染
+  const { componentTree } = useRenderComponents();
 
   return (
     <div
+      ref={containerRef}
       className="h-full edit-area overflow-auto relative"
       style={workspaceStyle}
     >
@@ -258,28 +128,12 @@ export function EditArea() {
         - overflow: hidden 防止内容溢出
       */}
       <div
+        ref={simulatorRef}
         className="simulator-container"
         style={simulatorStyle}
         onMouseOver={isDisabled ? undefined : handleMouseOver}
-        onMouseLeave={() => {
-          setHoverComponentId(undefined);
-          // 鼠标离开画布时，发送隐藏光标的消息（使用 -1, -1 表示隐藏）
-          if (editorMode === "live") {
-            sendCursorPosition(-1, -1);
-          }
-        }}
-        onMouseMove={
-          isDisabled || editorMode !== "live"
-            ? undefined
-            : (e) => {
-                // 发送光标位置（相对于 simulator-container）
-                const container = e.currentTarget;
-                const rect = container.getBoundingClientRect();
-                const x = e.clientX - rect.left + container.scrollLeft;
-                const y = e.clientY - rect.top + container.scrollTop;
-                sendCursorPosition(x, y);
-              }
-        }
+        onMouseLeave={isDisabled ? undefined : handleMouseLeave}
+        onMouseMove={isDisabled ? undefined : handleMouseMove}
         // 关键：使用捕获阶段处理点击事件，确保编辑器选中逻辑最高优先级
         onClickCapture={isDisabled ? undefined : handleClickCapture}
       >

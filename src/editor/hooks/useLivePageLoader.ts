@@ -35,7 +35,7 @@ interface UseLivePageLoaderResult {
  * 4. 清空本地历史栈
  */
 export function useLivePageLoader(): UseLivePageLoaderResult {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +45,11 @@ export function useLivePageLoader(): UseLivePageLoaderResult {
   useEffect(() => {
     // 本地模式或无 pageId，不加载
     if (editorMode !== "live" || !pageId) {
+      return;
+    }
+
+    // 等待 Clerk 初始化完成
+    if (!isLoaded) {
       return;
     }
 
@@ -120,7 +125,7 @@ export function useLivePageLoader(): UseLivePageLoaderResult {
     return () => {
       cancelled = true;
     };
-  }, [pageId, editorMode, getToken, navigate, setPageLoading]);
+  }, [pageId, editorMode, getToken, navigate, setPageLoading, isLoaded]);
 
   return { isLoading: isPageLoading, error };
 }

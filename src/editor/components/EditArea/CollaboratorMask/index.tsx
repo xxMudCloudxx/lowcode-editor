@@ -69,6 +69,11 @@ function CollaboratorMaskInner({
 
   /**
    * 计算并更新遮罩层的位置和大小
+   *
+   * 重要：当画布被 CSS transform: scale() 缩放时，
+   * getBoundingClientRect() 返回的是缩放后的视觉像素值。
+   * 但遮罩层在 Portal 中渲染，不受 scale 影响，
+   * 所以需要除以 scale 来还原逻辑坐标。
    */
   function updatePosition() {
     if (!selectedComponentId) return;
@@ -85,15 +90,26 @@ function CollaboratorMaskInner({
       return;
     }
 
+    // 获取当前缩放比例（从 CSS 变量中读取，由 useSimulatorStyles 设置）
+    const scale = parseFloat(
+      getComputedStyle(container).getPropertyValue("--current-scale") || "1"
+    );
+
     const { top, left, width, height } = node.getBoundingClientRect();
     const { top: containerTop, left: containerLeft } =
       container.getBoundingClientRect();
 
+    // 计算相对于容器的偏移（这些值是缩放后的），然后除以 scale 还原逻辑坐标
+    const relativeTop = (top - containerTop) / scale + container.scrollTop;
+    const relativeLeft = (left - containerLeft) / scale + container.scrollLeft;
+    const logicalWidth = width / scale;
+    const logicalHeight = height / scale;
+
     setPosition({
-      top: top - containerTop + container.scrollTop,
-      left: left - containerLeft + container.scrollLeft,
-      width,
-      height,
+      top: relativeTop,
+      left: relativeLeft,
+      width: logicalWidth,
+      height: logicalHeight,
     });
   }
 

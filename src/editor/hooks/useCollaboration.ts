@@ -190,7 +190,7 @@ export function sendCursorPosition(x: number, y: number) {
  * @returns 连接状态信息
  */
 export function useCollaboration(): UseCollaborationResult {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const { user } = useUser();
   const currentUserId = user?.id || "";
   // 使用 ref 存储 userId，避免闭包问题
@@ -522,6 +522,11 @@ export function useCollaboration(): UseCollaborationResult {
       return;
     }
 
+    // 等待 Clerk 初始化完成
+    if (!isLoaded) {
+      return;
+    }
+
     connect();
 
     return () => {
@@ -537,7 +542,7 @@ export function useCollaboration(): UseCollaborationResult {
       // 清理协作者
       clearCollaborators();
     };
-  }, [pageId, editorMode]); // 只在 pageId 或 editorMode 变化时重新连接
+  }, [pageId, editorMode, isLoaded]); // 只在 pageId、editorMode 或 isLoaded 变化时重新连接
 
   /**
    * 发送选中组件变更

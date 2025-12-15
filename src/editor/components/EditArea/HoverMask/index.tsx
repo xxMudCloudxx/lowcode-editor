@@ -50,6 +50,11 @@ function HoverMask({
 
   /**
    * @description 核心函数：计算并更新遮罩层的位置和大小。
+   *
+   * 重要：当画布被 CSS transform: scale() 缩放时，
+   * getBoundingClientRect() 返回的是缩放后的视觉像素值。
+   * 但遮罩层在 Portal 中渲染，不受 scale 影响，
+   * 所以需要除以 scale 来还原逻辑坐标。
    */
   function updatePosition() {
     if (!componentId) return;
@@ -61,25 +66,36 @@ function HoverMask({
     const node = document.querySelector(`[data-component-id="${componentId}"]`);
     if (!node) return;
 
+    // 获取当前缩放比例（从 CSS 变量中读取，由 useSimulatorStyles 设置）
+    const scale = parseFloat(
+      getComputedStyle(container).getPropertyValue("--current-scale") || "1"
+    );
+
     // getBoundingClientRect() 返回的是元素相对于浏览器视口的位置
     const { top, left, width, height } = node.getBoundingClientRect();
     const { top: containerTop, left: containerLeft } =
       container.getBoundingClientRect();
 
-    let labelTop = top - containerTop + container.scrollTop;
-    const labelLeft = left - containerLeft + width;
+    // 计算相对于容器的偏移（这些值是缩放后的），然后除以 scale 还原逻辑坐标
+    const relativeTop = (top - containerTop) / scale + container.scrollTop;
+    const relativeLeft = (left - containerLeft) / scale + container.scrollLeft;
+    const logicalWidth = width / scale;
+    const logicalHeight = height / scale;
+
+    let labelTop = relativeTop;
+    const labelLeft = relativeLeft + logicalWidth;
     if (labelTop <= 0) {
       labelTop += 20;
     }
 
-    // 核心逻辑：将组件的“视口坐标”转换为“相对于滚动画布容器的坐标”。
+    // 核心逻辑：将组件的"视口坐标"转换为"相对于滚动画布容器的坐标"。
     // 必须减去容器的视口偏移，并加上容器自身的滚动距离，
     // 这样遮罩层才能在画布滚动后依然正确定位。
     setPosition({
-      top: top - containerTop + container.scrollTop,
-      left: left - containerLeft + container.scrollLeft,
-      width,
-      height,
+      top: relativeTop,
+      left: relativeLeft,
+      width: logicalWidth,
+      height: logicalHeight,
       labelLeft,
       labelTop,
     });

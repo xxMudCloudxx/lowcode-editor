@@ -375,8 +375,8 @@ export function Header() {
                 />
               </div>
 
-              {/* 画布尺寸输入 - 仅在非 desktop 模式且大屏幕显示 */}
-              {canvasSize.mode !== "desktop" && (
+              {/* 画布尺寸输入 */}
+              {
                 <div className="hidden xl:flex items-center gap-1 text-sm">
                   <input
                     type="number"
@@ -393,24 +393,8 @@ export function Header() {
                     min={200}
                     max={2000}
                   />
-                  <span className="text-gray-400">×</span>
-                  <input
-                    type="number"
-                    value={
-                      typeof canvasSize.height === "number"
-                        ? canvasSize.height
-                        : 667
-                    }
-                    onChange={(e) => {
-                      const height = parseInt(e.target.value) || 667;
-                      setCanvasSize({ ...canvasSize, height });
-                    }}
-                    className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
-                    min={200}
-                    max={3000}
-                  />
                 </div>
-              )}
+              }
 
               {/* 快捷键指南 - 小屏幕隐藏 */}
               <div className="hidden md:block">
