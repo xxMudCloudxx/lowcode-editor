@@ -61,8 +61,8 @@ export default function ReactPlayground({ mode: editorMode }: Props) {
       {uiMode === "edit" ? (
         <div className="flex-1 flex overflow-hidden">
           <Allotment>
-            {/* 左侧物料面板 */}
-            <Allotment.Pane preferredSize={280} minSize={240}>
+            {/* 左侧物料面板 - 固定宽度 */}
+            <Allotment.Pane preferredSize={320} minSize={320} maxSize={320}>
               <div className="h-full custom-panel">
                 <div className="p-4">
                   <MaterialWrapper />

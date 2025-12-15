@@ -71,7 +71,7 @@ export function Outline() {
   };
 
   return (
-    <div className="w-full custom-scrollbar overflow-y-auto absolute overscroll-y-contain pr-6 h-full pb-20">
+    <div className="w-full custom-scrollbar overflow-y-auto overflow-x-auto absolute overscroll-x-contain overscroll-y-contain pr-6 h-full pb-20">
       <Tree
         fieldNames={{ title: "desc", key: "id" }}
         treeData={treeData as any}
