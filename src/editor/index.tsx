@@ -78,7 +78,7 @@ export default function ReactPlayground({ mode: editorMode }: Props) {
             </Allotment.Pane>
 
             {/* 右侧设置面板 */}
-            <Allotment.Pane preferredSize={360} maxSize={480} minSize={320}>
+            <Allotment.Pane preferredSize={360} maxSize={360} minSize={360}>
               <div className="h-full custom-panel border-l border-border">
                 <div className="p-4">
                   <Setting />

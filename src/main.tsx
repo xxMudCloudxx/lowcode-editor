@@ -18,7 +18,7 @@ createRoot(document.getElementById("root")!).render(
   <DndProvider backend={HTML5Backend}>
     <ClerkProvider
       publishableKey={PUBLISHABLE_KEY || ""}
-      afterSignOutUrl="/lowcode-editor"
+      afterSignOutUrl="/lowcode-editor/"
     >
       <BrowserRouter basename="/lowcode-editor">
         <App />
