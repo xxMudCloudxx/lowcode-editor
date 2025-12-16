@@ -11,7 +11,6 @@ import {
   Space,
   Popconfirm,
   Typography,
-  Popover,
   Tooltip,
   Segmented,
   message,
@@ -19,7 +18,6 @@ import {
   Dropdown,
 } from "antd";
 import {
-  QuestionCircleOutlined,
   UndoOutlined,
   RedoOutlined,
   EyeOutlined,
@@ -49,53 +47,9 @@ import { useHistoryStore } from "../../stores/historyStore";
 import { useCollaborationStore } from "../../stores/collaborationStore";
 import { exportSourceCode } from "../../../code-generator";
 import type { IGeneratedFile, ISchema } from "../../../code-generator/types/ir";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CodePreviewDrawer } from "../CodePreviewDrawer";
-
-/**
- * @description 快捷键指南的 Popover 内容
- */
-const shortcutsContent = (
-  <div className="w-64 space-y-3">
-    <div>
-      <Text className="text-text-secondary text-xs font-medium uppercase tracking-wide">
-        通用快捷键
-      </Text>
-    </div>
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <Text code className="text-xs">
-          Cmd/Ctrl + Z
-        </Text>
-        <Text className="text-text-secondary text-sm">撤销</Text>
-      </div>
-      <div className="flex justify-between items-center">
-        <Text code className="text-xs">
-          Cmd/Ctrl + Shift + Z
-        </Text>
-        <Text className="text-text-secondary text-sm">恢复</Text>
-      </div>
-      <div className="flex justify-between items-center">
-        <Text code className="text-xs">
-          Cmd/Ctrl + C
-        </Text>
-        <Text className="text-text-secondary text-sm">复制</Text>
-      </div>
-      <div className="flex justify-between items-center">
-        <Text code className="text-xs">
-          Cmd/Ctrl + V
-        </Text>
-        <Text className="text-text-secondary text-sm">粘贴</Text>
-      </div>
-      <div className="flex justify-between items-center">
-        <Text code className="text-xs">
-          Delete
-        </Text>
-        <Text className="text-text-secondary text-sm">删除</Text>
-      </div>
-    </div>
-  </div>
-);
+import { ShortcutsGuide } from "./ShortcutsGuide";
 
 /**
  * @description
@@ -129,6 +83,18 @@ export function Header() {
 
   const { editorMode, isConnected, connectionError } = useCollaborationStore();
   const isLiveMode = editorMode === "live";
+
+  // 画布宽度输入状态（本地状态，回车确认后才同步到 store）
+  const [inputWidth, setInputWidth] = useState(
+    String(typeof canvasSize.width === "number" ? canvasSize.width : 1440)
+  );
+
+  // 当从外部切换模式时，同步 store 到 input
+  useEffect(() => {
+    if (typeof canvasSize.width === "number") {
+      setInputWidth(String(canvasSize.width));
+    }
+  }, [canvasSize.width]);
 
   const handleReset = () => {
     resetComponents();
@@ -338,6 +304,53 @@ export function Header() {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
           {mode === "edit" && (
             <>
+              {/* 画布尺寸切换 - 小屏幕隐藏 */}
+              <div className="hidden xl:block">
+                <Segmented
+                  size="small"
+                  value={canvasSize.mode}
+                  onChange={(v) =>
+                    setCanvasPreset(v as "desktop" | "tablet" | "mobile")
+                  }
+                  options={[
+                    { value: "desktop", icon: <DesktopOutlined /> },
+                    { value: "tablet", icon: <TabletOutlined /> },
+                    { value: "mobile", icon: <MobileOutlined /> },
+                  ]}
+                />
+              </div>
+
+              {/* 画布尺寸输入（回车确认） */}
+              <div className="hidden xl:flex items-center gap-1 text-sm">
+                <input
+                  type="number"
+                  value={inputWidth}
+                  onChange={(e) => setInputWidth(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      // 空值意味着用户想要当前容器的 100% 宽度
+                      const width =
+                        inputWidth.trim() === ""
+                          ? ("100%" as const)
+                          : parseInt(inputWidth) || 375;
+                      setCanvasSize({ ...canvasSize, width });
+                    }
+                  }}
+                  onBlur={() => {
+                    // 失焦时也确认
+                    const width =
+                      inputWidth.trim() === ""
+                        ? ("100%" as const)
+                        : parseInt(inputWidth) || 375;
+                    setCanvasSize({ ...canvasSize, width });
+                  }}
+                  className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                  min={200}
+                  max={4000}
+                />
+              </div>
+
+              {/* 缩放控制已移至 EditArea/ZoomControl */}
               {/* 撤销/重做 */}
               <div className="flex items-center bg-neutral-100 rounded-lg p-1 gap-1">
                 <Tooltip title="撤销 (Ctrl+Z)">
@@ -359,61 +372,10 @@ export function Header() {
                   />
                 </Tooltip>
               </div>
-              {/* 画布尺寸切换 - 小屏幕隐藏 */}
-              <div className="hidden xl:block">
-                <Segmented
-                  size="small"
-                  value={canvasSize.mode}
-                  onChange={(v) =>
-                    setCanvasPreset(v as "desktop" | "tablet" | "mobile")
-                  }
-                  options={[
-                    { value: "desktop", icon: <DesktopOutlined /> },
-                    { value: "tablet", icon: <TabletOutlined /> },
-                    { value: "mobile", icon: <MobileOutlined /> },
-                  ]}
-                />
-              </div>
-
-              {/* 画布尺寸输入 */}
-              {
-                <div className="hidden xl:flex items-center gap-1 text-sm">
-                  <input
-                    type="number"
-                    value={
-                      typeof canvasSize.width === "number"
-                        ? canvasSize.width
-                        : 375
-                    }
-                    onChange={(e) => {
-                      const width = parseInt(e.target.value) || 375;
-                      setCanvasSize({ ...canvasSize, width });
-                    }}
-                    className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
-                    min={200}
-                    max={2000}
-                  />
-                </div>
-              }
 
               {/* 快捷键指南 - 小屏幕隐藏 */}
               <div className="hidden md:block">
-                <Popover
-                  content={shortcutsContent}
-                  title={
-                    <Title level={5} className="mb-2!">
-                      快捷键指南
-                    </Title>
-                  }
-                  trigger="click"
-                  placement="bottom"
-                >
-                  <Button
-                    icon={<QuestionCircleOutlined />}
-                    size="small"
-                    type="text"
-                  />
-                </Popover>
+                <ShortcutsGuide />
               </div>
             </>
           )}

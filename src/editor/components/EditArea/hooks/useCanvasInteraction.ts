@@ -32,7 +32,9 @@ export interface CanvasInteractionResult {
  * @param scale 当前缩放比例
  * @returns 交互事件处理器和状态
  */
-export function useCanvasInteraction(scale: number): CanvasInteractionResult {
+export function useCanvasInteraction(
+  localScale: number
+): CanvasInteractionResult {
   const { components } = useComponentsStore();
   const { curComponentId, setCurComponentId } = useUIStore();
   const { componentConfig } = useComponentConfigStore();
@@ -79,6 +81,11 @@ export function useCanvasInteraction(scale: number): CanvasInteractionResult {
 
   /**
    * 鼠标移动事件处理器（用于协作光标同步）
+   *
+   * 坐标计算说明：
+   * - getBoundingClientRect() 返回的是相对于视口的位置（已包含滚动偏移）
+   * - 因此不需要额外加 scrollLeft/scrollTop
+   * - 除以 localScale 得到逻辑坐标（未缩放状态下的位置）
    */
   const handleMouseMove: MouseEventHandler = useCallback(
     (e) => {
@@ -87,12 +94,14 @@ export function useCanvasInteraction(scale: number): CanvasInteractionResult {
       // 发送光标位置（相对于 simulator-container）
       const container = e.currentTarget;
       const rect = container.getBoundingClientRect();
-      // 除以 scale 还原逻辑坐标
-      const x = (e.clientX - rect.left) / scale + container.scrollLeft;
-      const y = (e.clientY - rect.top) / scale + container.scrollTop;
+
+      // 计算逻辑坐标（除以 localScale 还原）
+      // 注意：不需要加 scrollLeft，因为 rect.left 已经是视口坐标
+      const x = (e.clientX - rect.left) / localScale;
+      const y = (e.clientY - rect.top) / localScale;
       sendCursorPosition(x, y);
     },
-    [editorMode, scale]
+    [editorMode, localScale]
   );
 
   /**

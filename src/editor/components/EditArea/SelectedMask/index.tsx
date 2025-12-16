@@ -47,7 +47,8 @@ function SelectedMask({
   });
 
   const { components, deleteComponent, pasteComponents } = useComponentsStore();
-  const { curComponentId, setCurComponentId, setClipboard } = useUIStore();
+  const { curComponentId, setCurComponentId, setClipboard, localScale } =
+    useUIStore();
 
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
@@ -62,6 +63,7 @@ function SelectedMask({
   /**
    * 将所有外部事件监听统一管理。
    * 无论是容器滚动还是窗口尺寸变化，都触发一次位置更新。
+   * 注意：必须包含 localScale 依赖，否则事件处理器会捕获旧的 scale 值
    */
   useEffect(() => {
     const container = document.querySelector(`.${containerClassName}`);
@@ -83,11 +85,10 @@ function SelectedMask({
       window.removeEventListener("resize", handleResize);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containerClassName, componentId]);
+  }, [containerClassName, componentId, localScale]);
 
   // 将定位逻辑放在 useLayoutEffect 中，确保在 DOM 更新之后、浏览器绘制之前执行
-  // 注意：不依赖 components 对象，因为 props/desc 等非结构性变化不应触发位置更新
-  // 只在 componentId 变化或撤销/重做时更新位置
+  // 在 componentId 变化、撤销/重做、或缩放变化时更新位置
   useLayoutEffect(() => {
     updatePosition();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,11 +96,9 @@ function SelectedMask({
 
   /**
    * 计算并更新遮罩层的位置和大小
-   *
-   * 重要：当画布被 CSS transform: scale() 缩放时，
-   * getBoundingClientRect() 返回的是缩放后的视觉像素值。
-   * 但遮罩层在 Portal 中渲染，不受 scale 影响，
-   * 所以需要除以 scale 来还原逻辑坐标。
+   * 注意：getBoundingClientRect() 返回的是缩放后的视觉尺寸，
+   * 但 mask 是在 simulator 内部渲染的（也会被缩放），
+   * 所以需要将尺寸除以 scale 来得到正确的 CSS 定位值。
    */
   function updatePosition() {
     if (!componentId) return;
@@ -110,38 +109,34 @@ function SelectedMask({
     const node = document.querySelector(`[data-component-id="${componentId}"]`);
     if (!node) return;
 
-    // 获取当前缩放比例（从 CSS 变量中读取，由 useSimulatorStyles 设置）
-    const scale = parseFloat(
-      getComputedStyle(container).getPropertyValue("--current-scale") || "1"
-    );
-
     const { top, left, width, height } = node.getBoundingClientRect();
     const { top: containerTop, left: containerLeft } =
       container.getBoundingClientRect();
 
-    // 计算相对于容器的偏移（这些值是缩放后的），然后除以 scale 还原逻辑坐标
-    const relativeTop = (top - containerTop) / scale + container.scrollTop;
-    const relativeLeft = (left - containerLeft) / scale + container.scrollLeft;
-    const logicalWidth = width / scale;
-    const logicalHeight = height / scale;
+    // 将缩放后的视觉尺寸转换为未缩放的 CSS 值
+    const unscaledWidth = width / localScale;
+    const unscaledHeight = height / localScale;
+    const unscaledTop = (top - containerTop) / localScale + container.scrollTop;
+    const unscaledLeft =
+      (left - containerLeft) / localScale + container.scrollLeft;
 
-    let labelTop = relativeTop;
+    let labelTop = unscaledTop;
     if (labelTop <= 0) {
       labelTop += 20;
     }
 
     // 标签工具栏宽度约 180px，如果组件左边缘距离容器左边缘不足 180px，则标签会被遮挡
-    const labelFlipToRight = relativeLeft < 180;
+    const labelFlipToRight = unscaledLeft < 180;
     // 根据是否翻转，设置标签的左侧位置
     const labelLeft = labelFlipToRight
-      ? relativeLeft // 组件左边缘
-      : relativeLeft + logicalWidth; // 组件右边缘
+      ? unscaledLeft // 组件左边缘
+      : unscaledLeft + unscaledWidth; // 组件右边缘
 
     setPosition({
-      top: relativeTop,
-      left: relativeLeft,
-      width: logicalWidth,
-      height: logicalHeight,
+      top: unscaledTop,
+      left: unscaledLeft,
+      width: unscaledWidth,
+      height: unscaledHeight,
       labelLeft,
       labelTop,
       labelFlipToRight,

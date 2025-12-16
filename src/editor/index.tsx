@@ -62,7 +62,7 @@ export default function ReactPlayground({ mode: editorMode }: Props) {
         <div className="flex-1 flex overflow-hidden">
           <Allotment>
             {/* 左侧物料面板 - 固定宽度 */}
-            <Allotment.Pane preferredSize={320} minSize={320} maxSize={320}>
+            <Allotment.Pane preferredSize={260} minSize={260} maxSize={260}>
               <div className="h-full custom-panel">
                 <div className="p-4">
                   <MaterialWrapper />
@@ -78,7 +78,7 @@ export default function ReactPlayground({ mode: editorMode }: Props) {
             </Allotment.Pane>
 
             {/* 右侧设置面板 */}
-            <Allotment.Pane preferredSize={360} maxSize={360} minSize={360}>
+            <Allotment.Pane preferredSize={380} maxSize={380} minSize={380}>
               <div className="h-full custom-panel border-l border-border">
                 <div className="p-4">
                   <Setting />

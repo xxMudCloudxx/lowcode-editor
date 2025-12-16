@@ -4,10 +4,17 @@
  * 渲染其他协作者的光标位置。
  * 显示彩色光标箭头和用户名标签。
  *
+ * 坐标说明：
+ * - 收到的 cursorX/cursorY 是逻辑坐标（未缩放状态下的位置）
+ * - 由于光标渲染在 simulator-container 内，而 simulator 已经被 scale 缩放
+ * - 所以光标使用逻辑坐标直接定位即可，会自动跟随画布缩放
+ * - 但为了保持光标本身大小恒定，需要反向缩放 cursor 元素
+ *
  * @module Components/EditArea/CollaboratorCursor
  */
 
 import { type CSSProperties, memo } from "react";
+import { useUIStore } from "../../../stores/uiStore";
 import type { Collaborator } from "../../../stores/collaborationStore";
 
 interface CollaboratorCursorProps {
@@ -21,6 +28,7 @@ interface CollaboratorCursorProps {
  */
 function CollaboratorCursorInner({ collaborator }: CollaboratorCursorProps) {
   const { cursorX, cursorY, userName, color } = collaborator;
+  const { localScale } = useUIStore();
 
   // 如果没有光标位置，或者位置无效（0,0 或负值表示隐藏），不渲染
   if (
@@ -32,13 +40,19 @@ function CollaboratorCursorInner({ collaborator }: CollaboratorCursorProps) {
     return null;
   }
 
+  // 直接使用逻辑坐标定位
+  // 因为光标在 simulator-container 内，会随画布一起缩放
+  // 所以不需要额外乘以 localScale
   const cursorStyle: CSSProperties = {
     position: "absolute",
     left: cursorX,
     top: cursorY,
     pointerEvents: "none",
     zIndex: 1000,
-    transform: "translate(-2px, -2px)",
+    // 反向缩放光标本身，保持恒定大小
+    // 因为光标在画布内部，会跟随画布一起缩放，所以需要反向缩放
+    transform: `translate(-2px, -2px) scale(${1 / localScale})`,
+    transformOrigin: "top left",
     transition: "left 0.1s ease-out, top 0.1s ease-out",
   };
 

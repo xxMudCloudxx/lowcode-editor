@@ -11,6 +11,7 @@
 import { useEffect, useLayoutEffect, useState, memo } from "react";
 import { createPortal } from "react-dom";
 import type { Collaborator } from "../../../stores/collaborationStore";
+import { useUIStore } from "../../../stores/uiStore";
 
 interface CollaboratorMaskProps {
   collaborator: Collaborator;
@@ -36,6 +37,7 @@ function CollaboratorMaskInner({
     height: 0,
   });
 
+  const { localScale } = useUIStore();
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
   // 获取 Portal 容器
@@ -45,6 +47,7 @@ function CollaboratorMaskInner({
   }, [portalWrapperClassName]);
 
   // 监听滚动和窗口大小变化
+  // 注意：必须包含 localScale 依赖，否则事件处理器会捕获旧的 scale 值
   useEffect(() => {
     const container = document.querySelector(`.${containerClassName}`);
     if (!container) return;
@@ -60,20 +63,20 @@ function CollaboratorMaskInner({
       container.removeEventListener("scroll", handleUpdate);
       window.removeEventListener("resize", handleUpdate);
     };
-  }, [containerClassName, selectedComponentId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [containerClassName, selectedComponentId, localScale]);
 
-  // 计算位置
+  // 计算位置（当选中组件或缩放比例变化时）
   useLayoutEffect(() => {
     updatePosition();
-  }, [selectedComponentId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedComponentId, localScale]);
 
   /**
    * 计算并更新遮罩层的位置和大小
-   *
-   * 重要：当画布被 CSS transform: scale() 缩放时，
-   * getBoundingClientRect() 返回的是缩放后的视觉像素值。
-   * 但遮罩层在 Portal 中渲染，不受 scale 影响，
-   * 所以需要除以 scale 来还原逻辑坐标。
+   * 注意：getBoundingClientRect() 返回的是缩放后的视觉尺寸，
+   * 但 mask 是在 simulator 内部渲染的（也会被缩放），
+   * 所以需要将尺寸除以 scale 来得到正确的 CSS 定位值。
    */
   function updatePosition() {
     if (!selectedComponentId) return;
@@ -90,26 +93,22 @@ function CollaboratorMaskInner({
       return;
     }
 
-    // 获取当前缩放比例（从 CSS 变量中读取，由 useSimulatorStyles 设置）
-    const scale = parseFloat(
-      getComputedStyle(container).getPropertyValue("--current-scale") || "1"
-    );
-
     const { top, left, width, height } = node.getBoundingClientRect();
     const { top: containerTop, left: containerLeft } =
       container.getBoundingClientRect();
 
-    // 计算相对于容器的偏移（这些值是缩放后的），然后除以 scale 还原逻辑坐标
-    const relativeTop = (top - containerTop) / scale + container.scrollTop;
-    const relativeLeft = (left - containerLeft) / scale + container.scrollLeft;
-    const logicalWidth = width / scale;
-    const logicalHeight = height / scale;
+    // 将缩放后的视觉尺寸转换为未缩放的 CSS 值
+    const unscaledWidth = width / localScale;
+    const unscaledHeight = height / localScale;
+    const unscaledTop = (top - containerTop) / localScale + container.scrollTop;
+    const unscaledLeft =
+      (left - containerLeft) / localScale + container.scrollLeft;
 
     setPosition({
-      top: relativeTop,
-      left: relativeLeft,
-      width: logicalWidth,
-      height: logicalHeight,
+      top: unscaledTop,
+      left: unscaledLeft,
+      width: unscaledWidth,
+      height: unscaledHeight,
     });
   }
 

@@ -12,6 +12,7 @@ import {
   getComponentById,
   useComponentsStore,
 } from "../../../stores/components";
+import { useUIStore } from "../../../stores/uiStore";
 
 interface HoverMaskProps {
   portalWrapperClassName: string; // Portal 目标 DOM 节点的类名
@@ -33,6 +34,7 @@ function HoverMask({
     labelLeft: 0,
   });
   const { components } = useComponentsStore();
+  const { localScale } = useUIStore();
 
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
@@ -41,20 +43,17 @@ function HoverMask({
     setPortalEl(el);
   }, [portalWrapperClassName]);
 
-  // 当目标组件 ID 变化时，重新计算位置
-  // 注意：不依赖 components 对象，因为 props/desc 变化不应触发位置更新
+  // 当目标组件 ID 或缩放比例变化时，重新计算位置
   useEffect(() => {
     updatePosition();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentId]);
+  }, [componentId, localScale]);
 
   /**
    * @description 核心函数：计算并更新遮罩层的位置和大小。
-   *
-   * 重要：当画布被 CSS transform: scale() 缩放时，
-   * getBoundingClientRect() 返回的是缩放后的视觉像素值。
-   * 但遮罩层在 Portal 中渲染，不受 scale 影响，
-   * 所以需要除以 scale 来还原逻辑坐标。
+   * 注意：getBoundingClientRect() 返回的是缩放后的视觉尺寸，
+   * 但 mask 是在 simulator 内部渲染的（也会被缩放），
+   * 所以需要将尺寸除以 scale 来得到正确的 CSS 定位值。
    */
   function updatePosition() {
     if (!componentId) return;
@@ -66,36 +65,29 @@ function HoverMask({
     const node = document.querySelector(`[data-component-id="${componentId}"]`);
     if (!node) return;
 
-    // 获取当前缩放比例（从 CSS 变量中读取，由 useSimulatorStyles 设置）
-    const scale = parseFloat(
-      getComputedStyle(container).getPropertyValue("--current-scale") || "1"
-    );
-
     // getBoundingClientRect() 返回的是元素相对于浏览器视口的位置
     const { top, left, width, height } = node.getBoundingClientRect();
     const { top: containerTop, left: containerLeft } =
       container.getBoundingClientRect();
 
-    // 计算相对于容器的偏移（这些值是缩放后的），然后除以 scale 还原逻辑坐标
-    const relativeTop = (top - containerTop) / scale + container.scrollTop;
-    const relativeLeft = (left - containerLeft) / scale + container.scrollLeft;
-    const logicalWidth = width / scale;
-    const logicalHeight = height / scale;
+    // 将缩放后的视觉尺寸转换为未缩放的 CSS 值
+    const unscaledWidth = width / localScale;
+    const unscaledHeight = height / localScale;
+    const unscaledTop = (top - containerTop) / localScale + container.scrollTop;
+    const unscaledLeft =
+      (left - containerLeft) / localScale + container.scrollLeft;
 
-    let labelTop = relativeTop;
-    const labelLeft = relativeLeft + logicalWidth;
+    let labelTop = unscaledTop;
+    const labelLeft = unscaledLeft + unscaledWidth;
     if (labelTop <= 0) {
       labelTop += 20;
     }
 
-    // 核心逻辑：将组件的"视口坐标"转换为"相对于滚动画布容器的坐标"。
-    // 必须减去容器的视口偏移，并加上容器自身的滚动距离，
-    // 这样遮罩层才能在画布滚动后依然正确定位。
     setPosition({
-      top: relativeTop,
-      left: relativeLeft,
-      width: logicalWidth,
-      height: logicalHeight,
+      top: unscaledTop,
+      left: unscaledLeft,
+      width: unscaledWidth,
+      height: unscaledHeight,
       labelLeft,
       labelTop,
     });
