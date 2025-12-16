@@ -214,12 +214,20 @@ const creator: StateCreator<ComponentsStore, [["zustand/immer", never]]> = (
       const component = state.components[componentId]; // O(1) 查找
       if (!component) return;
 
-      component.props = replace
-        ? props
-        : {
-            ...component.props,
-            ...props,
-          };
+      if (replace) {
+        component.props = props;
+        return;
+      }
+
+      Object.entries(props).forEach(([key, value]) => {
+        if (value === undefined) {
+          // 通常用于清空属性
+          delete component.props[key];
+          return;
+        } else {
+          component.props[key] = value;
+        }
+      });
     });
   },
 
@@ -231,9 +239,21 @@ const creator: StateCreator<ComponentsStore, [["zustand/immer", never]]> = (
       const component = state.components[componentId]; // O(1) 查找
       if (!component) return;
 
-      component.styles = replace
-        ? { ...styles }
-        : { ...component.styles, ...styles };
+      if (replace) {
+        component.styles = styles;
+        return;
+      }
+
+      Object.entries(styles).forEach(([key, value]) => {
+        const styleKey = key as keyof CSSProperties;
+        if (value === undefined || value === null) {
+          delete component.styles?.[styleKey];
+          return;
+        } else {
+          if (!component.styles) component.styles = {};
+          component.styles[styleKey] = value;
+        }
+      });
     });
   },
 

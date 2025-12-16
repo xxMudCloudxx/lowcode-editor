@@ -25,14 +25,11 @@ export function useComponentAttrForm(curComponent: Component | null) {
     form.setFieldsValue(curComponent.props);
   }, [curComponentId, curComponent?.props, form]); // 依赖 curComponent.props 确保外部撤销/重做也能同步
 
-  // 表单值变化时的回调函数
-  const handleValuesChange = (_: AnyObject, allValues: AnyObject) => {
+  // 表单值变化时的回调函数（只传递实际变动的字段，生成最小化 patch）
+  const handleValuesChange = (changedValues: AnyObject) => {
     if (curComponentId) {
-      const newProps = Object.fromEntries(
-        Object.entries(allValues).filter(([_, value]) => value !== undefined)
-      );
-      // 使用替换模式，用过滤后的新 props 对象完全替换旧的
-      updateComponentProps(curComponentId, newProps, true);
+      // changedValues 只包含本次变动的字段，直接合并即可
+      updateComponentProps(curComponentId, changedValues, false);
     }
   };
 
