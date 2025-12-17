@@ -34,15 +34,24 @@ export function useSimulatorStyles(
 ): SimulatorStyles {
   const { canvasSize } = useUIStore();
 
-  // 计算画布宽度
-  const canvasWidth = useMemo(() => {
-    return typeof canvasSize.width === "number" ? canvasSize.width : 1440;
-  }, [canvasSize.width]);
+  // 画布宽度：数字或 "100%"
+  const isFullWidth = canvasSize.width === "100%";
+
+  // 计算画布数值宽度（用于 wrapper 撑开滚动条）
+  const canvasNumericWidth = useMemo(() => {
+    if (typeof canvasSize.width === "number") {
+      return canvasSize.width;
+    }
+    // "100%" 时使用容器宽度（如果已知），否则不撑开滚动条
+    return containerSize.width > 0 ? containerSize.width : 0;
+  }, [canvasSize.width, containerSize.width]);
 
   // 判断画布是否比容器宽（用于决定 transform-origin）
+  // 100% 模式下永远不会比容器宽
   const isCanvasWiderThanContainer = useMemo(() => {
-    return canvasWidth * localScale > containerSize.width;
-  }, [canvasWidth, localScale, containerSize.width]);
+    if (isFullWidth) return false;
+    return canvasNumericWidth * localScale > containerSize.width;
+  }, [isFullWidth, canvasNumericWidth, localScale, containerSize.width]);
 
   /**
    * 占位层样式（canvas-wrapper）
@@ -51,14 +60,14 @@ export function useSimulatorStyles(
    */
   const wrapperStyle = useMemo<CSSProperties>(() => {
     return {
-      // 精确宽度，用于撑开滚动条
-      width: canvasWidth * localScale,
+      // 100% 模式：占满容器；固定宽度模式：精确宽度撑开滚动条
+      width: isFullWidth ? "100%" : canvasNumericWidth * localScale,
       // 高度占满
       height: "100%",
       // 画布小于容器时居中显示，大于容器时左对齐（确保滚动条从左开始）
       margin: isCanvasWiderThanContainer ? "0" : "0 auto",
     };
-  }, [canvasWidth, localScale, isCanvasWiderThanContainer]);
+  }, [isFullWidth, canvasNumericWidth, localScale, isCanvasWiderThanContainer]);
 
   /**
    * 模拟器容器样式（simulator-container）
@@ -68,8 +77,8 @@ export function useSimulatorStyles(
     const isDesktop = canvasSize.mode === "desktop";
 
     return {
-      // 固定宽度，不能用 flex: 1（会与 transform 冲突导致尺寸计算错误）
-      width: canvasWidth,
+      // 100% 模式：占满容器；固定宽度模式：精确宽度
+      width: isFullWidth ? "100%" : canvasNumericWidth,
       // 高度占满（使用 100% 相对于 wrapper）
       height: "100%",
       // 防止被 flex 压缩
@@ -88,7 +97,7 @@ export function useSimulatorStyles(
       transition: "box-shadow 0.3s ease, border-radius 0.3s ease",
       "--current-scale": localScale,
     } as CSSProperties;
-  }, [canvasSize, localScale, canvasWidth]);
+  }, [canvasSize, localScale, isFullWidth, canvasNumericWidth]);
 
   /**
    * 工作台背景样式

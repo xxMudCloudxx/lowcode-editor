@@ -14,6 +14,7 @@
 
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { persist } from "zustand/middleware";
 import type { ComponentTree } from "../interface";
 
 // ===== 画布尺寸类型 =====
@@ -68,68 +69,75 @@ interface UIActions {
 export type UIStore = UIState & UIActions;
 
 export const useUIStore = create<UIStore>()(
-  immer((set) => ({
-    curComponentId: null,
-    mode: "edit",
-    canvasSize: CANVAS_PRESETS.desktop, // 默认桌面模式
-    localScale: 1, // 默认缩放比例 100%
-    clipboard: null,
+  persist(
+    immer((set) => ({
+      curComponentId: null,
+      mode: "edit",
+      canvasSize: CANVAS_PRESETS.desktop, // 默认桌面模式
+      localScale: 1, // 默认缩放比例 100%
+      clipboard: null,
 
-    setCurComponentId: (id) => {
-      set((state) => {
-        state.curComponentId = id;
-      });
-    },
+      setCurComponentId: (id) => {
+        set((state) => {
+          state.curComponentId = id;
+        });
+      },
 
-    setMode: (mode) => {
-      set((state) => {
-        state.mode = mode;
-      });
-    },
+      setMode: (mode) => {
+        set((state) => {
+          state.mode = mode;
+        });
+      },
 
-    setCanvasSize: (size) => {
-      set((state) => {
-        state.curComponentId = null;
-        state.canvasSize = size;
-      });
-    },
+      setCanvasSize: (size) => {
+        set((state) => {
+          state.curComponentId = null;
+          state.canvasSize = size;
+        });
+      },
 
-    setCanvasPreset: (preset) => {
-      set((state) => {
-        state.curComponentId = null;
-        state.canvasSize = CANVAS_PRESETS[preset];
-      });
-    },
+      setCanvasPreset: (preset) => {
+        set((state) => {
+          state.curComponentId = null;
+          state.canvasSize = CANVAS_PRESETS[preset];
+        });
+      },
 
-    setClipboard: (component) => {
-      set((state) => {
-        state.clipboard = component;
-      });
-    },
+      setClipboard: (component) => {
+        set((state) => {
+          state.clipboard = component;
+        });
+      },
 
-    setLocalScale: (scale) => {
-      set((state) => {
-        // 限制范围 10% - 300%
-        state.localScale = Math.max(0.1, Math.min(3, scale));
-      });
-    },
+      setLocalScale: (scale) => {
+        set((state) => {
+          // 限制范围 10% - 300%
+          state.localScale = Math.max(0.1, Math.min(3, scale));
+        });
+      },
 
-    zoomIn: () => {
-      set((state) => {
-        state.localScale = Math.min(3, state.localScale + 0.1);
-      });
-    },
+      zoomIn: () => {
+        set((state) => {
+          state.localScale = Math.min(3, state.localScale + 0.1);
+        });
+      },
 
-    zoomOut: () => {
-      set((state) => {
-        state.localScale = Math.max(0.1, state.localScale - 0.1);
-      });
-    },
+      zoomOut: () => {
+        set((state) => {
+          state.localScale = Math.max(0.1, state.localScale - 0.1);
+        });
+      },
 
-    resetZoom: () => {
-      set((state) => {
-        state.localScale = 1;
-      });
-    },
-  }))
+      resetZoom: () => {
+        set((state) => {
+          state.localScale = 1;
+        });
+      },
+    })),
+    {
+      name: "lowcode-editor-ui", // localStorage key
+      // 只持久化 canvasSize，其他状态不持久化
+      partialize: (state) => ({ canvasSize: state.canvasSize }),
+    }
+  )
 );

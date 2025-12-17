@@ -5,7 +5,7 @@
  * 使用 ResizeObserver 监听容器尺寸，支持 Allotment 拖动等场景。
  */
 
-import { useState, useEffect, type RefObject } from "react";
+import { useState, useLayoutEffect, type RefObject } from "react";
 
 export interface ContainerSize {
   width: number;
@@ -25,8 +25,12 @@ export function useContainerResize(
     height: 0,
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!containerRef.current) return;
+
+    // 同步初始化：立即获取当前尺寸，避免首次渲染时 containerSize 为 0
+    const { width, height } = containerRef.current.getBoundingClientRect();
+    setContainerSize({ width, height });
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {

@@ -321,34 +321,36 @@ export function Header() {
               </div>
 
               {/* 画布尺寸输入（回车确认） */}
-              <div className="hidden xl:flex items-center gap-1 text-sm">
-                <input
-                  type="number"
-                  value={inputWidth}
-                  onChange={(e) => setInputWidth(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      // 空值意味着用户想要当前容器的 100% 宽度
+              {canvasSize.mode !== "desktop" && (
+                <div className="hidden xl:flex items-center gap-1 text-sm">
+                  <input
+                    type="number"
+                    value={inputWidth}
+                    onChange={(e) => setInputWidth(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        // 空值意味着用户想要当前容器的 100% 宽度
+                        const width =
+                          inputWidth.trim() === ""
+                            ? ("100%" as const)
+                            : parseInt(inputWidth) || 375;
+                        setCanvasSize({ ...canvasSize, width });
+                      }
+                    }}
+                    onBlur={() => {
+                      // 失焦时也确认
                       const width =
                         inputWidth.trim() === ""
                           ? ("100%" as const)
                           : parseInt(inputWidth) || 375;
                       setCanvasSize({ ...canvasSize, width });
-                    }
-                  }}
-                  onBlur={() => {
-                    // 失焦时也确认
-                    const width =
-                      inputWidth.trim() === ""
-                        ? ("100%" as const)
-                        : parseInt(inputWidth) || 375;
-                    setCanvasSize({ ...canvasSize, width });
-                  }}
-                  className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
-                  min={200}
-                  max={4000}
-                />
-              </div>
+                    }}
+                    className="w-18 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                    min={200}
+                    max={4000}
+                  />
+                </div>
+              )}
 
               {/* 缩放控制已移至 EditArea/ZoomControl */}
               {/* 撤销/重做 */}

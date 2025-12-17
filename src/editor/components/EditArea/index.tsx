@@ -18,7 +18,7 @@
  * @module Components/EditArea
  */
 
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { ConfigProvider } from "antd";
 import { useUIStore } from "../../stores/uiStore";
 import {
@@ -44,8 +44,7 @@ export function EditArea() {
   const simulatorRef = useRef<HTMLDivElement>(null);
 
   // 从 store 获取必要状态
-  const { curComponentId, canvasSize, setCanvasSize, localScale } =
-    useUIStore();
+  const { curComponentId, localScale } = useUIStore();
   const { editorMode, connectionError } = useCollaborationStore();
   const collaborators = useCollaborators();
 
@@ -54,24 +53,8 @@ export function EditArea() {
   // 1. 监听容器尺寸变化
   const containerSize = useContainerResize(containerRef);
 
-  // 2. 初始化 Desktop 模式下的画布宽度（仅首次，将 "100%" 转换为具体像素值）
-  // 之后画布宽度固定，不再跟随窗口自动变化
-  useEffect(() => {
-    // 只有当 width 为 "100%" 时才需要初始化
-    if (
-      canvasSize.mode === "desktop" &&
-      canvasSize.width === "100%" &&
-      containerSize.width > 0
-    ) {
-      // 取当前容器宽度作为固定画布宽度
-      const initialWidth = Math.floor(containerSize.width);
-
-      setCanvasSize({
-        ...canvasSize,
-        width: initialWidth,
-      });
-    }
-  }, [canvasSize, containerSize.width, setCanvasSize]);
+  // 注意：Desktop 模式下的 "100%" 现在由 useSimulatorStyles 直接处理为 CSS width: 100%
+  // 不再需要转换为固定像素值
 
   // localScale 已从 useUIStore 中获取
 
