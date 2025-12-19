@@ -24,7 +24,7 @@ import {
   type Collaborator,
   generateUserColor,
 } from "../stores/collaborationStore";
-import { useUIStore } from "../stores/uiStore";
+import { useUIStore, type CanvasSize } from "../stores/uiStore";
 import {
   setPatchEmitter,
   type JSONPatchOp,
@@ -44,7 +44,8 @@ interface WSMessage {
     | "sync"
     | "ack"
     | "selection-change"
-    | "error";
+    | "error"
+    | "canvas-size";
   senderId: string;
   payload: unknown;
   ts: number;
@@ -80,6 +81,7 @@ interface SyncPayload {
   };
   version: number;
   users: SyncUserInfo[];
+  canvasSize?: CanvasSizePayload;
 }
 
 /**
@@ -113,6 +115,15 @@ interface CursorMovePayload {
  */
 interface SelectionChangePayload {
   selectedComponentId: string;
+}
+
+/**
+ * canvas-size 消息的 payload 结构
+ */
+interface CanvasSizePayload {
+  width: number | "100%";
+  height: number | "auto";
+  mode: "desktop" | "tablet" | "mobile";
 }
 
 /**
@@ -181,6 +192,34 @@ export function setCursorMoveEmitter(
  */
 export function sendCursorPosition(x: number, y: number) {
   cursorMoveEmitter?.(x, y);
+}
+
+// 模块级canvas size发射器
+let canvasSizeEmitter: ((size: CanvasSize) => void) | null = null;
+
+/**
+ * 设置canvas size发射器
+ */
+export function setCanvasSizeEmitter(
+  emitter: ((size: CanvasSize) => void) | null
+) {
+  canvasSizeEmitter = emitter;
+}
+
+/**
+ * 发送canvas size
+ */
+export function sendCanvasSize(size: CanvasSize) {
+  canvasSizeEmitter?.(size);
+}
+
+let isApplyingRemoteCanvasSize = false;
+
+export function setApplyingRemoteCanvasSize(value: boolean) {
+  isApplyingRemoteCanvasSize = value;
+}
+export function isRemoteCanvasSizeUpdate() {
+  return isApplyingRemoteCanvasSize;
 }
 
 /**
@@ -273,6 +312,17 @@ export function useCollaboration(): UseCollaborationResult {
             );
             setCollaborators(collaborators);
             console.log("[WS] Collaborators synced:", collaborators.length);
+          }
+
+          // 同步画布尺寸
+          if (syncPayload.canvasSize) {
+            setApplyingRemoteCanvasSize(true);
+            try {
+              useUIStore.getState().setCanvasSize(syncPayload.canvasSize);
+            } finally {
+              setApplyingRemoteCanvasSize(false);
+            }
+            console.log("[WS] Canvas size synced from server");
           }
           break;
         }
@@ -375,6 +425,18 @@ export function useCollaboration(): UseCollaborationResult {
           );
           break;
 
+        case "canvas-size": {
+          const payload = msg.payload as CanvasSizePayload;
+          console.log("[WS] Received canvas-size from:", msg.senderId);
+          setApplyingRemoteCanvasSize(true);
+          try {
+            useUIStore.getState().setCanvasSize(payload);
+          } finally {
+            setApplyingRemoteCanvasSize(false);
+          }
+          break;
+        }
+
         default:
           console.log("[WS] Unknown message type:", msg.type);
       }
@@ -466,6 +528,26 @@ export function useCollaboration(): UseCollaborationResult {
           }
         }, 100);
         setCursorMoveEmitter(throttledCursorMove);
+
+        setCanvasSizeEmitter((size: CanvasSize) => {
+          const userId = currentUserIdRef.current;
+          if (ws.readyState === WebSocket.OPEN && userId) {
+            ws.send(
+              JSON.stringify({
+                type: "canvas-size",
+                senderId: userId,
+                payload: size,
+                ts: Date.now(),
+              })
+            );
+          }
+        });
+
+        // 避免使用desktop模式
+        const currentCanvasSize = useUIStore.getState().canvasSize;
+        if (currentCanvasSize.mode === "desktop") {
+          useUIStore.getState().setCanvasPreset("tablet");
+        }
       };
 
       ws.onmessage = (event) => {
@@ -482,6 +564,7 @@ export function useCollaboration(): UseCollaborationResult {
         setConnected(false);
         isConnectingRef.current = false;
         setPatchEmitter(null);
+        setCanvasSizeEmitter(null);
 
         // 非正常关闭时尝试重连
         if (
@@ -535,6 +618,7 @@ export function useCollaboration(): UseCollaborationResult {
       }
       setPatchEmitter(null);
       setCursorMoveEmitter(null);
+      setCanvasSizeEmitter(null);
       if (wsRef.current) {
         wsRef.current.close(1000, "Component unmounted");
         wsRef.current = null;

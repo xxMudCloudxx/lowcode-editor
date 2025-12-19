@@ -312,11 +312,18 @@ export function Header() {
                   onChange={(v) =>
                     setCanvasPreset(v as "desktop" | "tablet" | "mobile")
                   }
-                  options={[
-                    { value: "desktop", icon: <DesktopOutlined /> },
-                    { value: "tablet", icon: <TabletOutlined /> },
-                    { value: "mobile", icon: <MobileOutlined /> },
-                  ]}
+                  options={
+                    isLiveMode
+                      ? [
+                          { value: "tablet", icon: <TabletOutlined /> },
+                          { value: "mobile", icon: <MobileOutlined /> },
+                        ]
+                      : [
+                          { value: "desktop", icon: <DesktopOutlined /> },
+                          { value: "tablet", icon: <TabletOutlined /> },
+                          { value: "mobile", icon: <MobileOutlined /> },
+                        ]
+                  }
                 />
               </div>
 

@@ -16,6 +16,11 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
 import type { ComponentTree } from "../interface";
+import { useCollaborationStore } from "./collaborationStore";
+import {
+  isRemoteCanvasSizeUpdate,
+  sendCanvasSize,
+} from "../hooks/useCollaboration";
 
 // ===== 画布尺寸类型 =====
 
@@ -94,6 +99,11 @@ export const useUIStore = create<UIStore>()(
           state.curComponentId = null;
           state.canvasSize = size;
         });
+
+        const { editorMode } = useCollaborationStore.getState();
+        if (editorMode === "live" && !isRemoteCanvasSizeUpdate()) {
+          sendCanvasSize(size);
+        }
       },
 
       setCanvasPreset: (preset) => {
@@ -101,6 +111,11 @@ export const useUIStore = create<UIStore>()(
           state.curComponentId = null;
           state.canvasSize = CANVAS_PRESETS[preset];
         });
+
+        const { editorMode } = useCollaborationStore.getState();
+        if (editorMode === "live" && !isRemoteCanvasSizeUpdate()) {
+          sendCanvasSize(CANVAS_PRESETS[preset]);
+        }
       },
 
       setClipboard: (component) => {
