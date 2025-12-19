@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useRef, useCallback } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { message } from "antd";
 import { throttle } from "lodash-es";
 import { useHistoryStore } from "../stores/historyStore";
@@ -50,6 +50,19 @@ interface WSMessage {
   payload: unknown;
   ts: number;
 }
+
+/**
+ * WebSocket 错误码
+ * @see docs/RealtimeCollaboration/frontend-integration.md
+ */
+type WSErrorCode =
+  | "VERSION_CONFLICT"
+  | "PATCH_INVALID"
+  | "PATCH_FAILED"
+  | "ROOM_NOT_FOUND"
+  | "UNAUTHORIZED"
+  | "PAGE_DELETED"
+  | "INTERNAL_ERROR";
 
 /**
  * Sync 消息中的用户状态
@@ -231,6 +244,7 @@ export function isRemoteCanvasSizeUpdate() {
 export function useCollaboration(): UseCollaborationResult {
   const { getToken, isLoaded } = useAuth();
   const { user } = useUser();
+  const { redirectToSignIn } = useClerk();
   const currentUserId = user?.id || "";
   // 使用 ref 存储 userId，避免闭包问题
   const currentUserIdRef = useRef(currentUserId);
@@ -263,6 +277,14 @@ export function useCollaboration(): UseCollaborationResult {
 
   const maxReconnectAttempts = 5;
 
+  const requestResync = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({ type: "request-sync", ts: Date.now() })
+      );
+    }
+  }, []);
+
   /**
    * 处理接收到的 WebSocket 消息
    * 核心逻辑：使用 applyRemotePatch 确保不触发回声
@@ -275,6 +297,7 @@ export function useCollaboration(): UseCollaborationResult {
           const syncPayload = msg.payload as SyncPayload;
           console.log("[WS] Received sync, version:", syncPayload.version);
 
+          reconnectAttemptsRef.current = 0;
           // ⚠️ 保存版本号
           versionRef.current = syncPayload.version;
 
@@ -401,16 +424,40 @@ export function useCollaboration(): UseCollaborationResult {
         }
 
         case "error": {
-          const errorPayload = msg.payload as { code: string; message: string };
-          console.error("[WS] Server error:", errorPayload);
-          message.error(`协同错误: ${errorPayload.message}`);
-
-          // 特殊处理：页面已删除
-          if (errorPayload.code === "PAGE_DELETED") {
-            message.error("页面已被删除，即将跳转到首页");
-            setTimeout(() => {
-              window.location.href = "/lowcode-editor/";
-            }, 2000);
+          const { code, message: errMsg } = msg.payload as {
+            code: WSErrorCode;
+            message: string;
+          };
+          switch (code) {
+            case "VERSION_CONFLICT":
+            case "PATCH_FAILED":
+              message.warning("数据同步冲突，正在重新同步...");
+              requestResync();
+              break;
+            case "PATCH_INVALID":
+              console.error("[WS] Invalid patch:", errMsg);
+              if (import.meta.env.DEV) message.error("Patch 格式错误");
+              break;
+            case "ROOM_NOT_FOUND":
+              // ⚠️ 不要手动清零计数器，依赖指数退避
+              message.warning("房间不存在，正在重试...");
+              wsRef.current?.close(4000, "Room not found");
+              break;
+            case "UNAUTHORIZED":
+              message.error("登录已过期，请重新登录");
+              reconnectAttemptsRef.current = maxReconnectAttempts;
+              wsRef.current?.close(1000, "Unauthorized");
+              redirectToSignIn(); // ✅ 使用 Clerk API
+              break;
+            case "PAGE_DELETED":
+              message.error("页面已被删除，即将跳转到首页");
+              reconnectAttemptsRef.current = maxReconnectAttempts;
+              setTimeout(() => {
+                window.location.href = "/lowcode-editor/";
+              }, 2000);
+              break;
+            default:
+              message.error(`协同服务异常: ${errMsg}`);
           }
           break;
         }
@@ -482,7 +529,6 @@ export function useCollaboration(): UseCollaborationResult {
         console.log("[WS] Connected to", pageId);
         wsRef.current = ws;
         isConnectingRef.current = false;
-        reconnectAttemptsRef.current = 0;
         setConnected(true);
         setConnectionError(null);
 
@@ -566,9 +612,16 @@ export function useCollaboration(): UseCollaborationResult {
         setPatchEmitter(null);
         setCanvasSizeEmitter(null);
 
+        const shouldReconnect = ![1000, 4001].includes(event.code);
+        if (event.code === 4004) {
+          message.error("页面已不存在，即将跳转首页");
+          window.location.href = "/lowcode-editor/";
+          return;
+        }
+
         // 非正常关闭时尝试重连
         if (
-          event.code !== 1000 &&
+          shouldReconnect &&
           reconnectAttemptsRef.current < maxReconnectAttempts
         ) {
           const delay = Math.min(
