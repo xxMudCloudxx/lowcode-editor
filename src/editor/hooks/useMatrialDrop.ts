@@ -14,6 +14,7 @@ import { useDrop } from "react-dnd";
 import { useComponentConfigStore } from "../stores/component-config";
 import { isDescendantOf, useComponentsStore } from "../stores/components";
 import { useTransition } from "react";
+import { useCollaborationStore } from "../stores/collaborationStore";
 
 /**
  * @description useDrop Hook 中 `item` 对象的类型定义。
@@ -59,6 +60,11 @@ export function useMaterailDrop(containerId: number, containerName: string) {
       // 关键：需要从 store.getState() 获取最新的 components
       // 因为 useDrop 的闭包会捕获 Hook 初始化时的旧 state，导致校验逻辑出错
       const { components } = useComponentsStore.getState();
+      const { errorOverlay, editorMode } = useCollaborationStore.getState();
+
+      if (editorMode === "live" && errorOverlay !== null) {
+        return false;
+      }
 
       // 如果是移动操作，需要进行额外的校验
       if (item.dragType === "move") {

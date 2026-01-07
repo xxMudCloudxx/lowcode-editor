@@ -10,6 +10,30 @@
 import { create } from "zustand";
 
 /**
+ * WebSocket 错误码
+ * @see docs/RealtimeCollaboration/frontend-integration.md
+ */
+export type WSErrorCode =
+  | "VERSION_CONFLICT"
+  | "PATCH_INVALID"
+  | "PATCH_FAILED"
+  | "ROOM_NOT_FOUND"
+  | "UNAUTHORIZED"
+  | "PAGE_DELETED"
+  | "INTERNAL_ERROR"
+  | "DISCONNECTED";
+
+/**
+ * 错误遮罩配置
+ */
+export interface ErrorOverlay {
+  code: WSErrorCode;
+  message: string;
+  /** 自动执行倒计时（秒），null 表示不自动执行 */
+  countdown: number | null;
+}
+
+/**
  * 根据 userId 生成一个稳定的颜色
  * 与后端 Go 实现保持一致
  */
@@ -75,6 +99,8 @@ interface CollaborationState {
   serverVersion: number;
   /** 协作者数组（除自己外的其他用户） */
   collaborators: Collaborator[];
+  /** 错误遮罩状态 */
+  errorOverlay: ErrorOverlay | null;
 }
 
 interface CollaborationActions {
@@ -113,6 +139,8 @@ interface CollaborationActions {
   setCollaborators: (collaborators: Collaborator[]) => void;
   /** 清空所有协作者 */
   clearCollaborators: () => void;
+  /** 设置错误遮罩 */
+  setErrorOverlay: (overlay: ErrorOverlay | null) => void;
 }
 
 const initialState: CollaborationState = {
@@ -123,6 +151,7 @@ const initialState: CollaborationState = {
   isPageLoading: false,
   serverVersion: 0,
   collaborators: [],
+  errorOverlay: null,
 };
 
 export const useCollaborationStore = create<
@@ -238,6 +267,8 @@ export const useCollaborationStore = create<
   setCollaborators: (collaborators) => set({ collaborators }),
 
   clearCollaborators: () => set({ collaborators: [] }),
+
+  setErrorOverlay: (overlay) => set({ errorOverlay: overlay }),
 }));
 
 /**

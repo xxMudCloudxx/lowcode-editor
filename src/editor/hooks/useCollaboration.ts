@@ -14,8 +14,7 @@
  */
 
 import { useEffect, useRef, useCallback } from "react";
-import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
-import { message } from "antd";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { throttle } from "lodash-es";
 import { useHistoryStore } from "../stores/historyStore";
 import { useComponentsStore } from "../stores/components";
@@ -244,7 +243,6 @@ export function isRemoteCanvasSizeUpdate() {
 export function useCollaboration(): UseCollaborationResult {
   const { getToken, isLoaded } = useAuth();
   const { user } = useUser();
-  const { redirectToSignIn } = useClerk();
   const currentUserId = user?.id || "";
   // 使用 ref 存储 userId，避免闭包问题
   const currentUserIdRef = useRef(currentUserId);
@@ -263,6 +261,7 @@ export function useCollaboration(): UseCollaborationResult {
     updateCollaboratorSelection,
     setCollaborators,
     clearCollaborators,
+    setErrorOverlay,
   } = useCollaborationStore();
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -298,6 +297,8 @@ export function useCollaboration(): UseCollaborationResult {
           console.log("[WS] Received sync, version:", syncPayload.version);
 
           reconnectAttemptsRef.current = 0;
+          // 清除错误遮罩（同步成功）
+          setErrorOverlay(null);
           // ⚠️ 保存版本号
           versionRef.current = syncPayload.version;
 
@@ -431,33 +432,34 @@ export function useCollaboration(): UseCollaborationResult {
           switch (code) {
             case "VERSION_CONFLICT":
             case "PATCH_FAILED":
-              message.warning("数据同步冲突，正在重新同步...");
+              setErrorOverlay({ code, message: errMsg, countdown: null });
               requestResync();
               break;
             case "PATCH_INVALID":
               console.error("[WS] Invalid patch:", errMsg);
-              if (import.meta.env.DEV) message.error("Patch 格式错误");
+              if (import.meta.env.DEV) {
+                setErrorOverlay({ code, message: errMsg, countdown: null });
+              }
               break;
             case "ROOM_NOT_FOUND":
-              // ⚠️ 不要手动清零计数器，依赖指数退避
-              message.warning("房间不存在，正在重试...");
+              setErrorOverlay({ code, message: errMsg, countdown: null });
               wsRef.current?.close(4000, "Room not found");
               break;
             case "UNAUTHORIZED":
-              message.error("登录已过期，请重新登录");
+              setErrorOverlay({ code, message: errMsg, countdown: 5 });
               reconnectAttemptsRef.current = maxReconnectAttempts;
               wsRef.current?.close(1000, "Unauthorized");
-              redirectToSignIn(); // ✅ 使用 Clerk API
               break;
             case "PAGE_DELETED":
-              message.error("页面已被删除，即将跳转到首页");
+              setErrorOverlay({ code, message: errMsg, countdown: 3 });
               reconnectAttemptsRef.current = maxReconnectAttempts;
-              setTimeout(() => {
-                window.location.href = "/lowcode-editor/";
-              }, 2000);
               break;
             default:
-              message.error(`协同服务异常: ${errMsg}`);
+              setErrorOverlay({
+                code: "INTERNAL_ERROR",
+                message: errMsg,
+                countdown: null,
+              });
           }
           break;
         }
@@ -614,8 +616,11 @@ export function useCollaboration(): UseCollaborationResult {
 
         const shouldReconnect = ![1000, 4001].includes(event.code);
         if (event.code === 4004) {
-          message.error("页面已不存在，即将跳转首页");
-          window.location.href = "/lowcode-editor/";
+          setErrorOverlay({
+            code: "PAGE_DELETED",
+            message: "页面已不存在",
+            countdown: 3,
+          });
           return;
         }
 
@@ -624,6 +629,12 @@ export function useCollaboration(): UseCollaborationResult {
           shouldReconnect &&
           reconnectAttemptsRef.current < maxReconnectAttempts
         ) {
+          // 显示断开连接遮罩
+          setErrorOverlay({
+            code: "DISCONNECTED",
+            message: "正在尝试重新连接...",
+            countdown: null,
+          });
           const delay = Math.min(
             1000 * Math.pow(2, reconnectAttemptsRef.current),
             30000
@@ -633,7 +644,11 @@ export function useCollaboration(): UseCollaborationResult {
           reconnectTimeoutRef.current = setTimeout(connect, delay);
         } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
           setConnectionError("连接失败，请刷新页面重试");
-          message.error("协同连接已断开，请刷新页面");
+          setErrorOverlay({
+            code: "INTERNAL_ERROR",
+            message: "连接失败，请刷新页面重试",
+            countdown: null,
+          });
         }
       };
 

@@ -30,6 +30,7 @@ import SelectedMask from "./SelectedMask";
 import CollaboratorCursor from "./CollaboratorCursor";
 import CollaboratorMask from "./CollaboratorMask";
 import ZoomControl from "./ZoomControl";
+import { ErrorOverlay } from "./ErrorOverlay";
 
 // 抽离的 hooks
 import {
@@ -45,7 +46,7 @@ export function EditArea() {
 
   // 从 store 获取必要状态
   const { curComponentId, localScale } = useUIStore();
-  const { editorMode, connectionError } = useCollaborationStore();
+  const { editorMode } = useCollaborationStore();
   const collaborators = useCollaborators();
 
   // ========== 使用抽离的 hooks ==========
@@ -79,43 +80,8 @@ export function EditArea() {
 
   return (
     <>
-      {/* 断开连接时显示禁用遮罩 */}
-      {isDisabled && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.158)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            backdropFilter: "blur(2px)",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "24px 32px",
-              borderRadius: 12,
-              boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📡</div>
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
-              连接已断开
-            </div>
-            <div style={{ color: "#666", marginBottom: 16 }}>
-              {connectionError || "正在尝试重新连接..."}
-            </div>
-            <div style={{ fontSize: 12, color: "#999" }}>
-              编辑功能已暂时禁用
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 错误遮罩 */}
+      <ErrorOverlay />
 
       {/* 画布容器 */}
       <div
