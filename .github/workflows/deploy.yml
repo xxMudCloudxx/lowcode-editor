@@ -4,18 +4,20 @@ name: Deploy to GitHub Pages
 # 触发条件：当代码被 push到 main 分支时触发
 on:
   push:
-    branches:
-      - main # 注意：如果你的主分支不叫 main，请修改此处
-  workflow_dispatch: # 允许手动触发
+    branches: ["main"]
+  workflow_dispatch:
 
 # 权限配置：授予 Actions 读写 GitHub Pages 和部署的权限
 permissions:
   contents: read
   pages: write
   id-token: write
-  deployments: write
 
-# 任务（Jobs）
+# 允许并发部署
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   # 构建任务
   build:
@@ -26,107 +28,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 步骤2：设置 Node.js 环境
-      # 使用 actions/setup-node@v4 来安装指定版本的 Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          # 注意: pnpm 的缓存不再通过 setup-node 的 'cache' 字段处理
-
-      # 步骤3：安装 pnpm
-      # 使用官方的 pnpm/action-setup@v3 action 来安装 pnpm
+      # 设置 pnpm
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 10.20.0 # 建议指定 pnpm 版本，与你本地开发环境保持一致
+          version: 10.20.0 # 使用与本地一致的版本
 
-      # 步骤4：获取 pnpm 缓存目录
-      # pnpm 将所有依赖存储在一个全局 store 中，我们需要获取这个 store 的路径
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      # 步骤5：配置 pnpm 缓存
-      # 使用 actions/cache@v4 来缓存 pnpm store
-      # path: 指定要缓存的目录（上一步获取的 store 路径）
-      # key: 缓存的唯一标识符。使用 pnpm-lock.yaml 的哈希值，当 lock 文件变更时，缓存自动失效
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+      # 设置 Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: 20
+          cache: "pnpm"
 
-      # 步骤6：安装依赖
-      # 使用 pnpm install --frozen-lockfile
-      # --frozen-lockfile 标志确保 CI 严格按照 pnpm-lock.yaml 文件安装，禁止任何修改
+      # 安装依赖
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 步骤7：构建项目
-      # 运行 package.json 中定义的 build 脚本 (通过 pnpm)
+      # 构建项目 (只构建编辑器即可，它包含了运行时所需的所有资源)
       - name: Build
-        run: pnpm run build
+        run: pnpm --filter @lowcode/editor build
 
-      # 步骤8：上传构建产物
-      # 将打包好的 dist 文件夹上传为一个名为 github-pages 的构件（artifact）
-      # 后续的 deploy 任务会下载这个构件
+      # 上传构建产物
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist # 指定要上传的文件夹路径
-
-  # 清理任务（使用脚本实现）
-  cleanup:
-    name: 🧹 Cleanup old deployments
-    runs-on: ubuntu-latest
-    steps:
-      - name: Keep last 15 deployments and delete the rest
-        # 使用 GitHub CLI 和 jq 工具来手动实现清理逻辑
-        env:
-          # 将 GitHub Token 传入环境变量，以便 gh 命令使用
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 定义环境变量，让脚本更清晰
-          OWNER: ${{ github.repository_owner }}
-          REPO: ${{ github.event.repository.name }}
-          ENVIRONMENT: github-pages
-        run: |
-          echo "Fetching deployments for environment: $ENVIRONMENT"
-
-          # 1. 使用 GitHub API 获取部署列表，并用 jq 工具处理 JSON
-          #   - sort_by(.created_at) | reverse: 按创建时间倒序排序（最新的在最前面）
-          #   - .[15:]: 跳过最新的 15 个，选取所有更早的部署
-          #   - .[].id: 从选中的部署对象中，只提取 id 字段
-          DEPLOYMENT_IDS_TO_DELETE=$(gh api "repos/$OWNER/$REPO/deployments?environment=$ENVIRONMENT&per_page=100" | jq 'sort_by(.created_at) | reverse | .[15:] | .[].id')
-
-          # 检查是否有需要删除的部署
-          if [ -z "$DEPLOYMENT_IDS_TO_DELETE" ]; then
-            echo "No old deployments to delete. Found 15 or fewer."
-            exit 0
-          fi
-
-          echo "The following deployment IDs will be deleted:"
-          echo "$DEPLOYMENT_IDS_TO_DELETE"
-
-          # 2. 遍历这些旧的部署 ID 并删除它们
-          for ID in $DEPLOYMENT_IDS_TO_DELETE; do
-            echo "Deleting deployment ID: $ID"
-            gh api --method DELETE "repos/$OWNER/$REPO/deployments/$ID"
-          done
-
-          echo "Cleanup complete."
+          # 注意：Monorepo 架构下，编辑器的构建产物在 packages/editor/dist
+          path: packages/editor/dist
 
   # 部署任务
   deploy:
-    needs: [build, cleanup] # 依赖于 build 和 cleanup 任务，必须在它们都成功后才运行
-    runs-on: ubuntu-latest
     environment:
-      name: github-pages # 指定部署环境为 github-pages
-      url: ${{ steps.deployment.outputs.page_url }} # 将部署后的 URL 输出为变量
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
     steps:
       # 步骤1：部署到 GitHub Pages
       # 使用官方的 actions/deploy-pages@v4 来执行部署
