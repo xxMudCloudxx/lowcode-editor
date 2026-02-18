@@ -315,6 +315,8 @@ export function useMaterailDrop(containerId: number, containerName: string) {
 
 遵从以下步骤即可在本地运行此项目。
 
+> **注意**: 本项目采用 **Monorepo** 架构，使用 **pnpm** 作为包管理器。
+
 1. **克隆仓库**
 
    ```bash
@@ -325,17 +327,41 @@ export function useMaterailDrop(containerId: number, containerName: string) {
 2. **安装依赖**
 
    ```bash
-   npm install
-   # 或者 yarn install, pnpm install
+   pnpm install
+   ```
+
+   如果你还没有安装 pnpm，请先运行：
+   ```bash
+   npm install -g pnpm
    ```
 
 3. **运行项目**
 
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
    项目将在本地启动，你可以通过浏览器访问对应的地址（如 `http://localhost:5173`）。
+
+### 📦 Monorepo 架构说明
+
+项目已重构为 Monorepo 架构，包含以下子包：
+
+- **`@lowcode/schema`**: 类型定义和协议层
+- **`@lowcode/materials`**: 物料组件库
+- **`@lowcode/renderer`**: 纯渲染引擎
+- **`@lowcode/code-generator`**: 代码生成器
+- **`@lowcode/editor`**: 编辑器主应用
+
+构建所有包：
+```bash
+pnpm build
+```
+
+仅构建特定包（例如编辑器）：
+```bash
+pnpm --filter @lowcode/editor build
+```
 
 ## 🤝 如何贡献 (How to Contribute)
 
