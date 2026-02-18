@@ -45,8 +45,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 构建项目 (只构建编辑器即可，它包含了运行时所需的所有资源)
-      - name: Build
+      # 构建项目
+      # 注意: 必须先构建依赖包 (schema, code-generator)，因为它们导出的是编译后的 dist 目录
+      - name: Build dependencies
+        run: pnpm --filter @lowcode/schema --filter @lowcode/code-generator build
+
+      # 构建编辑器 (包含运行时所需的所有资源)
+      - name: Build editor
         run: pnpm --filter @lowcode/editor build
 
       # 上传构建产物
