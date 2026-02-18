@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noEmit": true,
+    "strict": false,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"],
+  "references": [
+    { "path": "../schema" },
+    { "path": "../materials" },
+    { "path": "../renderer" },
+    { "path": "../code-generator" }
+  ]
+}

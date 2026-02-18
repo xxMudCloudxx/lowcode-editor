@@ -1,9 +1,25 @@
-//
 {
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2020", "dom", "dom.iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true
+  },
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" },
-    { "path": "./scripts/tsconfig.json" }
+    { "path": "./packages/schema" },
+    { "path": "./packages/materials" },
+    { "path": "./packages/renderer" },
+    { "path": "./packages/code-generator" },
+    { "path": "./packages/editor" }
   ]
 }

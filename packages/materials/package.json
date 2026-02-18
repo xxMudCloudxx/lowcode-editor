@@ -1,0 +1,25 @@
+{
+  "name": "@lowcode/materials",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "module": "src/index.tsx",
+  "types": "src/index.tsx",
+  "scripts": {
+    "gen:meta": "tsx scripts/gen-antd-metas.ts"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.2.6",
+    "@lowcode/schema": "workspace:*",
+    "antd": "^5.14.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.2.0",
+    "react-docgen-typescript": "^2.4.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.18"
+  }
+}
