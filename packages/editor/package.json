@@ -1,0 +1,49 @@
+{
+  "name": "@lowcode/editor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.2.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@lowcode/code-generator": "workspace:*",
+    "@lowcode/materials": "workspace:*",
+    "@lowcode/renderer": "workspace:*",
+    "@lowcode/schema": "workspace:*",
+    "@monaco-editor/react": "^4.6.0",
+    "allotment": "^1.0.0",
+    "antd": "^5.12.0",
+    "clsx": "^2.0.0",
+    "codesandbox-import-utils": "^1.0.0",
+    "dayjs": "^1.11.0",
+    "immer": "^10.0.0",
+    "lodash-es": "^4.17.21",
+    "monaco-editor": "^0.45.0",
+    "react": "^18.2.0",
+    "react-dnd": "^16.0.0",
+    "react-dnd-html5-backend": "^16.0.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.0.0",
+    "style-to-object": "^1.0.0",
+    "zustand": "^4.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@types/lodash-es": "^4.17.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0",
+    "vite-plugin-monaco-editor-esm": "^2.0.2",
+    "vitest": "^4.0.18"
+  }
+}

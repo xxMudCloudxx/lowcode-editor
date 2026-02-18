@@ -1,0 +1,22 @@
+{
+  "name": "@lowcode/renderer",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "module": "src/index.tsx",
+  "types": "src/index.tsx",
+  "scripts": {},
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lodash-es": "^4.17.21",
+    "@lowcode/schema": "workspace:*",
+    "@lowcode/materials": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/lodash-es": "^4.17.0",
+    "@types/node": "^22.0.0"
+  }
+}

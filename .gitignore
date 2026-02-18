@@ -17,14 +17,5 @@ dist-ssr
 /src/editor/materials/_generated
 
 # Editor directories and files
-.vscode/*
-.VSCodeCounter/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-/docs/项目亮点.md
+/docs
+.agent
