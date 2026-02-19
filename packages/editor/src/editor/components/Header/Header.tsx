@@ -130,7 +130,7 @@ export function Header() {
 
     try {
       const result = await exportSourceCode(schema as ISchema, {
-        publisher: "none",
+        skipPublisher: true,
       });
 
       if (result.success && result.files) {

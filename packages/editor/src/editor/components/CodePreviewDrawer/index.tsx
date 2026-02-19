@@ -5,8 +5,8 @@ import Editor from "@monaco-editor/react";
 import type { IGeneratedFile } from "@lowcode/schema";
 import { buildFileTree, getFileLanguage } from "../../utils/fileTree";
 import { openInCodeSandbox } from "../../utils/openInCodeSandbox"; // 保留
-import { zipPublisher } from "@lowcode/code-generator";
 import { downloadBlob } from "@lowcode/code-generator";
+import { zipPublisher } from "@lowcode/code-generator/src/publisher/zip-publisher";
 
 const { Sider, Content } = Layout;
 
@@ -65,9 +65,10 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
     setIsZipLoading(true);
     try {
       const projectName = "my-lowcode-project";
-      const blob = await zipPublisher(files, {
+      const result = await zipPublisher.publish(files, {
         projectName: projectName,
       });
+      const blob = result.blob;
       downloadBlob(blob, `${projectName}.zip`);
     } catch (error) {
       console.error("Failed to download ZIP:", error);
