@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Drawer, Layout, Tree, Button, Spin, Empty, Space } from "antd";
+import { Drawer, Layout, Tree, Button, Spin, Empty, Space, Select } from "antd";
 import type { TreeDataNode } from "antd";
 import Editor from "@monaco-editor/react";
 import type { IGeneratedFile } from "@lowcode/schema";
 import { buildFileTree, getFileLanguage } from "../../utils/fileTree";
 import { openInCodeSandbox } from "../../utils/openInCodeSandbox"; // 保留
-import { downloadBlob } from "@lowcode/code-generator";
+import { downloadBlob, getRegisteredSolutions } from "@lowcode/code-generator";
 import { zipPublisher } from "@lowcode/code-generator/src/publisher/zip-publisher";
 
 const { Sider, Content } = Layout;
@@ -15,6 +15,8 @@ interface CodePreviewDrawerProps {
   files: IGeneratedFile[];
   onClose: () => void;
   loading: boolean;
+  solution: string;
+  onSolutionChange: (solution: string) => void;
 }
 
 export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
@@ -22,24 +24,40 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
   files,
   onClose,
   loading,
+  solution,
+  onSolutionChange,
 }) => {
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<IGeneratedFile | null>(null);
   const [isSandboxLoading, setIsSandboxLoading] = useState(false);
   const [isZipLoading, setIsZipLoading] = useState(false);
+  const [availableSolutions, setAvailableSolutions] = useState<string[]>([]);
+
+  useEffect(() => {
+    // 获取所有注册的 Solutions
+    setAvailableSolutions(getRegisteredSolutions());
+  }, []);
 
   useEffect(() => {
     // 用于构建文件树
     if (visible && files.length > 0) {
       const fileTree = buildFileTree(files);
       setTreeData(fileTree);
+
+      // 尝试保持之前选中的文件，如果不存在则选中默认的
+      const currentFilePath = selectedFile?.filePath;
+      const sameFile = currentFilePath
+        ? files.find((f) => f.filePath === currentFilePath)
+        : null;
+
       const defaultFile =
+        sameFile ||
         files.find((f) => f.fileName === "package.json") ||
         files.find((f) => f.fileName === "main.tsx") ||
         files[0];
       setSelectedFile(defaultFile);
     }
-  }, [visible, files]);
+  }, [visible, files]); // selectedFile 不在依赖里，防止循环重置
 
   const handleSelect = (
     _selectedKeys: React.Key[],
@@ -78,8 +96,17 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
   };
 
   const drawerTitle = (
-    <div className="flex justify-between items-center">
-      <span>源码预览</span>
+    <div className="flex justify-between items-center pr-8">
+      <Space>
+        <span>源码预览</span>
+        <Select
+          value={solution}
+          onChange={onSolutionChange}
+          style={{ width: 150 }}
+          options={availableSolutions.map((s) => ({ label: s, value: s }))}
+          size="small"
+        />
+      </Space>
       <Space>
         <Button loading={isZipLoading} onClick={handleDownloadZip}>
           下载ZIP
@@ -110,8 +137,8 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
             {/* Sider: 文件树 */}
             <Sider
               width={250}
-              style={{ background: "#fff" }}
-              className="overflow-auto border-r border-gray-200 h-screen"
+              theme="light"
+              className="overflow-auto border-r border-gray-200 h-full"
             >
               <Tree
                 showLine
