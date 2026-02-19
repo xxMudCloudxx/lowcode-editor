@@ -5,10 +5,10 @@
  * @description 定义了使用 React 和 Vite 技术栈生成代码的流水线 (Pipeline)。
  */
 
+import { ProjectBuilder } from "@lowcode/schema";
 import type {
   ISchema,
   IRPage,
-  ProjectBuilder,
   IComponentPlugin,
   IProjectPlugin,
 } from "@lowcode/schema";
