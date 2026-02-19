@@ -1,11 +1,11 @@
-/**
+﻿/**
  * @file Page/meta.tsx
  * @description Page 组件协议配置
  *
  * Page 是组件树的根节点，只能有一个实例。
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 
 const PageProtocol: ComponentProtocol = {
   name: "Page",
@@ -22,3 +22,4 @@ const PageProtocol: ComponentProtocol = {
 };
 
 export default PageProtocol;
+

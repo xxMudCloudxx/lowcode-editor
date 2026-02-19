@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file TableColumn/meta.tsx
  * @description TableColumn 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 
 const TableColumnProtocol: ComponentProtocol = {
   name: "TableColumn",
@@ -39,3 +39,4 @@ const TableColumnProtocol: ComponentProtocol = {
 };
 
 export default TableColumnProtocol;
+

@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Grid/meta.tsx
  * @description Grid 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_LAYOUT } from "../../containerTypes";
 
 const GridProtocol: ComponentProtocol = {
@@ -71,3 +71,4 @@ const GridProtocol: ComponentProtocol = {
 };
 
 export default GridProtocol;
+

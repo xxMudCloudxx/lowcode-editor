@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Dropdown/meta.tsx
  * @description Dropdown 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_NAVIGATION } from "../../containerTypes";
 
 const DropdownProtocol: ComponentProtocol = {
@@ -60,3 +60,4 @@ const DropdownProtocol: ComponentProtocol = {
 };
 
 export default DropdownProtocol;
+

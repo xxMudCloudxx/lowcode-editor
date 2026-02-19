@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Tooltip/meta.tsx
  * @description Tooltip 组件协议配置（容器组件）
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_GENERAL } from "../../containerTypes";
 
 const TooltipProtocol: ComponentProtocol = {
@@ -49,3 +49,4 @@ const TooltipProtocol: ComponentProtocol = {
 };
 
 export default TooltipProtocol;
+

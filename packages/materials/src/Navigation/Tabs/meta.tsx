@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Tabs/meta.tsx
  * @description Tabs 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_LAYOUT } from "../../containerTypes";
 
 const TabsProtocol: ComponentProtocol = {
@@ -67,3 +67,4 @@ const TabsProtocol: ComponentProtocol = {
 };
 
 export default TabsProtocol;
+

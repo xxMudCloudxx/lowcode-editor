@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Table/meta.tsx
  * @description Table 组件协议配置（容器组件）
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_DATA } from "../../containerTypes";
 
 const TableProtocol: ComponentProtocol = {
@@ -40,3 +40,4 @@ const TableProtocol: ComponentProtocol = {
 };
 
 export default TableProtocol;
+

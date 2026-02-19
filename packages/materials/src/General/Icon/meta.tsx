@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Icon/meta.tsx
  * @description Icon 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_GENERAL } from "../../containerTypes";
 
 const IconProtocol: ComponentProtocol = {
@@ -58,3 +58,4 @@ const IconProtocol: ComponentProtocol = {
 };
 
 export default IconProtocol;
+
