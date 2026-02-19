@@ -8,5 +8,6 @@
 import { createRoot } from "react-dom/client";
 import { RendererApp } from "./RendererApp";
 import "../index.css";
+import "./renderer.css";
 
 createRoot(document.getElementById("root")!).render(<RendererApp />);

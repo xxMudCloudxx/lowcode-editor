@@ -14,6 +14,13 @@ import { useRendererStore } from "../stores/rendererStore";
 import { simulatorRenderer } from "../../editor/simulator/SimulatorRenderer";
 import type { Component } from "@lowcode/schema";
 
+import { Dropdown, message, Popconfirm, Space, Tooltip } from "antd";
+import {
+  CopyOutlined,
+  DeleteOutlined,
+  FileAddOutlined,
+} from "@ant-design/icons";
+
 interface RendererSelectedMaskProps {
   portalWrapperClassName: string;
   containerClassName: string;
@@ -144,7 +151,6 @@ export function RendererSelectedMask({
 
   return createPortal(
     <>
-      {/* 遮罩层 */}
       <div
         style={{
           position: "absolute",
@@ -160,8 +166,6 @@ export function RendererSelectedMask({
           boxSizing: "border-box",
         }}
       />
-
-      {/* 交互标签区域 */}
       <div
         style={{
           position: "absolute",
@@ -170,81 +174,99 @@ export function RendererSelectedMask({
           fontSize: "14px",
           zIndex: 13,
           display: !position.width || position.width < 10 ? "none" : "flex",
-          gap: 4,
           transform: position.labelFlipToRight
             ? "translate(0, -100%)"
             : "translate(-100%, -100%)",
         }}
       >
-        {/* 父组件面包屑下拉 */}
-        <div
-          style={{
-            padding: "0 8px",
-            backgroundColor: "blue",
-            borderRadius: 4,
-            color: "#fff",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-            position: "relative",
-          }}
-          title={parentComponents.map((p) => p.desc).join(" > ")}
-          onClick={(e) => {
-            e.stopPropagation();
-            // 简化：点击面包屑选中父组件
-            if (parentComponents.length > 0) {
-              simulatorRenderer.selectComponent(parentComponents[0].id);
-            }
-          }}
-        >
-          {curComponent.desc}
-        </div>
+        <Space>
+          <Dropdown
+            menu={{
+              items: parentComponents.map((item) => ({
+                key: item.id,
+                label: item.desc,
+              })),
+              onClick: ({ key }) => {
+                simulatorRenderer.selectComponent(+key);
+              },
+            }}
+            disabled={parentComponents.length === 0}
+          >
+            <div
+              style={{
+                padding: "0 8px",
+                backgroundColor: "blue",
+                borderRadius: 4,
+                color: "#fff",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                display: "flex",
+                alignItems: "center",
+                height: 24,
+              }}
+            >
+              {curComponent.desc}
+            </div>
+          </Dropdown>
 
-        {/* 删除 */}
-        {curComponentId !== 1 && (
+          {componentId !== 1 && (
+            <div
+              style={{
+                padding: "0 8px",
+                backgroundColor: "blue",
+                borderRadius: 4,
+                display: "flex",
+                alignItems: "center",
+                height: 24,
+              }}
+            >
+              <Popconfirm
+                title="确认删除？"
+                onConfirm={handleDelete}
+                okText="确认"
+                cancelText="取消"
+              >
+                <DeleteOutlined style={{ color: "#fff", cursor: "pointer" }} />
+              </Popconfirm>
+            </div>
+          )}
+
           <div
             style={{
               padding: "0 8px",
               backgroundColor: "blue",
               borderRadius: 4,
-              color: "#fff",
-              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              height: 24,
             }}
-            onClick={handleDelete}
-            title="删除"
           >
-            ✕
+            <Tooltip title="复制">
+              <CopyOutlined
+                style={{ color: "#fff", cursor: "pointer" }}
+                onClick={handleCopy}
+              />
+            </Tooltip>
           </div>
-        )}
 
-        {/* 复制 */}
-        <div
-          style={{
-            padding: "0 8px",
-            backgroundColor: "blue",
-            borderRadius: 4,
-            color: "#fff",
-            cursor: "pointer",
-          }}
-          onClick={handleCopy}
-          title="复制"
-        >
-          ⎘
-        </div>
-
-        {/* 粘贴 */}
-        <div
-          style={{
-            padding: "0 8px",
-            backgroundColor: "blue",
-            borderRadius: 4,
-            color: "#fff",
-            cursor: "pointer",
-          }}
-          onClick={handlePaste}
-          title="粘贴"
-        >
-          ⧫
-        </div>
+          <div
+            style={{
+              padding: "0 8px",
+              backgroundColor: "blue",
+              borderRadius: 4,
+              display: "flex",
+              alignItems: "center",
+              height: 24,
+            }}
+          >
+            <Tooltip title="粘贴">
+              <FileAddOutlined
+                style={{ color: "#fff", cursor: "pointer" }}
+                onClick={handlePaste}
+              />
+            </Tooltip>
+          </div>
+        </Space>
       </div>
     </>,
     portalEl,
