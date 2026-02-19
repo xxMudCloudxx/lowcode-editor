@@ -19,10 +19,19 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
+      "react-refresh/only-export-components": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      // Note: check if strict-type-checked is enabled if this rule doesn't exist in standard recommended
+      "@typescript-eslint/no-empty-object-type": "off", // This might be 'ban-types' in older versions, keeping as requested
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+          varsIgnorePattern: "^_",
+        },
       ],
     },
-  }
+  },
 );
