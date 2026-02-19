@@ -5,13 +5,13 @@
  * @description 定义了编辑器中使用的物料组件与其在最终代码中对应的导入信息等的映射关系。
  */
 
-import type { ModuleBuilder } from "../generator/module-builder";
+import type { ModuleBuilder } from "@lowcode/schema";
 import type {
   ICodeGenComponentMethod,
   IRDependency,
   IRLiteral,
   IRPropValue,
-} from "../types/ir";
+} from "@lowcode/schema";
 
 /**
  * 组件元数据接口
@@ -329,7 +329,7 @@ export interface ComponentCodeGenMeta {
    * @returns 真正传递给 JSX 组件的 props 对象 (IRPropValue 格式)
    */
   getTransformedProps: (
-    props: Record<string, any>
+    props: Record<string, any>,
   ) => Record<string, IRPropValue>;
 
   /**
@@ -339,7 +339,7 @@ export interface ComponentCodeGenMeta {
    */
   getLogicFragments?: (
     props: Record<string, any>,
-    moduleBuilder: ModuleBuilder
+    moduleBuilder: ModuleBuilder,
   ) => void;
 }
 
@@ -599,7 +599,7 @@ codeGenLogicMap.set("Icon", {
           destructuring: true,
           exportName: iconName,
         },
-        iconName // [! 修正 !] 确保 addImport 接收正确的第二个参数
+        iconName, // [! 修正 !] 确保 addImport 接收正确的第二个参数
       );
     }
     // 如果是默认图标，则无需操作，jsx.ts 已经处理了
@@ -673,7 +673,7 @@ codeGenLogicMap.set("TableColumn", {
  * @param componentName 组件在 Schema 中的 name (e.g., 'Typography')
  */
 export function getComponentCodeGenMeta(
-  componentName: string
+  componentName: string,
 ): ComponentCodeGenMeta {
   const logic = codeGenLogicMap.get(componentName);
 

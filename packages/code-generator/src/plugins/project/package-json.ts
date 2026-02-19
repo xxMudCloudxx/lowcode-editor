@@ -1,7 +1,6 @@
 // src/code-generator/plugins/project/package-json.ts
 
-import type { IProjectPlugin } from "../../types/plugin";
-import type { ProjectBuilder } from "../../generator/project-builder";
+import type { IProjectPlugin, ProjectBuilder } from "@lowcode/schema";
 
 /**
  * @file package.json 生成插件
@@ -54,9 +53,10 @@ const packageJsonPlugin: IProjectPlugin = {
     };
 
     // 4. 合并所有依赖
-    // irProject.dependencies 是从 schema 解析来的 (e.g., { 'antd': '^5.0.0' })
+    // collectDependencies() 收集 IR 解析 + 插件注册的依赖
+    const collectedDeps = projectBuilder.collectDependencies();
     const dependencies = {
-      ...irProject.dependencies,
+      ...collectedDeps,
       ...coreDependencies,
     };
 

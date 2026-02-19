@@ -1,5 +1,3 @@
-// src/code-generator/types/plugin.ts
-
 /**
  * @file 出码插件核心类型定义
  * @description 定义了不同类型的插件及其执行签名
@@ -11,7 +9,7 @@ import type { ProjectBuilder } from "./project-builder";
 
 /**
  * @interface IComponentPlugin
- * @description 组件级别插件：处理单个 IRNode，生成代码块并放入 ModuleBuilder。
+ * @description 组件级别插件：处理单个 IRPage，生成代码块并放入 ModuleBuilder。
  * @example jsxPlugin, cssPlugin
  */
 export interface IComponentPlugin {
@@ -19,7 +17,7 @@ export interface IComponentPlugin {
   name: string;
   /**
    * 执行组件插件
-   * @param page -完整的 IRPage 上下文
+   * @param page - 完整的 IRPage 上下文
    * @param moduleBuilder - 当前页面的模块构建器
    * @param projectBuilder - (可选) 整个项目的构建器，用于访问项目级信息
    */
@@ -39,6 +37,18 @@ export interface IProjectPlugin {
   type: "project";
   name: string;
   /**
+   * 执行阶段
+   * - 'pre': 在组件插件之前执行
+   * - 'post': 在组件插件之后执行
+   * @default 'post'
+   */
+  phase?: "pre" | "post";
+  /**
+   * 排序权重（同一 phase 内的排序，数字越小越靠前）
+   * @default 100
+   */
+  weight?: number;
+  /**
    * 执行项目插件
    * @param projectBuilder - 整个项目的构建器
    */
@@ -52,10 +62,10 @@ export interface IProjectPlugin {
  */
 export type IPostProcessor = (
   file: IGeneratedFile,
-) => Promise<IGeneratedFile> | IGeneratedFile; // <-- 2. 定义类型
+) => Promise<IGeneratedFile> | IGeneratedFile;
 
 /**
  * @type CodeGeneratorPlugin
  * @description 所有出码插件的联合类型
  */
-export type ICodeGeneratorPlugin = IComponentPlugin | IProjectPlugin; // | IPostprocessorPlugin | IPublisherPlugin
+export type ICodeGeneratorPlugin = IComponentPlugin | IProjectPlugin;

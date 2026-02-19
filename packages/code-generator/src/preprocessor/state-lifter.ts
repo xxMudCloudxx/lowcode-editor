@@ -14,7 +14,7 @@ import type {
   IRJSExpression,
   IRLiteral,
   IRPage,
-} from "../types/ir";
+} from "@lowcode/schema";
 import { buildIrNodeMap, isIRActionArray } from "../utils/ir-helper";
 
 /**
@@ -39,7 +39,7 @@ function transformPage(page: IRPage): IRPage {
  */
 function transformComponentMethods(
   page: IRPage, // [!> 签名变更 <!]
-  irNodeMap: Map<number | string, IRNode>
+  irNodeMap: Map<number | string, IRNode>,
 ) {
   const traverse = (irNode: IRNode) => {
     // 1. 遍历当前节点的所有 Props
@@ -60,7 +60,7 @@ function transformComponentMethods(
               return liftComponentMethod(
                 action,
                 page, // [!> 传递 page 对象 <!]
-                irNodeMap
+                irNodeMap,
               );
             }
             return action; // 保留其他类型的 action
@@ -108,7 +108,7 @@ function transformComponentMethods(
 function liftComponentMethod(
   action: IRAction,
   page: IRPage, // [!> 签名变更 <!]
-  irNodeMap: Map<number | string, IRNode>
+  irNodeMap: Map<number | string, IRNode>,
 ): IRAction | null {
   const config = action.config;
   const targetComponentId = config.componentId;
@@ -123,7 +123,7 @@ function liftComponentMethod(
   const targetIrNode = irNodeMap.get(targetComponentId);
   if (!targetIrNode) {
     console.warn(
-      `[StateLifter] 未找到 componentMethod 的目标组件 ID: ${targetComponentId}`
+      `[StateLifter] 未找到 componentMethod 的目标组件 ID: ${targetComponentId}`,
     );
     return null;
   }
@@ -132,7 +132,7 @@ function liftComponentMethod(
   const metadata = getComponentMetadata(targetIrNode.componentName);
   if (!metadata) {
     console.warn(
-      `[StateLifter] 组件 ${targetIrNode.componentName} 的方法 ${targetMethod} 没有定义 stateBinding。`
+      `[StateLifter] 组件 ${targetIrNode.componentName} 的方法 ${targetMethod} 没有定义 stateBinding。`,
     );
     return null;
   }
@@ -140,7 +140,7 @@ function liftComponentMethod(
 
   if (!methodMeta || !methodMeta.stateBinding) {
     console.warn(
-      `[StateLifter] 组件 ${targetIrNode.componentName} 的方法 ${targetMethod} 没有定义 stateBinding。`
+      `[StateLifter] 组件 ${targetIrNode.componentName} 的方法 ${targetMethod} 没有定义 stateBinding。`,
     );
     return null;
   }
@@ -167,7 +167,7 @@ function liftComponentMethod(
   page.methods[methodName] = {
     type: "JSFunction",
     value: `function() { this.setState({ ${stateName}: ${JSON.stringify(
-      stateValue
+      stateValue,
     )} }) }`,
   } as IRJSFunction;
 

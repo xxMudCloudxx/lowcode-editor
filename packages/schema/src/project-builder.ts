@@ -16,6 +16,8 @@ import type { IPostProcessor } from "./plugin";
 export class ProjectBuilder {
   /** 存储生成的文件，Key 为文件路径 */
   private files: Map<string, IGeneratedFile> = new Map();
+  /** 插件注册的依赖（按需收集） */
+  private pluginDependencies: Map<string, string> = new Map();
   /** 项目的中间表示 (IR) */
   readonly ir: IRProject;
 
@@ -102,39 +104,29 @@ export class ProjectBuilder {
     return new ModuleBuilder();
   }
 
-  // --- 阶段性方法 (示例，实际逻辑在插件中) ---
+  /**
+   * 注册一个运行时依赖（用于 package.json 生成）。
+   * @param packageName - npm 包名
+   * @param version - 版本范围
+   */
+  addDependency(packageName: string, version: string): void {
+    this.pluginDependencies.set(packageName, version);
+  }
 
   /**
-   * 【示例】为单个页面生成文件 (实际应由插件完成)。
-   * 此方法仅作演示，实际的 JSX 生成和文件添加逻辑在 Solution 中调用插件完成。
-   * @param page - 要生成文件的 IRPage 对象。
-   * @deprecated 此方法仅为示例，实际逻辑应在插件中实现。
+   * 收集所有插件注册的依赖，合并 IR 中的依赖。
+   * @returns 去重后的依赖映射 { packageName: version }
    */
-  generatePageFiles_ExampleOnly(page: IRPage): void {
-    const moduleBuilder = this.createModuleBuilder();
-    // JSX 生成逻辑将在插件中完成，这里只是示意
-    // moduleBuilder.setJSX('<div>Generated Page Content</div>');
-
-    // --- 修正 ---
-    // 收集页面依赖并添加到 moduleBuilder
-    // ! 此处调用已失效，因为 addImport 签名已更改。
-    // ! 实际的 addImport 调用在 jsx.ts 插件中通过遍历 IRNode 树来完成。
-    // page.dependencies.forEach((dep) => moduleBuilder.addImport(dep)); // <--- 注释掉此行
-    moduleBuilder.addReactImport("React"); // 默认导入 React
-
-    const componentName = page.fileName; // 使用文件名作为组件名基础
-    const fileName = `${componentName}.tsx`; // 假设页面都是 tsx
-    // 统一文件输出路径结构，例如 src/pages/PageName/PageName.tsx
-    const filePath = `src/pages/${upperFirst(
-      camelCase(componentName),
-    )}/${fileName}`;
-    const content = moduleBuilder.generateModule(componentName);
-
-    this.addFile({
-      fileName,
-      filePath,
-      content,
-      fileType: "tsx",
+  collectDependencies(): Record<string, string> {
+    const deps: Record<string, string> = {};
+    // 先合并 IR 中解析出来的依赖
+    if (this.ir.dependencies) {
+      Object.assign(deps, this.ir.dependencies);
+    }
+    // 再合并插件注册的依赖（插件优先级更高，可覆盖 IR 中的版本）
+    this.pluginDependencies.forEach((version, pkg) => {
+      deps[pkg] = version;
     });
+    return deps;
   }
 }

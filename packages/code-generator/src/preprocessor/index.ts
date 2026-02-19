@@ -5,7 +5,7 @@
  * @description 串联执行所有 IR 预处理步骤（例如状态提升），为后续插件阶段准备好可用的 IRProject 结构。
  */
 
-import type { IRProject } from "../types/ir";
+import type { IRProject } from "@lowcode/schema";
 import { runStateLifter } from "./state-lifter";
 // import { runDataSourceTransformer } from './datasource-transformer'; // 示例：未来可以添加更多
 

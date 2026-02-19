@@ -11,7 +11,7 @@ import type {
   ISchemaNode,
   IRDependency,
   IRLiteral,
-} from "../types/ir";
+} from "@lowcode/schema";
 import { uniqueId } from "lodash-es";
 
 /**
@@ -26,7 +26,7 @@ export interface IParserContext {
   parsePropValue: (
     key: string,
     value: any,
-    schemaNode: ISchemaNode
+    schemaNode: ISchemaNode,
   ) => IRPropValue;
 }
 
@@ -34,7 +34,7 @@ export interface IParserContext {
 // (返回 IRNode 则代表完全接管；返回 undefined 则继续执行默认逻辑)
 export type NodeTransformer = (
   schemaNode: ISchemaNode,
-  context: IParserContext
+  context: IParserContext,
 ) => IRNode | undefined;
 
 /**
@@ -112,7 +112,7 @@ const buttonMapper: NodeMapper = (irNode, schemaNode) => {
       irNode.props.children = irNode.props.text; // 将 text 转为 children prop
     } else {
       console.warn(
-        `组件 '${schemaNode.name}' (ID: ${schemaNode.id}) ... (忽略 'text' 属性)。`
+        `组件 '${schemaNode.name}' (ID: ${schemaNode.id}) ... (忽略 'text' 属性)。`,
       );
     }
     delete irNode.props.text; // 删除原始 prop
@@ -129,7 +129,7 @@ const typographyMapper: NodeMapper = (irNode, schemaNode) => {
       irNode.props.children = irNode.props.content;
     } else {
       console.warn(
-        `组件 '${schemaNode.name}' (ID: ${schemaNode.id}) ... (忽略 'content' 属性)。`
+        `组件 '${schemaNode.name}' (ID: ${schemaNode.id}) ... (忽略 'content' 属性)。`,
       );
     }
     delete irNode.props.content;
@@ -147,7 +147,7 @@ export const nodeMapperRegistry: Record<string, NodeMapper> = {
 export type PropMapper = (
   value: any,
   key: string,
-  schemaNode: ISchemaNode
+  schemaNode: ISchemaNode,
 ) => IRPropValue | undefined;
 
 /**
