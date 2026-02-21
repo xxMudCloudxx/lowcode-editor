@@ -30,15 +30,30 @@ export function useComponentStyleManager(form: any) {
   // State: 存储 CSS 编辑器中的文本内容
   const [css, setCss] = useState<string>(".comp{\n\n}");
 
-  // Effect: 当选中组件变化时，同步表单和 CSS 编辑器的内容
+  // 当选中组件变化时，同步 CSS 编辑器的内容（render-time sync）
+  const [prevSyncKey, setPrevSyncKey] = useState({
+    id: curComponent?.id,
+    styles: curComponent?.styles,
+  });
+  if (
+    curComponent?.id !== prevSyncKey.id ||
+    curComponent?.styles !== prevSyncKey.styles
+  ) {
+    setPrevSyncKey({ id: curComponent?.id, styles: curComponent?.styles });
+    setCss(
+      curComponent?.styles
+        ? convertStyleObjectToCssString(curComponent.styles)
+        : ".comp{\n\n}",
+    );
+  }
+
+  // Effect: 当选中组件变化时，同步表单内容
   useEffect(() => {
     if (curComponent?.styles) {
       form.resetFields();
       form.setFieldsValue(curComponent.styles);
-      setCss(convertStyleObjectToCssString(curComponent.styles));
     } else {
       form.resetFields();
-      setCss(".comp{\n\n}");
     }
   }, [curComponent?.id, curComponent?.styles, form]);
 
@@ -57,7 +72,6 @@ export function useComponentStyleManager(form: any) {
 
         const newStyles = parseCssStringToObject(value);
 
-        // 调用 store action 更新样式, `true` 表示完全替换旧样式
         updateComponentStyles(
           curComponent.id,
           { ...form.getFieldsValue(), ...newStyles },

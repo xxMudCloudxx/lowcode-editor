@@ -22,7 +22,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 // --- 类型定义 (保持不变) ---
 interface ItemProperty {
@@ -134,7 +134,7 @@ export const AttrListSetter = ({
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = (event: any) => {
@@ -146,8 +146,11 @@ export const AttrListSetter = ({
     }
   };
 
+  const counterRef = useRef(0);
+
   const handleAdd = () => {
-    const newItem = { ...defaultItem, key: `new-item-${Date.now()}` };
+    counterRef.current += 1;
+    const newItem = { ...defaultItem, key: `new-item-${counterRef.current}` };
     onChange?.([...value, newItem]);
   };
 
@@ -171,7 +174,7 @@ export const AttrListSetter = ({
       .then((formValues) => {
         if (editingIndex === null) return;
         const newValue = value.map((item, i) =>
-          i === editingIndex ? { ...item, ...formValues } : item
+          i === editingIndex ? { ...item, ...formValues } : item,
         );
         onChange?.(newValue);
         setIsModalVisible(false);

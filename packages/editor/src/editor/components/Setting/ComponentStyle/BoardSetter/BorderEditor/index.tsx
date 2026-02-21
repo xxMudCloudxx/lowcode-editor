@@ -35,9 +35,8 @@ const BorderEditor = (props: BorderRadiusEditorProps) => {
     (v?: string) => {
       const nextMode = v === localType ? "" : v || "";
       setLocalType(nextMode);
-      // console.log(nextMode);
     },
-    [onChange, localType]
+    [localType],
   );
 
   const handleWidthChange = (newV: number | null) => {
@@ -62,7 +61,7 @@ const BorderEditor = (props: BorderRadiusEditorProps) => {
           <StyleColorPicker
             value={camelCaseValue[`${localType}Color`]}
             onChange={createChangeHandler(
-              `${localType}Color` as keyof CSSProperties
+              `${localType}Color` as keyof CSSProperties,
             )}
             className="mb-2"
           />

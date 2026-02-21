@@ -7,7 +7,7 @@
  */
 import { Form, InputNumber, Select, type SelectProps } from "antd";
 import type { Component } from "@lowcode/schema";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import LocationBoxModalEditor from "./BoxModalEditor";
 import { cap } from "../../../../utils/styles";
 import { useStyleChangeHandler } from "../../../../hooks/useStyleChangeHandler";
@@ -42,11 +42,11 @@ const LocationSetter = ({ curComponent, onChange }: LocationSetterProps) => {
     value.position as Position | undefined,
   );
 
-  useEffect(() => {
-    if (value.position !== position) {
-      setPosition(value.position as Position | undefined);
-    }
-  }, [value.position, position]);
+  const [prevPosition, setPrevPosition] = useState(value.position);
+  if (value.position !== prevPosition) {
+    setPrevPosition(value.position);
+    setPosition(value.position as Position | undefined);
+  }
 
   const createChangeHandler = useStyleChangeHandler(onChange);
 

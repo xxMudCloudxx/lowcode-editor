@@ -80,7 +80,7 @@ function generateSandboxHTML(
     name: string;
     props: Record<string, unknown>;
     eventArgs?: unknown[];
-  }
+  },
 ): string {
   const contextJSON = safeSerialize(context);
 
@@ -159,7 +159,7 @@ function generateSandboxHTML(
 export function executeSandboxedCode(
   code: string,
   context: SandboxContext,
-  timeout: number = 5000
+  timeout: number = 5000,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     // 创建隐藏的 iframe
@@ -168,7 +168,6 @@ export function executeSandboxedCode(
     // sandbox 属性：只允许脚本执行，禁止访问父页面 DOM、表单提交等
     iframe.sandbox.add("allow-scripts");
 
-    let timeoutId: ReturnType<typeof setTimeout>;
     let resolved = false;
 
     // 清理函数
@@ -209,7 +208,7 @@ export function executeSandboxedCode(
     window.addEventListener("message", handleMessage);
 
     // 设置超时
-    timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       cleanup();
       reject(new Error("沙盒代码执行超时"));
     }, timeout);

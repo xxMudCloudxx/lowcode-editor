@@ -6,7 +6,7 @@
  * 它复用了 `StyleStripInputEditor` 组件来实现四个方向的输入。
  * @module Components/Setting/ComponentStyle/LocationBoxModalEditor
  */
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useState, type CSSProperties } from "react";
 import {
   DIRS,
   Strip,
@@ -41,23 +41,25 @@ const LocationBoxModalEditor = (props: LocationBoxModalProps) => {
     left: "",
   });
 
-  useEffect(() => {
-    if (!value) return;
-
-    setLocal((current) => {
-      const next = { ...current };
-      let changed = false;
-      DIRS.forEach((d) => {
-        const key = `${d}` as keyof CSSProperties;
-        const v = stripUnit("px", value[key]);
-        if (current[d] !== v) {
-          next[d] = v;
-          changed = true;
-        }
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    if (value) {
+      setLocal((current) => {
+        const next = { ...current };
+        let changed = false;
+        DIRS.forEach((d) => {
+          const key = `${d}` as keyof CSSProperties;
+          const v = stripUnit("px", value[key]);
+          if (current[d] !== v) {
+            next[d] = v;
+            changed = true;
+          }
+        });
+        return changed ? next : current;
       });
-      return changed ? next : current;
-    });
-  }, [value]);
+    }
+  }
   /**
    * @description 当输入框的值发生变化时，立即更新本地状态，并通知父组件。
    * @param dir - 更改的方向 ("top" | "right" | "bottom" | "left")
@@ -74,7 +76,7 @@ const LocationBoxModalEditor = (props: LocationBoxModalProps) => {
         onChange?.({ [dir]: addUnit("px", v) });
       }
     },
-    [onChange] // 依赖项是 onChange
+    [onChange], // 依赖项是 onChange
   );
 
   return (

@@ -2,20 +2,19 @@ import { useMemo, useState } from "react";
 import { useComponentConfigStore } from "../../../stores/component-config";
 import { MaterialItem } from "./MaterialItem";
 
+const categoryOrder = [
+  "基础",
+  "布局",
+  "数据录入",
+  "数据展示",
+  "导航",
+  "反馈",
+  "通用",
+  "其他",
+];
+
 export function Material() {
   const { componentConfig } = useComponentConfigStore();
-
-  // 定义分类顺序
-  const categoryOrder = [
-    "基础",
-    "布局",
-    "数据录入",
-    "数据展示",
-    "导航",
-    "反馈",
-    "通用",
-    "其他",
-  ];
 
   // 管理每个分类的展开/收起状态，默认全部展开
   const [expandedCategories, setExpandedCategories] = useState<
@@ -26,8 +25,8 @@ export function Material() {
         acc[category] = true;
         return acc;
       },
-      {} as Record<string, boolean>
-    )
+      {} as Record<string, boolean>,
+    ),
   );
 
   // 切换分类展开状态
@@ -40,7 +39,7 @@ export function Material() {
 
   const categorizedComponents = useMemo(() => {
     const components = Object.values(componentConfig).filter(
-      (item) => item.name !== "Page"
+      (item) => item.name !== "Page",
     );
 
     // 按分类分组
@@ -53,12 +52,12 @@ export function Material() {
         acc[category].push(component);
         return acc;
       },
-      {} as Record<string, typeof components>
+      {} as Record<string, typeof components>,
     );
 
     // 按预定义顺序排序分类
     const sortedCategories = categoryOrder.filter(
-      (category) => grouped[category]
+      (category) => grouped[category],
     );
 
     return sortedCategories.map((category) => ({

@@ -25,7 +25,7 @@ import {
   type HoverComponentPayload,
   type ForwardKeyboardEventPayload,
 } from "./protocol";
- 
+
 import { useComponentsStore } from "../stores/components";
 import { useUIStore } from "../stores/uiStore";
 
@@ -62,6 +62,13 @@ export class SimulatorHost {
     this.iframe = null;
     this.iframeReady = false;
     this.messageQueue = [];
+  }
+
+  /**
+   * 获取 iframe 内的 document 对象
+   */
+  getIframeDocument(): Document | null {
+    return this.iframe?.contentDocument || null;
   }
 
   // ==================== 消息发送 ====================
