@@ -2,7 +2,10 @@
  * @file renderer/components/RendererEditArea.tsx
  * @description
  * Iframe 内的编辑画布区域。
- * 基于原 EditArea 改造，核心差异：
+ * 基于 SchemaRenderer（@lowcode/renderer）统一渲染核心改造。
+ * 设计态能力通过 designHooks 注入（DragWrapper、data-component-id 等）。
+ *
+ * 核心差异：
  * - 从 rendererStore（Slave Store）读取数据，而非 useComponentsStore
  * - 交互事件通过 SimulatorRenderer 的 postMessage 传递给 Host
  * - 独立的 DndProvider 上下文（由 RendererApp 提供）
@@ -17,7 +20,10 @@ import React, {
   useCallback,
   type MouseEventHandler,
   type CSSProperties,
+  type ReactElement,
 } from "react";
+import { SchemaRenderer, type DesignHooks } from "@lowcode/renderer";
+import { UNIFIED_RENDERER } from "../../config/featureFlags";
 import { useRendererStore } from "../stores/rendererStore";
 import { simulatorRenderer } from "../../editor/simulator/SimulatorRenderer";
 import { materials, type ComponentConfig } from "@lowcode/materials";
@@ -117,17 +123,39 @@ export function RendererEditArea() {
     [components, curComponentId],
   );
 
-  // ==================== 容器判断 ====================
+  // ==================== 设计态钩子 ====================
 
-  const isContainerComponent = useCallback((name: string): boolean => {
-    const config = componentConfigMap[name];
-    if (!config) return false;
-    return config.editor.isContainer ?? false;
-  }, []);
+  /**
+   * 通过 customCreateElement 注入 DragWrapper — 保持编辑态拖拽能力
+   * 这是 SchemaRenderer 留给 editor 侧的注入点（参考阿里 lowcode-engine）
+   */
+  const designHooks = useMemo<DesignHooks>(
+    () => ({
+      customCreateElement: (
+        componentId: number,
+        componentName: string,
+        element: ReactElement,
+      ) => {
+        const config = componentConfigMap[componentName];
+        const isContainer = config?.editor.isContainer ?? false;
+        return (
+          <RendererDraggableNode
+            key={componentId}
+            id={componentId}
+            name={componentName}
+            isContainer={isContainer}
+          >
+            {element}
+          </RendererDraggableNode>
+        );
+      },
+    }),
+    [],
+  );
 
-  // ==================== 渲染 ====================
+  // ==================== Legacy 渲染路径（Feature Flag 回退） ====================
 
-  const RenderNode = useCallback(
+  const LegacyRenderNode = useCallback(
     ({ id }: { id: number }) => {
       const component = components[id];
       if (!component) return null;
@@ -138,7 +166,7 @@ export function RendererEditArea() {
       const ComponentToRender = config.component;
       if (!ComponentToRender) return null;
 
-      const isContainer = isContainerComponent(component.name);
+      const isContainer = config.editor.isContainer ?? false;
 
       return (
         <Suspense
@@ -158,19 +186,19 @@ export function RendererEditArea() {
                 style: component.styles,
               },
               component.children?.map((childId) => (
-                <RenderNode key={childId} id={childId} />
+                <LegacyRenderNode key={childId} id={childId} />
               )),
             )}
           </RendererDraggableNode>
         </Suspense>
       );
     },
-    [components, isContainerComponent],
+    [components],
   );
 
-  const componentTree = useMemo(() => {
-    return rootId ? <RenderNode id={rootId} /> : null;
-  }, [rootId, RenderNode]);
+  const legacyComponentTree = useMemo(() => {
+    return rootId ? <LegacyRenderNode id={rootId} /> : null;
+  }, [rootId, LegacyRenderNode]);
 
   return (
     <div
@@ -184,7 +212,17 @@ export function RendererEditArea() {
         onMouseLeave={() => setHoverComponentId(undefined)}
         onClickCapture={handleClickCapture}
       >
-        {componentTree}
+        {UNIFIED_RENDERER ? (
+          <SchemaRenderer
+            components={components}
+            rootId={rootId}
+            componentMap={componentConfigMap}
+            designMode="design"
+            designHooks={designHooks}
+          />
+        ) : (
+          legacyComponentTree
+        )}
 
         {/* Hover Mask */}
         {hoverComponentId &&
