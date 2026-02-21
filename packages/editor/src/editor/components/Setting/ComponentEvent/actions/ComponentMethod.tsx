@@ -29,21 +29,21 @@ export function ComponentMethod(props: ComponentMethodProps) {
 
   const treeData = useMemo(
     () => buildComponentTree(components, rootId),
-    [components, rootId]
+    [components, rootId],
   );
 
   const selectedComponent = useMemo(() => {
     return value?.componentId
       ? getComponentById(value.componentId, components)
       : null;
-  }, [value?.componentId, components]);
+  }, [value, components]);
 
   const selectedMethodConfig = useMemo(() => {
     if (!selectedComponent || !value?.method) return null;
     return componentConfig[selectedComponent.name]?.methods?.find(
-      (m) => m.name === value.method
+      (m) => m.name === value.method,
     );
-  }, [selectedComponent, value?.method, componentConfig]);
+  }, [selectedComponent, value, componentConfig]);
 
   useEffect(() => {
     if (value) {
@@ -77,10 +77,12 @@ export function ComponentMethod(props: ComponentMethodProps) {
       >
         <Form.Item
           name="componentId"
-          label={<span className="text-sm font-medium text-gray-700">目标组件</span>}
+          label={
+            <span className="text-sm font-medium text-gray-700">目标组件</span>
+          }
           className="mb-4"
         >
-            <TreeSelect
+          <TreeSelect
             className="w-full"
             size="large"
             placeholder="请选择要调用方法的组件"
@@ -93,9 +95,13 @@ export function ComponentMethod(props: ComponentMethodProps) {
         </Form.Item>
 
         {selectedComponent && (
-          <Form.Item 
-            name="method" 
-            label={<span className="text-sm font-medium text-gray-700">调用方法</span>}
+          <Form.Item
+            name="method"
+            label={
+              <span className="text-sm font-medium text-gray-700">
+                调用方法
+              </span>
+            }
             className="mb-4"
           >
             <Select
@@ -106,7 +112,7 @@ export function ComponentMethod(props: ComponentMethodProps) {
                 (method) => ({
                   label: method.label,
                   value: method.name,
-                })
+                }),
               )}
             />
           </Form.Item>
@@ -114,13 +120,17 @@ export function ComponentMethod(props: ComponentMethodProps) {
 
         {/* 动态渲染参数输入框 */}
         {selectedMethodConfig?.params?.map((param: any) => (
-          <Form.Item 
-            key={param.name} 
-            name={param.name} 
-            label={<span className="text-sm font-medium text-gray-700">{param.label}</span>}
+          <Form.Item
+            key={param.name}
+            name={param.name}
+            label={
+              <span className="text-sm font-medium text-gray-700">
+                {param.label}
+              </span>
+            }
             className="mb-4"
           >
-            <Input 
+            <Input
               className="w-full"
               size="large"
               placeholder={`请输入${param.label}...`}

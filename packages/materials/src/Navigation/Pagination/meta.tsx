@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Pagination/meta.tsx
  * @description Pagination 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_PAGE_LEVEL } from "../../containerTypes";
 
 const PaginationProtocol: ComponentProtocol = {
@@ -42,3 +42,4 @@ const PaginationProtocol: ComponentProtocol = {
 };
 
 export default PaginationProtocol;
+

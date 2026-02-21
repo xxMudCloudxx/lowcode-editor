@@ -11,7 +11,7 @@ import MonacoEditor, {
 } from "@monaco-editor/react";
 import { Button } from "antd";
 import { editor } from "monaco-editor";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export interface EditorFile {
   name: string;
@@ -49,10 +49,12 @@ export default function CssEditor(props: Props) {
    * 当父组件通过某种方式（例如，从服务器加载新数据或保存成功后）更新了 `value` 时，
    * 我们需要同步更新编辑器的内部值，并重置“脏”状态。
    */
-  useEffect(() => {
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     setInternalValue(value);
     setIsDirty(false);
-  }, [value]);
+  }
 
   /**
    * @description 编辑器挂载后的回调。

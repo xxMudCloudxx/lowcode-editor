@@ -7,7 +7,7 @@
  * @module Components/Common/StyleSliderWithInput
  */
 import { InputNumber, Slider } from "antd";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { addUnit, stripUnit } from "../../../utils/styles";
 
 interface StyleSliderWithInputProps {
@@ -51,11 +51,12 @@ const StyleSliderWithInput = ({
 
   const [internalValue, setInternalValue] = useState(getInitialValue());
 
-  // 当外部 props.value 变化时，同步到内部状态
-  // 这个 effect 确保了组件始终能响应外部“受控”值的变化
-  useEffect(() => {
-    const externalValue = stripUnit(unit || "", value[propertyName]);
-    // 只有当外部值存在时才进行覆盖，以尊重 defaultValue 的初始设置
+  // 当外部 props.value 变化时，同步到内部状态（render-time sync）
+  const propValue = value[propertyName];
+  const [prevPropValue, setPrevPropValue] = useState(propValue);
+  if (propValue !== prevPropValue) {
+    setPrevPropValue(propValue);
+    const externalValue = stripUnit(unit || "", propValue);
     if (
       externalValue !== undefined &&
       externalValue !== null &&
@@ -63,10 +64,9 @@ const StyleSliderWithInput = ({
     ) {
       setInternalValue(externalValue);
     } else if (defaultValue === undefined) {
-      // 如果外部值和defaultValue都清空了，则清空内部
       setInternalValue("");
     }
-  }, [value[propertyName], propertyName, unit, defaultValue]);
+  }
 
   // 将内部状态值转换为数字，用于组件渲染
   const numericValue = parseFloat(internalValue.toString());

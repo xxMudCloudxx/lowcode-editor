@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Space/meta.tsx
  * @description Space 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_LAYOUT } from "../../containerTypes";
 
 const SpaceProtocol: ComponentProtocol = {
@@ -66,3 +66,4 @@ const SpaceProtocol: ComponentProtocol = {
 };
 
 export default SpaceProtocol;
+

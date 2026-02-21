@@ -1,0 +1,8 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 防止滚动条双重出现，滚动条由 RendererEditArea 处理 */
+}

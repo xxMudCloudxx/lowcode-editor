@@ -8,13 +8,7 @@
  * @module Components/Setting/ComponentStyle/BorderRadiusEditor
  */
 import { InputNumber } from "antd";
-import {
-  useState,
-  type CSSProperties,
-  useEffect,
-  useMemo,
-  useCallback,
-} from "react";
+import { useState, type CSSProperties, useMemo, useCallback } from "react";
 import StyleOptionGroup from "../../../../common/StyleOptionGroup";
 import StyleSliderWithInput from "../../../../common/StyleSliderWithInput";
 import {
@@ -46,27 +40,30 @@ const parseCornerRadiiFromValue = (camelCaseValue: CSSProperties) => ({
   borderTopRightRadius: stripUnit("px", camelCaseValue.borderTopRightRadius),
   borderBottomLeftRadius: stripUnit(
     "px",
-    camelCaseValue.borderBottomLeftRadius
+    camelCaseValue.borderBottomLeftRadius,
   ),
   borderBottomRightRadius: stripUnit(
     "px",
-    camelCaseValue.borderBottomRightRadius
+    camelCaseValue.borderBottomRightRadius,
   ),
 });
 
 // 辅助函数：将分角圆角对象转换回可用的 CSSProperties 对象
 const applyCornerRadiiStyles = (
-  corners: Record<string, string>
+  corners: Record<string, string>,
 ): CSSProperties =>
   Object.fromEntries(
     Object.entries(corners).map(([key, val]) => [
       key,
       val ? addUnit("px", val) : undefined,
-    ])
+    ]),
   );
 
+// 稳定的空对象引用，避免默认参数 `value = {}` 在每次渲染时创建新对象导致无限循环
+const EMPTY_STYLES: KebabCaseCSSProperties = {};
+
 const BorderRadiusEditor = ({
-  value = {},
+  value = EMPTY_STYLES,
   onChange,
   id,
 }: BorderRadiusEditorProps) => {
@@ -76,8 +73,10 @@ const BorderRadiusEditor = ({
   // 使用 state 来控制当前是“统一设置” (all) 还是“分角设置” (remote) 模式
   const [radioModal, setRadioModal] = useState<string>("");
 
-  // Effect Hook：当外部数据源 (value) 或所选元素 (id) 变化时，同步UI模式
-  useEffect(() => {
+  // 当外部数据源 (value) 或所选元素 (id) 变化时，同步UI模式（render-time sync）
+  const [prevSyncKey, setPrevSyncKey] = useState({ camelCaseValue, id });
+  if (camelCaseValue !== prevSyncKey.camelCaseValue || id !== prevSyncKey.id) {
+    setPrevSyncKey({ camelCaseValue, id });
     const hasBorderRadius = camelCaseValue.borderRadius != null;
     const newRadii = parseCornerRadiiFromValue(camelCaseValue);
     const hasCornerValues = Object.values(newRadii).some(Boolean);
@@ -87,7 +86,7 @@ const BorderRadiusEditor = ({
     } else if (hasCornerValues) {
       setRadioModal("remote");
     }
-  }, [camelCaseValue, id]);
+  }
 
   // 回调函数：处理“统一圆角”模式的变更
   // 这个函数由 StyleSliderWithInput 在滑动结束后调用
@@ -100,7 +99,7 @@ const BorderRadiusEditor = ({
       };
       onChange?.(newCss);
     },
-    [onChange]
+    [onChange],
   );
 
   // 回调函数：处理“分角设置”模式的变更
@@ -122,7 +121,7 @@ const BorderRadiusEditor = ({
 
       onChange?.(newCss);
     },
-    [camelCaseValue, onChange]
+    [camelCaseValue, onChange],
   );
 
   // 回调函数：处理模式切换
@@ -131,7 +130,7 @@ const BorderRadiusEditor = ({
       const nextMode = v === radioModal ? "" : v || "";
       setRadioModal(nextMode);
     },
-    [radioModal, onChange]
+    [radioModal],
   );
 
   return (
@@ -162,7 +161,7 @@ const BorderRadiusEditor = ({
                   config.key as keyof ReturnType<
                     typeof parseCornerRadiiFromValue
                   >
-                ] || 0
+                ] || 0,
               )}
               onChange={(val) =>
                 handleCornerRadiusChange(config.key as keyof CSSProperties, val)

@@ -13,7 +13,7 @@ export default defineConfig({
     tailwindcss(),
     monacoEditorPlugin({
       languageWorkers: ["json", "css", "html", "typescript"],
-    }),
+    }) as any,
   ],
   resolve: {
     alias: {
@@ -25,6 +25,15 @@ export default defineConfig({
     fs: {
       // 允许访问根目录下的 assets
       allow: ["..", "../../assets"],
+    },
+  },
+  // MPA 多入口：主编辑器 + Renderer (iframe)
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        renderer: path.resolve(__dirname, "renderer.html"),
+      },
     },
   },
   test: {

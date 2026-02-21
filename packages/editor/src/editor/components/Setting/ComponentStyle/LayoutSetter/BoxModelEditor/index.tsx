@@ -13,6 +13,7 @@ import {
   useRef,
   type CSSProperties,
   useCallback,
+  useMemo,
 } from "react";
 import { addUnit, cap, stripUnit } from "../../../../../utils/styles";
 import {
@@ -55,49 +56,49 @@ export default function BoxModelEditor({ value, onChange }: Props) {
   });
 
   //
-  // 2. 同步逻辑：当外部 `value` prop 变化时，同步更新到内部的 `local` state。
+  // 2. 同步逻辑：当外部 `value` prop 变化时，同步更新到内部的 `local` state。（render-time sync）
   //
-  useEffect(() => {
-    if (!value) return;
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    if (value) {
+      setLocal((prev) => {
+        const next = {
+          margin: { ...prev.margin },
+          padding: { ...prev.padding },
+        };
+        let changed = false;
 
-    // 使用函数式更新 `setLocal(prev => ...)`，可以避免将 `local` 作为此 effect 的依赖项，
-    // 防止在本地更新时（`onFieldChange`中）反向触发此 effect，造成不必要的渲染循环。
-    setLocal((prev) => {
-      const next = {
-        margin: { ...prev.margin },
-        padding: { ...prev.padding },
-      };
-      let changed = false;
+        DIRS.forEach((d) => {
+          const mKey = `margin${cap(d)}` as keyof CSSProperties;
+          const pKey = `padding${cap(d)}` as keyof CSSProperties;
+          const m = stripUnit("px", value[mKey]);
+          const p = stripUnit("px", value[pKey]);
 
-      DIRS.forEach((d) => {
-        const mKey = `margin${cap(d)}` as keyof CSSProperties;
-        const pKey = `padding${cap(d)}` as keyof CSSProperties;
-        const m = stripUnit("px", value[mKey]);
-        const p = stripUnit("px", value[pKey]);
+          if (prev.margin[d] !== m) {
+            next.margin[d] = m;
+            changed = true;
+          }
+          if (prev.padding[d] !== p) {
+            next.padding[d] = p;
+            changed = true;
+          }
+        });
 
-        if (prev.margin[d] !== m) {
-          next.margin[d] = m;
-          changed = true;
-        }
-        if (prev.padding[d] !== p) {
-          next.padding[d] = p;
-          changed = true;
-        }
+        return changed ? next : prev;
       });
-
-      // 仅当解析出的值与当前 state 不同时，才进行更新，避免无效渲染。
-      return changed ? next : prev;
-    });
-  }, [value]);
+    }
+  }
 
   //
   // 3. 事件处理：将本地 state 的变化通过防抖函数上报给父组件。
   //
-  const debouncedEmit = useCallback(
-    debounce((css: BoxModelValue) => {
-      onChange?.(css);
-    }, 300),
-    [onChange] // 依赖项是 onChange，确保能拿到最新的回调函数引用
+  const debouncedEmit = useMemo(
+    () =>
+      debounce((css: BoxModelValue) => {
+        onChange?.(css);
+      }, 300),
+    [onChange],
   );
 
   const onFieldChange = useCallback(
@@ -110,16 +111,16 @@ export default function BoxModelEditor({ value, onChange }: Props) {
       // 触发防抖回调，延迟上报给父组件
       debouncedEmit({ [`${type}${cap(dir)}`]: addUnit("px", v) });
     },
-    [debouncedEmit]
+    [debouncedEmit],
   );
 
   const handleMargin = useCallback(
     (dir: Direction, v: string) => onFieldChange("margin", dir, v),
-    [onFieldChange]
+    [onFieldChange],
   );
   const handlePadding = useCallback(
     (dir: Direction, v: string) => onFieldChange("padding", dir, v),
-    [onFieldChange]
+    [onFieldChange],
   );
 
   //

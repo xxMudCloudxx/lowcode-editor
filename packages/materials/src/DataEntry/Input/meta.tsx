@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Input/meta.tsx
  * @description Input 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_GENERAL } from "../../containerTypes";
 
 const InputProtocol: ComponentProtocol = {
@@ -69,3 +69,4 @@ const InputProtocol: ComponentProtocol = {
 };
 
 export default InputProtocol;
+

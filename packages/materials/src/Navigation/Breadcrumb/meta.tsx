@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Breadcrumb/meta.tsx
  * @description Breadcrumb 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_LAYOUT } from "../../containerTypes";
 
 const BreadcrumbProtocol: ComponentProtocol = {
@@ -35,3 +35,4 @@ const BreadcrumbProtocol: ComponentProtocol = {
 };
 
 export default BreadcrumbProtocol;
+

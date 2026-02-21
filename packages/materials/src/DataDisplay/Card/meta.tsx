@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Card/meta.tsx
  * @description Card 组件协议配置（容器组件）
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_CARD } from "../../containerTypes";
 
 const CardProtocol: ComponentProtocol = {
@@ -32,3 +32,4 @@ const CardProtocol: ComponentProtocol = {
 };
 
 export default CardProtocol;
+
