@@ -127,7 +127,6 @@ export interface ComponentProtocol {
    * - 必须使用 forwardRef 包裹，否则拖拽功能失效！
    * - 可以是 lazy 加载的组件
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: ComponentType<any> | React.LazyExoticComponent<ComponentType<any>>;
 
   /**
@@ -142,7 +141,6 @@ export interface ComponentProtocol {
    * component: lazy(() => import("./index")),  // 编辑态
    * runtimeComponent: lazy(() => import("./runtime")),  // 运行态
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   runtimeComponent?:
     | ComponentType<any>
     | React.LazyExoticComponent<ComponentType<any>>;
@@ -183,7 +181,7 @@ export type ComponentConfig = ComponentProtocol;
  */
 export function validateRefForwarding(
   componentName: string,
-  refCurrent: unknown
+  refCurrent: unknown,
 ): void {
   if (process.env.NODE_ENV === "development") {
     // 延迟检查，给组件渲染完成的时间
@@ -196,7 +194,7 @@ export function validateRefForwarding(
             `示例：\n` +
             `const ${componentName} = forwardRef<HTMLElement, Props>((props, ref) => {\n` +
             `  return <div ref={ref}>...</div>;\n` +
-            `});`
+            `});`,
         );
       }
     }, 100);

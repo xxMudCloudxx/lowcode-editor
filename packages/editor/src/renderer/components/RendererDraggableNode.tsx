@@ -19,7 +19,8 @@ import {
   type ReactElement,
   type CSSProperties,
 } from "react";
-import { useDrag, useDrop, type ConnectDropTarget } from "react-dnd";
+
+import { useDrag, useDrop } from "react-dnd";
 import { NativeTypes } from "react-dnd-html5-backend";
 import { mergeRefs } from "../../editor/hooks/useMergeRefs";
 import { useRendererStore } from "../stores/rendererStore";

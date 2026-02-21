@@ -14,7 +14,7 @@ import {
   MessageType,
   createMessage,
   isLowcodeMessage,
-  type MessageEnvelope,
+   
   type SyncComponentsStatePayload,
   type SyncUIStatePayload,
   type DragStartMetadataPayload,

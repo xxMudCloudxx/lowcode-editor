@@ -25,7 +25,8 @@ import {
   type HoverComponentPayload,
   type ForwardKeyboardEventPayload,
 } from "./protocol";
-import { useComponentsStore, type ComponentsStore } from "../stores/components";
+ 
+import { useComponentsStore } from "../stores/components";
 import { useUIStore } from "../stores/uiStore";
 
 export class SimulatorHost {

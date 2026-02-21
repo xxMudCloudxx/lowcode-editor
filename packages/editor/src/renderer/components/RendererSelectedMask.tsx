@@ -12,14 +12,13 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRendererStore } from "../stores/rendererStore";
 import { simulatorRenderer } from "../../editor/simulator/SimulatorRenderer";
-import type { Component } from "@lowcode/schema";
-
-import { Dropdown, message, Popconfirm, Space, Tooltip } from "antd";
+import { Dropdown, Popconfirm, Space, Tooltip } from "antd";
 import {
   CopyOutlined,
   DeleteOutlined,
   FileAddOutlined,
 } from "@ant-design/icons";
+import { Component } from "@lowcode/schema";
 
 interface RendererSelectedMaskProps {
   portalWrapperClassName: string;
