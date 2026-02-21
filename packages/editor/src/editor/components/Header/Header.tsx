@@ -117,7 +117,9 @@ export function Header() {
     resetComponents();
   };
 
-  const handleOpenCodePreview = async () => {
+  const [currentSolution, setCurrentSolution] = useState("react-vite");
+
+  const generateCode = async (solutionName: string) => {
     setIsExporting(true);
     const { components, rootId } = useComponentsStore.getState();
     const schema = buildComponentTree(components, rootId);
@@ -130,11 +132,14 @@ export function Header() {
 
     try {
       const result = await exportSourceCode(schema as ISchema, {
-        publisher: "none",
+        solution: solutionName,
+        skipPublisher: true,
       });
 
       if (result.success && result.files) {
         setGeneratedFiles(result.files);
+        // 如果是首次打开（Drawer 不可见），则显示 Drawer
+        // 如果是切换 Solution（Drawer 可见），则只更新 files
         setIsDrawerVisible(true);
       } else {
         console.error("出码失败:", result.message);
@@ -146,6 +151,16 @@ export function Header() {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const handleOpenCodePreview = async () => {
+    // 默认打开当前选中的 Solution (或者重置为 react-vite)
+    await generateCode(currentSolution);
+  };
+
+  const handleSolutionChange = async (newSolution: string) => {
+    setCurrentSolution(newSolution);
+    await generateCode(newSolution);
   };
 
   // // 更多菜单（危险操作折叠）
@@ -358,6 +373,8 @@ export function Header() {
                 loading={isExporting}
                 files={generatedFiles}
                 onClose={() => setIsDrawerVisible(false)}
+                solution={currentSolution}
+                onSolutionChange={handleSolutionChange}
               />
 
               {/* 预览（Primary Action） */}

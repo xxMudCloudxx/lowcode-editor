@@ -1,7 +1,7 @@
 // src/code-generator/plugins/project/index-html.ts
 
-import type { IProjectPlugin } from "../../types/plugin";
-import type { ProjectBuilder } from "../../generator/project-builder";
+import type { IProjectPlugin } from "@lowcode/schema";
+import type { ProjectBuilder } from "@lowcode/schema";
 
 /**
  * @file index.html 生成插件

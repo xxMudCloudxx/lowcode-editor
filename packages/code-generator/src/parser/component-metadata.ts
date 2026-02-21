@@ -10,7 +10,7 @@ import {
   componentMetadataMap,
   type IComponentMetadata,
 } from "../const/component-metadata";
-import type { IRDependency } from "../types/ir";
+import type { IRDependency } from "@lowcode/schema";
 
 /**
  * 根据组件在 Schema 中的名称获取其元数据。
@@ -18,7 +18,7 @@ import type { IRDependency } from "../types/ir";
  * @returns 组件元数据对象，如果未找到则返回 undefined。
  */
 export function getComponentMetadata(
-  componentName: string
+  componentName: string,
 ): IComponentMetadata | undefined {
   // 直接使用导入的 componentMetadataMap
   return componentMetadataMap[componentName];
@@ -31,7 +31,7 @@ export function getComponentMetadata(
  * @returns 包含所有唯一依赖项的数组。
  */
 export function getAllDependencies(
-  metadataMap: Record<string, IComponentMetadata>
+  metadataMap: Record<string, IComponentMetadata>,
 ): IRDependency[] {
   const dependencies = new Map<string, IRDependency>();
   Object.values(metadataMap).forEach((meta) => {
@@ -54,7 +54,7 @@ export function getAllDependencies(
  * @returns 一个记录 NPM 包名和版本号的对象, e.g., { antd: '^5.0.0', react: '^18.0.0' }。
  */
 export function getProjectDependencies(
-  allDependencies: IRDependency[]
+  allDependencies: IRDependency[],
 ): Record<string, string> {
   const projectDeps: Record<string, string> = {};
   allDependencies.forEach((dep) => {

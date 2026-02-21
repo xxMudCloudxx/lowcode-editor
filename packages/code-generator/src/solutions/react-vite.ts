@@ -1,119 +1,53 @@
-// src/code-generator/solutions/react-vite.ts
-
 /**
  * @file React + Vite 出码解决方案
- * @description 定义了使用 React 和 Vite 技术栈生成代码的流水线 (Pipeline)。
+ * @description 实现 ISolution 接口，定义 React + Vite 技术栈的完整出码流水线。
  */
 
-import type {
-  ISchema,
-  IRPage,
-  ProjectBuilder,
-  IComponentPlugin,
-  IProjectPlugin,
-} from "@lowcode/schema";
-import { SchemaParser } from "../parser/schema-parser";
+import type { ISolution } from "@lowcode/schema";
+import { reactViteTemplate } from "../templates/react-vite-template";
+import { prettierPostProcessor } from "../postprocessor/prettier";
+import { zipPublisher } from "../publisher/zip-publisher";
+
+// --- 组件级插件 ---
 import jsxPlugin from "../plugins/component/react/jsx";
-import { camelCase, upperFirst } from "lodash-es";
-import { projectPlugins } from "../plugins/project";
 import cssPlugin from "../plugins/component/style/css";
-import { runPreprocessors } from "../preprocessor";
-// 引入其他插件... (例如 CSS 插件, 路由插件等，将在后续阶段添加)
+
+// --- 项目级插件（动态文件，依赖 IR）---
+import globalStylePlugin from "../plugins/project/global-style";
+import routerPlugin from "../plugins/project/router";
+import entryPlugin from "../plugins/project/entry";
+import packageJsonPlugin from "../plugins/project/package-json";
+import componentsPlugin from "../plugins/project/components";
 
 /**
- * 代码生成解决方案接口
+ * React + Vite 出码方案
+ *
+ * 编排完整的出码流水线：
+ * 1. ReactViteTemplate → 静态脚手架文件（tsconfig, vite.config, .gitignore, index.html, vite-env）
+ * 2. ComponentPlugins → CSS Module 提取 + React JSX 生成
+ * 3. ProjectPlugins → 路由、入口、全局样式、组件桶文件、package.json
+ * 4. PostProcessors → Prettier 格式化
+ * 5. Publisher → ZIP 打包下载
  */
-export interface ICodeGeneratorSolution {
-  /**
-   * 执行代码生成流水线。
-   * @param schema - 输入的低代码 Schema。
-   * @returns 包含生成结果的 ProjectBuilder 实例。
-   */
-  run: (schema: ISchema) => Promise<ProjectBuilder>;
-}
+const reactViteSolution: ISolution = {
+  name: "react-vite",
+  description: "基于 React 18 + Vite 5 + TypeScript 的标准 SPA 项目",
 
-/**
- * React + Vite 解决方案的具体实现。
- * 支持插件流水线
- */
-const reactViteSolution: ICodeGeneratorSolution = {
-  /**
-   * 按 React + Vite 流水线执行完整出码。
-   * @param schema - 编辑器导出的 Schema 数据
-   * @returns 含有所有生成文件的 ProjectBuilder 实例
-   */
-  run: async (schema: ISchema) => {
-    // 1. 解析 Schema -> IR (Intermediate Representation)
-    const parser = new SchemaParser();
-    const irProject = parser.parse(schema);
+  template: reactViteTemplate,
 
-    const transformedIrProject = runPreprocessors(irProject);
+  componentPlugins: [cssPlugin, jsxPlugin],
 
-    // 2. 初始化 ProjectBuilder，传入 IR
-    const projectBuilder = new ProjectBuilder(transformedIrProject);
+  projectPlugins: [
+    { ...globalStylePlugin, phase: "post" as const, weight: 10 },
+    { ...componentsPlugin, phase: "post" as const, weight: 20 },
+    { ...routerPlugin, phase: "post" as const, weight: 30 },
+    { ...entryPlugin, phase: "post" as const, weight: 40 },
+    { ...packageJsonPlugin, phase: "post" as const, weight: 100 }, // package.json 最后生成，以收集所有依赖
+  ],
 
-    // 3. --- 定义插件流水线 ---
-    // 阶段一：组件级别插件
-    const componentPlugins: IComponentPlugin[] = [cssPlugin, jsxPlugin];
+  postProcessors: [prettierPostProcessor()],
 
-    // 阶段二/三：项目级别插件
-    const projectPluginsList: IProjectPlugin[] = [
-      ...projectPlugins,
-      // 未来可以添加 packageJsonPlugin, viteConfigPlugin 等
-      // packageJsonPlugin,
-      // viteConfigPlugin,
-    ];
-
-    // 4. --- 执行组件插件流水线 (Pipeline) ---
-    transformedIrProject.pages.forEach((page: IRPage) => {
-      // 为每个页面创建一个 ModuleBuilder
-      const moduleBuilder = projectBuilder.createModuleBuilder();
-
-      // 应用所有组件插件
-      componentPlugins.forEach((plugin) => {
-        plugin.run(page, moduleBuilder, projectBuilder);
-      });
-
-      // --- 生成当前页面的文件 ---
-      const componentName = page.fileName;
-      const fileName = `${upperFirst(camelCase(componentName))}.tsx`; // 统一命名为 PascalCase
-      const componentPascalName = upperFirst(camelCase(componentName));
-      const filePath = `src/pages/${componentPascalName}/${fileName}`;
-
-      // 调用 moduleBuilder 生成最终的代码字符串
-      const content = moduleBuilder.generateModule(componentPascalName);
-
-      // 将生成的文件内容添加到 ProjectBuilder
-      projectBuilder.addFile({
-        fileName,
-        filePath,
-        content,
-        fileType: "tsx",
-      });
-
-      // 生成 CSS Module 文件 (如果需要)
-      const cssContent = moduleBuilder.generateCssModule(componentPascalName);
-      if (cssContent) {
-        const cssFileName = `${componentPascalName}.module.scss`;
-        const cssFilePath = `src/pages/${componentPascalName}/${cssFileName}`;
-
-        projectBuilder.addFile({
-          fileName: cssFileName,
-          filePath: cssFilePath,
-          content: cssContent,
-          fileType: "scss",
-        });
-      }
-    });
-
-    // 5. --- 执行 Project 级别的插件 ---
-    projectPluginsList.forEach((plugin) => {
-      plugin.run(projectBuilder);
-    });
-
-    // 6. 返回填充了文件结果的 ProjectBuilder
-    return projectBuilder;
-  },
+  publisher: zipPublisher,
 };
 
 export default reactViteSolution;

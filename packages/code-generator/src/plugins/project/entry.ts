@@ -5,7 +5,7 @@
  * @description 生成 src/main.tsx 和 src/App.tsx
  */
 
-import type { IProjectPlugin } from "../../types/plugin";
+import type { IProjectPlugin } from "@lowcode/schema";
 
 /**
  * 生成 App.tsx

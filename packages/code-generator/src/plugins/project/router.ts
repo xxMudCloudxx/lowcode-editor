@@ -5,8 +5,7 @@
  * @description 基于 irProject.pages 生成路由配置
  */
 
-import type { ProjectBuilder } from "../../generator/project-builder";
-import type { IProjectPlugin } from "../../types/plugin";
+import type { ProjectBuilder, IProjectPlugin } from "@lowcode/schema";
 import { upperFirst, camelCase } from "lodash-es";
 
 /**

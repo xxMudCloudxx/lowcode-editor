@@ -1,7 +1,7 @@
 // src/code-generator/plugins/project/vite-config.ts
 
-import type { IProjectPlugin } from "../../types/plugin";
-import type { ProjectBuilder } from "../../generator/project-builder";
+import type { IProjectPlugin } from "@lowcode/schema";
+import type { ProjectBuilder } from "@lowcode/schema";
 
 /**
  * @file Vite 配置文件生成插件

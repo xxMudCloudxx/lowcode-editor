@@ -1,7 +1,7 @@
 // src/code-generator/plugins/project/tsconfig.ts
 
-import type { IProjectPlugin } from "../../types/plugin";
-import type { ProjectBuilder } from "../../generator/project-builder";
+import type { IProjectPlugin } from "@lowcode/schema";
+import type { ProjectBuilder } from "@lowcode/schema";
 
 /**
  * @file TypeScript 配置文件生成插件

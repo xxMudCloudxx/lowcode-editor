@@ -5,7 +5,7 @@
  * @description 生成 src/global.scss 文件
  */
 
-import type { IProjectPlugin } from "../../types/plugin";
+import type { IProjectPlugin } from "@lowcode/schema";
 
 // 基础的全局样式
 const getGlobalStyleContent = () => `

@@ -3,7 +3,7 @@
  * @description 提供遍历 IRNode 树和判定 IRAction 数组的工具方法，供预处理器和各类插件复用。
  */
 
-import type { IRAction, IRNode } from "../types/ir";
+import type { IRAction, IRNode } from "@lowcode/schema";
 
 /**
  * 判断一个值是否为 IRAction 数组。
@@ -28,7 +28,7 @@ export const isIRActionArray = (propValue: any): propValue is IRAction[] => {
  */
 export const buildIrNodeMap = (
   irNode: IRNode,
-  map: Map<number | string, IRNode>
+  map: Map<number | string, IRNode>,
 ) => {
   map.set(irNode.id, irNode);
 
