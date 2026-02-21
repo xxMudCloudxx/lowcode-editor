@@ -2,13 +2,14 @@
 
 > **版本核心**: 本文档包含了具体的代码级执行步骤、目标目录结构和接口定义。
 
-## 总览：四个 Branch 的依赖关系
+## 总览：五个 Branch 的依赖关系
 
 ```
-refactor/monorepo-foundation (Branch 1)
-    └── refactor/iframe-preview (Branch 2)  ← 依赖 Branch 1 拆出的 renderer 包
-        └── refactor/codegen-decoupling (Branch 3)  ← 依赖 Branch 1 的 monorepo 结构
-            └── refactor/collab-crdt (Branch 4)  ← 依赖 Branch 1 的 schema 包
+refactor/monorepo-foundation (Branch 1)           ← ✅ 已完成
+    ├── refactor/renderer-unification (Branch 1.5) ← 🆕 激活 @lowcode/renderer，统一渲染引擎
+    │   └── refactor/iframe-preview (Branch 2)     ← 预览模式也走 iframe 隔离
+    ├── refactor/codegen-decoupling (Branch 3)     ← 依赖 Branch 1 的 monorepo 结构
+    └── refactor/collab-crdt (Branch 4)            ← 依赖 Branch 1 的 schema 包
 ```
 
 ---
@@ -127,78 +128,175 @@ lowcode-editor/
 
 ---
 
-## Branch 2: `refactor/iframe-preview`
+## Branch 1.5: `refactor/renderer-unification` 🆕
+
+> **参考**: 阿里巴巴 lowcode-engine 的分层思路（渲染核心统一、设计态能力通过注入点扩展）
+
+### 背景：当前问题
+
+当前 `@lowcode/renderer` 包尚未被业务路径消费，编辑态与预览态分别维护了两套递归渲染逻辑。
+
+| 场景         | 实现位置                                                       | 渲染方式                                     |
+| ------------ | -------------------------------------------------------------- | -------------------------------------------- |
+| 编辑模式画布 | `packages/editor/src/renderer/components/RendererEditArea.tsx` | iframe 内渲染，通过 postMessage 与 Host 通信 |
+| 预览模式     | `packages/editor/src/editor/components/Preview/index.tsx`      | Host 窗口直接渲染，无样式隔离                |
 
 ### 目标
 
-用 **iframe 沙箱** 替换当前的同页面预览，实现彻底的样式和环境隔离。
+将 `@lowcode/renderer` 变成唯一渲染核心，遵循 lowcode-engine 的关键原则：
 
-### 前置依赖
+1. **同一渲染核心服务 design/live 两种模式**（不是两套 renderer）
+2. **设计态能力通过注入点扩展**（如 `customCreateElement` / `onCompGetRef`）
+3. **编辑器专有能力不下沉到 renderer 包**（拖拽、蒙层、事件编排由 editor 维护）
 
-Branch 1 完成（`@lowcode/renderer` 包已抽离）。
+### 最终架构（贴合当前项目）
+
+```
+@lowcode/renderer
+  ├─ SchemaRenderer（纯渲染核心）
+  ├─ types（RendererProps / DesignHooks / RenderContext）
+  └─ utils（可选：props 解析、condition/loop 等）
+
+@lowcode/editor
+  ├─ renderer/RendererEditArea  → SchemaRenderer(design)
+  │                              + DragWrapper + HoverMask + SelectedMask
+  └─ editor/components/Preview  → SchemaRenderer(live)
+                                 + EventOrchestrator（仍在 editor 包）
+```
 
 ### 详细步骤
 
-**Step 2.1：创建 Renderer Host 页面**
+**Step 1.5.0：冻结渲染输入契约（先做）**
 
-- 在 `packages/renderer/` 中新增一个独立的 HTML 入口：`packages/renderer/src/host.tsx`。
-- 这是一个极简的 React 应用，功能是：
-  1. 监听 `window.addEventListener('message', ...)` 接收来自父窗口的 Schema 数据。
-  2. 用 `<Renderer>` 组件渲染收到的 Schema。
-  3. 将用户交互事件通过 `parent.postMessage(...)` 回传给编辑器。
-- Vite 配置为独立打包，产物是一个可独立加载的 HTML 页面。
-
-**Step 2.2：设计 PostMessage 通信协议**
+统一输入模型为：`components + rootId + componentMap`（范式化 Map），不再混用树结构输入。
 
 ```typescript
-// packages/schema/src/iframe-protocol.ts
-
-/** 编辑器 → iframe */
-export type EditorToRendererMessage =
-  | { type: "RENDER"; payload: { schema: ISchemaNode[]; components: string[] } }
-  | { type: "UPDATE_PROPS"; payload: { componentId: number; props: any } }
-  | { type: "SELECT"; payload: { componentId: number | null } }
-  | { type: "HOVER"; payload: { componentId: number | null } };
-
-/** iframe → 编辑器 */
-export type RendererToEditorMessage =
-  | { type: "COMPONENT_CLICK"; payload: { componentId: number } }
-  | { type: "COMPONENT_HOVER"; payload: { componentId: number } }
-  | {
-      type: "EVENT_FIRED";
-      payload: { componentId: number; eventName: string; args: unknown[] };
-    }
-  | { type: "RENDERER_READY" }
-  | { type: "DOM_RECT"; payload: { componentId: number; rect: DOMRect } };
+export interface SchemaRendererProps {
+  components: Record<number, Component>;
+  rootId: number;
+  componentMap: Record<string, ComponentConfig>;
+  designMode?: "design" | "live";
+  designHooks?: {
+    onCompGetRef?: (id: number, el: HTMLElement | null) => void;
+    customCreateElement?: (
+      componentId: number,
+      componentName: string,
+      element: React.ReactElement,
+    ) => React.ReactElement;
+  };
+  onEvent?: (componentId: number, eventName: string, args: unknown[]) => void;
+}
 ```
 
-**Step 2.3：改造 EditArea 画布区**
+**Step 1.5.1：实现 SchemaRenderer 核心（renderer 包）**
 
-- 当前 `EditArea` 中直接渲染组件的逻辑，替换为嵌入一个 `<iframe>`。
-- 创建 `useIframeBridge` Hook：
-  - 负责向 iframe 发送 Schema 更新。
-  - 负责接收 iframe 中的点击/悬停事件，同步到 `uiStore.setCurComponentId`。
-  - 当 store 中 `components` 发生变化时，自动 `postMessage` 新的 Schema 给 iframe。
-- 选中遮罩 (SelectedMask) 改为基于 iframe 内回传的 `DOMRect` 定位，叠加在 iframe 之上（使用 `pointer-events: none` 的绝对定位层）。
+- 只实现纯渲染能力：组件查找、props 合并、children 递归、Suspense 包裹
+- `designMode="live"` 时优先 `runtimeComponent`
+- `designMode="design"` 时支持注入 `data-component-id` 与 ref 收集
 
-**Step 2.4：拖拽适配**
+**Step 1.5.2：明确能力边界（对齐阿里分层）**
 
-- 当前使用的 `@dnd-kit` 拖拽需要适配跨 iframe 场景。
-- 方案 A（推荐）：拖拽操作在 **编辑器侧** 完成，iframe 只负责渲染。拖拽指示器（drop indicator）覆盖在 iframe 上方。
-- 方案 B：使用 `drag-and-drop-iframe-events` 库桥接 iframe 内外的拖拽事件。
+保留在 `@lowcode/editor`：
+
+- 拖拽排序（`RendererDraggableNode`）
+- Hover/Selected 蒙层
+- 事件编排（`goToLink` / `showMessage` / `customJs` / `componentMethod`）
+
+保留在 `@lowcode/renderer`：
+
+- 纯渲染管道与模式切换
+- 设计态注入点（hook/回调），不依赖 store
+
+**Step 1.5.3：替换编辑态渲染路径**
+
+将 `RendererEditArea.RenderNode` 替换为 `SchemaRenderer(design)`；通过 `customCreateElement` 注入 DragWrapper；保留现有鼠标捕获与 postMessage 交互链路。
+
+**Step 1.5.4：替换预览态渲染路径**
+
+将 `Preview.RenderNode` 替换为 `SchemaRenderer(live)`；`EventOrchestrator` 迁到 editor 内独立模块（不放 renderer 包）。
+
+**Step 1.5.5：兼容层与灰度开关**
+
+新增特性开关（例如 `renderer.unified=true/false`），允许旧渲染路径与新路径并存 1 个迭代，支持快速回滚。
+
+**Step 1.5.6：验证**
+
+- [ ] `pnpm build` 全包通过
+- [ ] 编辑态拖拽、选中、悬停行为不回归
+- [ ] 预览态事件编排与旧版一致
+- [ ] 关键链路仍有 `data-component-id`，蒙层定位正常
+- [ ] `@lowcode/renderer` 无 editor/store 依赖
+
+### 预估
+
+- **工期**: 3-4 天
+- **风险**: 中（替换两条渲染路径）
+- **收益**: 去重、后续功能扩展成本显著下降
+
+---
+
+## Branch 2: `refactor/iframe-preview` (更新)
+
+### 目标
+
+将预览模式迁入 iframe，形成编辑/预览统一隔离环境，提升所见即所得一致性。
+
+### 前置依赖
+
+Branch 1.5 完成（统一渲染核心已落地并灰度验证）。
+
+### 设计取舍（参考阿里方案）
+
+- 阿里在同域下可用共享引用通信（`window.LCSimulatorHost`）提升效率
+- 当前项目已稳定使用 postMessage，且边界更清晰
+- **本阶段保持 postMessage，不切通信机制**，优先完成预览 iframe 化
+
+### 详细步骤
+
+**Step 2.1：统一 iframe 入口，支持 edit/preview 双模式**
+
+`RendererApp` 根据 `mode` 渲染 `RendererEditArea` 或 `RendererPreviewArea`，两者都复用 `SchemaRenderer`。
+
+**Step 2.2：新增 RendererPreviewArea（iframe 内）**
+
+- 使用 `SchemaRenderer(designMode="live")`
+- 复用 editor 侧 EventOrchestrator（通过消息或上下文注入）
+- 不引入第二套渲染实现
+
+**Step 2.3：协议策略（先复用、后扩展）**
+
+优先复用现有 `SYNC_UI_STATE` 的 `mode` 同步能力。
+
+仅当需要“瞬时命令语义”时，再新增 `SWITCH_MODE`，避免协议膨胀。
+
+**Step 2.4：两阶段退役旧 Preview**
+
+1. 阶段 A（灰度）：保留旧 Preview，使用开关 `preview.useIframe`
+2. 阶段 B（收口）：灰度稳定后删除旧 Preview 组件与旧入口分支
 
 **Step 2.5：响应式预览**
 
-- 利用 iframe 天然支持尺寸控制的特性，移除当前 `canvasSize` 对 div 宽度的 hack。
-- 直接设置 `<iframe width={canvasSize.width} height={canvasSize.height}>` 即可实现手机/平板/桌面预览。
+继续使用 `canvasSize` 驱动 iframe 尺寸，统一编辑/预览设备视图能力。
 
-**Step 2.6：验证**
+**Step 2.6：迁移安全与回滚策略**
 
-- 编辑器画布中组件渲染正常，样式无污染。
-- 点击组件能正确选中（SelectedMask 定位准确）。
-- 拖拽组件到画布功能正常。
-- 手机/平板尺寸切换功能正常。
-- 自定义 JS 事件在 iframe 沙箱中安全执行（复用现有 `sandboxExecutor`）。
+- 增加监控指标：模式切换耗时、消息失败率、渲染异常率
+- 保留快速回滚：`preview.useIframe=false` 立即回退旧链路
+- 明确兼容窗口：至少 1 个小版本并行保留
+
+**Step 2.7：验证**
+
+- [ ] 编辑模式功能不受影响
+- [ ] 预览模式在 iframe 内正确渲染且无样式污染
+- [ ] edit/preview 切换稳定，无明显卡顿
+- [ ] 事件编排与旧 Preview 行为一致
+- [ ] 连续切换与长时会话无明显内存泄漏
+
+### 预估
+
+- **工期**: 3-4 天
+- **风险**: 中高（跨 iframe 事件与模式切换）
+- **收益**: 一致性提升、架构收敛、维护成本下降
 
 ---
 
@@ -383,7 +481,8 @@ export function componentsToYjs(
 
 ## 执行建议
 
-1. **Monorepo Foundation**: 3-5 天 (⭐⭐ 中)
-2. **Iframe Preview**: 5-7 天 (⭐⭐⭐ 高)
-3. **CodeGen Decoupling**: 2-3 天 (⭐ 低)
-4. **Collab CRDT**: 7-10 天 (⭐⭐⭐ 高)
+1. **Monorepo Foundation** (Branch 1): ✅ 已完成
+2. **Renderer 统一** (Branch 1.5): 3-4 天 (⭐⭐ 中) ← **建议下一步**
+3. **Iframe Preview** (Branch 2): 3-4 天 (⭐⭐⭐ 高，依赖 1.5)
+4. **CodeGen Decoupling** (Branch 3): 2-3 天 (⭐ 低)
+5. **Collab CRDT** (Branch 4): 7-10 天 (⭐⭐⭐ 高)
