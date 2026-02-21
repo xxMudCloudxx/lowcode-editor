@@ -43,32 +43,31 @@ const PairedInputEditor = ({
   unStyle,
 }: PairedInputEditorProps) => {
   if (!unit) unit = "px";
-  const [internalValue1, setInternalValue1] = useState("");
-  const [internalValue2, setInternalValue2] = useState("");
+  const [internalValue1, setInternalValue1] = useState<string | number>("");
+  const [internalValue2, setInternalValue2] = useState<string | number>("");
+
+  const prop1Value = value[prop1.propertyName];
+  const prop2Value = value[prop2.propertyName];
 
   // 当外部 value 变化时，同步到内部 state
   useEffect(() => {
-    setInternalValue1(stripUnit(unit!, value[prop1.propertyName]));
-    setInternalValue2(stripUnit(unit!, value[prop2.propertyName]));
-  }, [
-    value[prop1.propertyName],
-    value[prop2.propertyName],
-    prop1.propertyName,
-    prop2.propertyName,
-  ]);
+    const strValue1 = stripUnit(unit!, prop1Value);
+    const strValue2 = stripUnit(unit!, prop2Value);
+    // 将字符串转换为数字，如果为空则保持空字符串
+    setInternalValue1(strValue1 === "" ? "" : Number(strValue1) || "");
+    setInternalValue2(strValue2 === "" ? "" : Number(strValue2) || "");
+  }, [prop1Value, prop2Value, unit]);
 
   // 创建一个通用的 change 处理器
   const handleChange = (
     propertyName: keyof CSSProperties,
-    newValue: string | null
+    newValue: string | number | null,
   ) => {
-    const v = newValue === null ? "" : newValue;
-    if (/\d*/g.test(v)) {
-      onChange?.({
-        ...value,
-        [propertyName]: addUnit(unit!, v),
-      });
-    }
+    const v = newValue === null || newValue === "" ? "" : String(newValue);
+    onChange?.({
+      ...value,
+      [propertyName]: addUnit(unit!, v),
+    });
   };
 
   const style = unStyle ? "" : "flex flex-row justify-center items-center";

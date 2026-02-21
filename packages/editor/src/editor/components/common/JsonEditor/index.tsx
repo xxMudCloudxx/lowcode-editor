@@ -1,5 +1,5 @@
 import { Input } from "antd";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 /**
  * @description 一个专门用于编辑 JSON 数据的受控组件，兼容 antd Form.Item。
@@ -17,22 +17,22 @@ const JsonEditor = ({
   const [str, setStr] = useState("");
   const [isValid, setIsValid] = useState(true);
 
-  useEffect(() => {
-    // 只有在 value 实际存在时才进行格式化
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     if (value !== undefined) {
       try {
         const formattedJson = JSON.stringify(value, null, 2);
         setStr(formattedJson);
         setIsValid(true);
-      } catch (e) {
+      } catch (_e) {
         setStr("无效的 JSON 数据");
         setIsValid(false);
       }
     } else {
-      // 如果外部没有传入 value，则显示为空
       setStr("");
     }
-  }, [value]);
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newStr = e.target.value;
@@ -43,7 +43,7 @@ const JsonEditor = ({
       // 关键改动 2：在调用 onChange 之前，进行可选链 '?.' 调用
       onChange?.(parsed);
       setIsValid(true);
-    } catch (e) {
+    } catch (_e) {
       setIsValid(false);
     }
   };

@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Avatar/meta.tsx
  * @description Avatar 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_GENERAL } from "../../containerTypes";
 
 const AvatarProtocol: ComponentProtocol = {
@@ -45,3 +45,4 @@ const AvatarProtocol: ComponentProtocol = {
 };
 
 export default AvatarProtocol;
+

@@ -1,7 +1,7 @@
 import { Allotment } from "allotment";
 import "allotment/dist/style.css";
 import { Header } from "./components/Header/Header";
-import { EditArea } from "./components/EditArea";
+import { SimulatorView } from "./components/SimulatorView";
 import { Setting } from "./components/Setting";
 import { MaterialWrapper } from "./components/MaterialWrapper";
 import { Preview } from "./components/Preview";
@@ -31,10 +31,10 @@ export default function ReactPlayground() {
               </div>
             </Allotment.Pane>
 
-            {/* 中间编辑区域 */}
+            {/* 中间编辑区域 (iframe 隔离画布) */}
             <Allotment.Pane>
               <div className="h-full bg-linear-to-br from-surface to-neutral-100">
-                <EditArea />
+                <SimulatorView />
               </div>
             </Allotment.Pane>
 

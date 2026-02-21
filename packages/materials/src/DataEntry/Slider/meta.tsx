@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Slider/meta.tsx
  * @description Slider 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_GENERAL } from "../../containerTypes";
 
 const SliderProtocol: ComponentProtocol = {
@@ -38,3 +38,4 @@ const SliderProtocol: ComponentProtocol = {
 };
 
 export default SliderProtocol;
+

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file Modal/meta.tsx
  * @description Modal 组件协议配置
  *
@@ -7,7 +7,7 @@
  * - 运行态(runtimeComponent): 真正的 Antd Modal 弹窗
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 
 const ModalProtocol: ComponentProtocol = {
   name: "Modal",
@@ -54,3 +54,4 @@ const ModalProtocol: ComponentProtocol = {
 };
 
 export default ModalProtocol;
+

@@ -5,7 +5,7 @@
  * 根据用户选择的动作类型，渲染对应的配置表单。
  * @module Components/Setting/ComponentEvent/ActionModal
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Modal, Segmented } from "antd";
 import { GoToLink, type GoToLinkConfig } from "../actions/GoToLink";
 import { ShowMessage, type ShowMessageConfig } from "../actions/ShowMessage";
@@ -29,6 +29,13 @@ interface ActionModalProps {
   handleCancel: () => void;
 }
 
+const ACTION_TYPE_MAP: Record<string, string> = {
+  goToLink: "访问链接",
+  showMessage: "消息提示",
+  customJs: "自定义 JS",
+  componentMethod: "组件方法",
+};
+
 export function ActionModal(props: ActionModalProps) {
   const { visible, handleCancel, handleOk, action } = props;
 
@@ -37,27 +44,21 @@ export function ActionModal(props: ActionModalProps) {
   // State: 当前模态框中正在编辑的动作配置对象
   const [curConfig, setCurConfig] = useState<ActionConfig>();
 
-  const map = {
-    goToLink: "访问链接",
-    showMessage: "消息提示",
-    customJs: "自定义 JS",
-    componentMethod: "组件方法",
-  };
-
-  // 1. 使用 effect 在模态框可见时，用 action prop 初始化内部状态
-  useEffect(() => {
+  // 在模态框可见或 action 变化时，用 action prop 初始化内部状态（render-time sync）
+  const [prevVisible, setPrevVisible] = useState(visible);
+  const [prevAction, setPrevAction] = useState(action);
+  if (visible !== prevVisible || action !== prevAction) {
+    setPrevVisible(visible);
+    setPrevAction(action);
     if (visible) {
-      // 将外部的 action 同步到内部的 curConfig state
       setCurConfig(action);
-
-      // 根据 action 设置 Tab，如果是新增则设为默认值
       if (action?.type) {
-        setKey(map[action.type]);
+        setKey(ACTION_TYPE_MAP[action.type]);
       } else {
         setKey("访问链接");
       }
     }
-  }, [visible, action]);
+  }
 
   return (
     <Modal
@@ -71,7 +72,7 @@ export function ActionModal(props: ActionModalProps) {
       // 关键：添加 destroyOnClose，确保每次打开都是一个全新的干净状态，避免旧 state 的干扰
       destroyOnHidden
     >
-      <div className="h-[500px]">
+      <div className="h-125">
         <Segmented
           value={key}
           onChange={setKey}

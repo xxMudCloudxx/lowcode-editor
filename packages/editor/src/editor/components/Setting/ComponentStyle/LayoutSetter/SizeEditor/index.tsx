@@ -8,6 +8,7 @@
  */
 import type { CSSProperties } from "react";
 import PairedInputEditor from "../../../../common/PariedInputEditor";
+import { simulatorHost } from "@/editor/simulator";
 
 interface SizeEditorProps {
   value?: CSSProperties;
@@ -18,14 +19,21 @@ interface SizeEditorProps {
 const SizeEditor = (props: SizeEditorProps) => {
   const { value = {}, onChange, curComponentId } = props;
 
-  // 获取 DOM 节点用于 placeholder
-  const node = document.querySelector(
-    `[data-component-id="${curComponentId}"]`
+  // 获取 iframe 内的 DOM 节点用于 placeholder
+  const iframeDoc = simulatorHost.getIframeDocument();
+  const node = iframeDoc?.querySelector(
+    `[data-component-id="${curComponentId}"]`,
   );
-  if (!node) {
-    return null;
+
+  // 如果找到节点，则从实际尺寸中获取 placeholder
+  let widthPlaceholder = "auto";
+  let heightPlaceholder = "auto";
+
+  if (node) {
+    const { width, height } = node.getBoundingClientRect();
+    widthPlaceholder = `${Math.round(width)}`;
+    heightPlaceholder = `${Math.round(height)}`;
   }
-  const { width, height } = node.getBoundingClientRect();
 
   return (
     <PairedInputEditor
@@ -35,12 +43,12 @@ const SizeEditor = (props: SizeEditorProps) => {
       prop1={{
         label: "宽度",
         propertyName: "width",
-        placeholder: `${Math.round(width)}`,
+        placeholder: widthPlaceholder,
       }}
       prop2={{
         label: "高度",
         propertyName: "height",
-        placeholder: `${Math.round(height)}`,
+        placeholder: heightPlaceholder,
       }}
       unStyle={true}
     />

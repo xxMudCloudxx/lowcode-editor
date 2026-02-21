@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Form/meta.tsx
  * @description Form 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_DATA } from "../../containerTypes";
 
 const FormProtocol: ComponentProtocol = {
@@ -29,3 +29,4 @@ const FormProtocol: ComponentProtocol = {
 };
 
 export default FormProtocol;
+

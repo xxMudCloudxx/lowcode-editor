@@ -52,6 +52,7 @@ const ModalRuntime = forwardRef<ModalRef, ModalRuntimeProps>(
     // 当 propOpen 变化时（如用户绑定了 {{ state.showModal }}），同步到内部状态
     useEffect(() => {
       if (propOpen !== undefined) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setInternalOpen(propOpen);
       }
     }, [propOpen]);

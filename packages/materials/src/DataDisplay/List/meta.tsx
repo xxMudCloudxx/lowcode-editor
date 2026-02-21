@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file List/meta.tsx
  * @description List 组件协议配置（容器组件）
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_LIST } from "../../containerTypes";
 
 const ListProtocol: ComponentProtocol = {
@@ -39,3 +39,4 @@ const ListProtocol: ComponentProtocol = {
 };
 
 export default ListProtocol;
+

@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @file Select/meta.tsx
  * @description Select 组件协议配置
  */
 import { lazy } from "react";
-import type { ComponentProtocol } from "../../../types/component-protocol";
+import type { ComponentProtocol } from "@lowcode/schema";
 import { PT_GENERAL } from "../../containerTypes";
 
 const SelectProtocol: ComponentProtocol = {
@@ -46,3 +46,4 @@ const SelectProtocol: ComponentProtocol = {
 };
 
 export default SelectProtocol;
+

@@ -1,5 +1,5 @@
 import { Input, Select } from "antd";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useUIStore } from "../../../../stores/uiStore";
 
 export interface ShowMessageConfig {
@@ -22,16 +22,18 @@ export function ShowMessage(props: ShowMessageProps) {
   const curComponentId = useUIStore((s) => s.curComponentId);
 
   const [type, setType] = useState<"success" | "error">(
-    defaultValue?.type || "success"
+    defaultValue?.type || "success",
   );
   const [text, setText] = useState<string>(defaultValue?.text || "");
 
-  useEffect(() => {
+  const [prevVal, setPrevVal] = useState(val);
+  if (val !== prevVal) {
+    setPrevVal(val);
     if (val) {
       setType(val.type);
       setText(val.text);
     }
-  });
+  }
   function messageTypeChange(value: "success" | "error") {
     if (!curComponentId) return;
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useUIStore } from "../../../../stores/uiStore";
 import type { OnMount } from "@monaco-editor/react";
 import MonacoEditor from "@monaco-editor/react";
@@ -30,9 +30,11 @@ export function CustomJS(props: CustomJsProps) {
   const curComponentId = useUIStore((s) => s.curComponentId);
   const [value, setValue] = useState(defaultValue || DEFAULT_CODE_TEMPLATE);
 
-  useEffect(() => {
+  const [prevVal, setPrevVal] = useState(val);
+  if (val !== prevVal) {
+    setPrevVal(val);
     setValue(val || DEFAULT_CODE_TEMPLATE);
-  }, [val]);
+  }
 
   function codeChange(value?: string) {
     if (!curComponentId) return;

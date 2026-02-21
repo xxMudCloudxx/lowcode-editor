@@ -31,7 +31,6 @@ const DynamicIcon = ({
   rotate?: number;
 }) => {
   if (!icon) return null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const IconComponent = (AntdIcons as any)[icon];
   return IconComponent ? <IconComponent spin={spin} rotate={rotate} /> : null;
 };
@@ -49,7 +48,7 @@ const Icon = forwardRef<HTMLSpanElement, IconProps>(
         <DynamicIcon icon={icon} spin={spin} rotate={rotate} />
       </span>
     );
-  }
+  },
 );
 
 Icon.displayName = "Icon";

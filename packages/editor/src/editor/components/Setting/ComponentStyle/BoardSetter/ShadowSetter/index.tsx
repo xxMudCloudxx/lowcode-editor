@@ -7,7 +7,7 @@
  * @module Components/Setting/ComponentStyle/ShadowSetter
  */
 import type { CSSProperties } from "react";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { ColorPicker, InputNumber, Space } from "antd";
 import { debounce } from "lodash-es";
 import {
@@ -38,7 +38,7 @@ interface ShadowSetterProps {
 
 const ShadowSetter = ({ value = {}, onChange }: ShadowSetterProps) => {
   const [shadow, setShadow] = useState<Shadow>(() =>
-    parseBoxShadow(value.boxShadow)
+    parseBoxShadow(value.boxShadow),
   );
 
   const [activeShadowType, setActiveShadowType] = useState<
@@ -48,7 +48,9 @@ const ShadowSetter = ({ value = {}, onChange }: ShadowSetterProps) => {
     return value.boxShadow.includes("inset") ? "inset" : "outset";
   });
 
-  useEffect(() => {
+  const [prevBoxShadow, setPrevBoxShadow] = useState(value.boxShadow);
+  if (value.boxShadow !== prevBoxShadow) {
+    setPrevBoxShadow(value.boxShadow);
     const newShadow = parseBoxShadow(value.boxShadow);
     setShadow(newShadow);
     if (!value.boxShadow || value.boxShadow === "none") {
@@ -56,14 +58,14 @@ const ShadowSetter = ({ value = {}, onChange }: ShadowSetterProps) => {
     } else {
       setActiveShadowType(newShadow.inset ? "inset" : "outset");
     }
-  }, [value.boxShadow]);
+  }
 
   const debouncedOnChange = useMemo(
     () =>
       debounce((css: CSSProperties) => {
         onChange?.(css);
       }, 200),
-    [onChange]
+    [onChange],
   );
 
   // 内外阴影按钮组的事件处理器
@@ -102,7 +104,7 @@ const ShadowSetter = ({ value = {}, onChange }: ShadowSetterProps) => {
   // 用于更新单个阴影属性 (颜色, x, y 等) 的处理器
   const handleShadowPropertyChange = (
     key: keyof Shadow,
-    val: string | number | boolean
+    val: string | number | boolean,
   ) => {
     setShadow((prev) => {
       const newShadowState = { ...prev, [key]: val };
