@@ -11,10 +11,12 @@ export {
   isLowcodeMessage,
   type MessageEnvelope,
   type SyncComponentsStatePayload,
+  type SyncComponentsPatchPayload,
   type SyncUIStatePayload,
   type DragStartMetadataPayload,
   type DispatchActionPayload,
   type SelectComponentPayload,
   type HoverComponentPayload,
   type ForwardKeyboardEventPayload,
+  type RequestFullSnapshotPayload,
 } from "./protocol";

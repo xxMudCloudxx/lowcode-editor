@@ -4,18 +4,26 @@
  * Iframe (Renderer) 侧的通信管理器。
  * 负责：
  * - 发送 READY 握手
- * - 接收 Host 同步的 Store 状态并更新本地 Slave Store
+ * - 接收 Host 同步的全量快照和增量补丁并更新本地 Slave Store
+ * - 版本校验 + 自愈降级（脑裂时申请全量快照）
  * - 将 iframe 内的交互事件 (click/hover/drag) 通过 postMessage 发送给 Host
+ *
+ * @version 2.0
+ * 新增：
+ * - SYNC_COMPONENTS_PATCH 增量补丁处理
+ * - REQUEST_FULL_SNAPSHOT 版本断层自愈
+ * - RendererStoreAPI 扩展 applyComponentPatches + getVersion
  *
  * @module Simulator/Renderer
  */
 
+import type { Patch } from "immer";
 import {
   MessageType,
   createMessage,
   isLowcodeMessage,
-   
   type SyncComponentsStatePayload,
+  type SyncComponentsPatchPayload,
   type SyncUIStatePayload,
   type DragStartMetadataPayload,
   type DispatchActionPayload,
@@ -28,7 +36,13 @@ import {
  * Renderer 侧 Store 接口（由外部注入，解耦依赖）
  */
 export interface RendererStoreAPI {
-  setComponentsState: (components: Record<number, any>, rootId: number) => void;
+  setComponentsState: (
+    components: Record<number, any>,
+    rootId: number,
+    version: number,
+  ) => void;
+  applyComponentPatches: (patches: Patch[], version: number) => void;
+  getVersion: () => number;
   setUIState: (curComponentId: number | null, mode: "edit" | "preview") => void;
   setDraggingMaterial: (data: DragStartMetadataPayload | null) => void;
 }
@@ -91,6 +105,9 @@ export class SimulatorRenderer {
       case MessageType.SYNC_COMPONENTS_STATE:
         this.onSyncComponentsState(payload as SyncComponentsStatePayload);
         break;
+      case MessageType.SYNC_COMPONENTS_PATCH:
+        this.onSyncComponentsPatch(payload as SyncComponentsPatchPayload);
+        break;
       case MessageType.SYNC_UI_STATE:
         this.onSyncUIState(payload as SyncUIStatePayload);
         break;
@@ -105,8 +122,42 @@ export class SimulatorRenderer {
 
   // ==================== 状态同步处理 ====================
 
+  /**
+   * 全量快照覆盖：建立版本基准
+   */
   private onSyncComponentsState(payload: SyncComponentsStatePayload) {
-    this.storeAPI?.setComponentsState(payload.components, payload.rootId);
+    this.storeAPI?.setComponentsState(
+      payload.components,
+      payload.rootId,
+      payload.version,
+    );
+  }
+
+  /**
+   * 增量补丁应用：带版本校验 + 自愈降级
+   *
+   * 如果 payload.baseVersion 与本地 version 不匹配，说明发生了版本断层（脑裂），
+   * 此时不应用补丁，而是向 Host 请求全量快照重建基准。
+   */
+  private onSyncComponentsPatch(payload: SyncComponentsPatchPayload) {
+    if (!this.storeAPI) return;
+
+    const localVersion = this.storeAPI.getVersion();
+
+    if (payload.baseVersion !== localVersion) {
+      // 版本断层！请求 Host 下发全量快照
+      console.warn(
+        `[SimulatorRenderer] Version mismatch: local=${localVersion}, base=${payload.baseVersion}. Requesting full snapshot.`,
+      );
+      this.sendToHost(MessageType.REQUEST_FULL_SNAPSHOT, {});
+      return;
+    }
+
+    // 版本匹配，安全应用补丁并对齐游标
+    this.storeAPI.applyComponentPatches(
+      payload.patches,
+      payload.currentVersion,
+    );
   }
 
   private onSyncUIState(payload: SyncUIStatePayload) {

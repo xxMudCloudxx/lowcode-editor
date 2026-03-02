@@ -33,6 +33,12 @@ interface State {
    * 根节点 id（通常是 Page 节点）
    */
   rootId: number;
+  /**
+   * 状态版本游标，每次变更单调递增。
+   * 不持久化：刷新后从 0 重新开始，迫使建立全新基线。
+   * 用于 Host → Iframe 的版本化增量补丁同步。
+   */
+  version: number;
 }
 
 /**
@@ -128,6 +134,7 @@ const createInitialState = (): State => ({
     },
   },
   rootId: INITIAL_ROOT_ID,
+  version: 0,
 });
 
 /**

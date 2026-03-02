@@ -6,8 +6,15 @@
  * - 管理 iframe 的生命周期
  * - Ready 握手机制
  * - 消息队列（确保 iframe Ready 前的消息不丢失）
- * - Zustand Store 变更 → postMessage 同步
+ * - 通过 PatchEventBus 接收增量补丁 → postMessage 同步到 Iframe
  * - 接收 iframe 发来的 DISPATCH_ACTION 并执行
+ * - 处理 iframe 的 REQUEST_FULL_SNAPSHOT 自愈降级请求
+ *
+ * @version 2.0
+ * 变更：
+ * - 组件状态同步从全量 subscribe 改为增量补丁流（patchEventBus）
+ * - 新增微任务级别的补丁批处理，避免高频操作时的消息风暴
+ * - UI Store 保持全量同步不变（数据量极小，无需增量化）
  *
  * @module Simulator/Host
  */
@@ -18,6 +25,7 @@ import {
   isLowcodeMessage,
   type MessageEnvelope,
   type SyncComponentsStatePayload,
+  type SyncComponentsPatchPayload,
   type SyncUIStatePayload,
   type DragStartMetadataPayload,
   type DispatchActionPayload,
@@ -28,12 +36,17 @@ import {
 
 import { useComponentsStore } from "../stores/components";
 import { useUIStore } from "../stores/uiStore";
+import { patchEventBus, type PatchEvent } from "../utils/patchEventBus";
 
 export class SimulatorHost {
   private iframe: HTMLIFrameElement | null = null;
   private iframeReady = false;
   private messageQueue: MessageEnvelope[] = [];
   private unsubscribers: (() => void)[] = [];
+
+  // ---------- 补丁批处理 ----------
+  private pendingPatches: PatchEvent[] = [];
+  private flushScheduled = false;
 
   // ==================== 生命周期 ====================
 
@@ -48,7 +61,7 @@ export class SimulatorHost {
     // 监听来自 iframe 的消息
     window.addEventListener("message", this.handleMessage);
 
-    // 订阅 Zustand Store 变更，自动同步到 iframe
+    // 订阅 PatchEventBus（增量补丁流）+ UI Store（全量同步）
     this.subscribeStores();
   }
 
@@ -62,6 +75,8 @@ export class SimulatorHost {
     this.iframe = null;
     this.iframeReady = false;
     this.messageQueue = [];
+    this.pendingPatches = [];
+    this.flushScheduled = false;
   }
 
   /**
@@ -128,6 +143,9 @@ export class SimulatorHost {
       case MessageType.FORWARD_KEYBOARD_EVENT:
         this.onForwardKeyboardEvent(payload as ForwardKeyboardEventPayload);
         break;
+      case MessageType.REQUEST_FULL_SNAPSHOT:
+        this.onRequestFullSnapshot();
+        break;
     }
   };
 
@@ -139,23 +157,40 @@ export class SimulatorHost {
   private onReady() {
     this.iframeReady = true;
 
+    // 清除所有排队的增量补丁——全量快照会覆盖一切
+    this.messageQueue = this.messageQueue.filter(
+      (msg) => msg.type !== MessageType.SYNC_COMPONENTS_PATCH,
+    );
+
+    // 清空待发送的批处理补丁
+    this.pendingPatches = [];
+    this.flushScheduled = false;
+
     // 1. 首次同步完整状态
     this.syncFullState();
 
-    // 2. 清空排队消息
+    // 2. 清空剩余排队消息（UI State、拖拽等）
     this.flushQueue();
   }
 
   /**
-   * 同步完整的 Store 状态到 iframe
+   * iframe 请求全量快照（版本断层自愈）
+   */
+  private onRequestFullSnapshot() {
+    this.syncFullState();
+  }
+
+  /**
+   * 同步完整的 Store 状态到 iframe（附带当前 version）
    */
   syncFullState() {
-    const { components, rootId } = useComponentsStore.getState();
+    const { components, rootId, version } = useComponentsStore.getState();
     const { curComponentId, mode } = useUIStore.getState();
 
     this.send<SyncComponentsStatePayload>(MessageType.SYNC_COMPONENTS_STATE, {
       components,
       rootId,
+      version,
     });
     this.send<SyncUIStatePayload>(MessageType.SYNC_UI_STATE, {
       curComponentId,
@@ -252,21 +287,60 @@ export class SimulatorHost {
     window.dispatchEvent(syntheticEvent);
   }
 
+  // ==================== 补丁批处理 ====================
+
+  /**
+   * 收到 patchEventBus 补丁时的回调。
+   * 使用微任务（queueMicrotask）级别的批处理，
+   * 将同一个事件循环 tick 内的多个补丁合并为一条消息发送，
+   * 避免高频操作（如快速拖拽、连续修改 props）时的消息风暴。
+   */
+  private onPatchGenerated = (event: PatchEvent) => {
+    this.pendingPatches.push(event);
+
+    if (!this.flushScheduled) {
+      this.flushScheduled = true;
+      queueMicrotask(() => this.flushPatches());
+    }
+  };
+
+  /**
+   * 将所有 pending 补丁合并为一条 SYNC_COMPONENTS_PATCH 消息发出
+   */
+  private flushPatches() {
+    if (this.pendingPatches.length === 0) {
+      this.flushScheduled = false;
+      return;
+    }
+
+    const merged: SyncComponentsPatchPayload = {
+      patches: this.pendingPatches.flatMap((e) => e.patches),
+      baseVersion: this.pendingPatches[0].baseVersion,
+      currentVersion:
+        this.pendingPatches[this.pendingPatches.length - 1].currentVersion,
+    };
+
+    this.send<SyncComponentsPatchPayload>(
+      MessageType.SYNC_COMPONENTS_PATCH,
+      merged,
+    );
+
+    this.pendingPatches = [];
+    this.flushScheduled = false;
+  }
+
   // ==================== Store 订阅 ====================
 
   /**
-   * 订阅 Zustand Store，变更时自动同步到 iframe
+   * 订阅数据源，变更时自动同步到 iframe：
+   * - Components Store → 通过 patchEventBus 增量补丁流
+   * - UI Store → 保持全量同步（数据量极小，无需增量化）
    */
   private subscribeStores() {
-    // 订阅 Components Store
-    const unsubComponents = useComponentsStore.subscribe((state) => {
-      this.send<SyncComponentsStatePayload>(MessageType.SYNC_COMPONENTS_STATE, {
-        components: state.components,
-        rootId: state.rootId,
-      });
-    });
+    // 订阅 PatchEventBus（替代原来的 useComponentsStore.subscribe 全量同步）
+    const unsubPatch = patchEventBus.subscribe(this.onPatchGenerated);
 
-    // 订阅 UI Store (只同步 iframe 关心的字段)
+    // 订阅 UI Store (只同步 iframe 关心的字段，保持全量同步)
     const unsubUI = useUIStore.subscribe((state) => {
       this.send<SyncUIStatePayload>(MessageType.SYNC_UI_STATE, {
         curComponentId: state.curComponentId,
@@ -274,7 +348,7 @@ export class SimulatorHost {
       });
     });
 
-    this.unsubscribers.push(unsubComponents, unsubUI);
+    this.unsubscribers.push(unsubPatch, unsubUI);
   }
 
   // ==================== 对外拖拽桥接 API ====================

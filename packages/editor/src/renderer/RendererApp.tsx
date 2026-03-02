@@ -25,6 +25,8 @@ export function RendererApp() {
     // 初始化通信
     simulatorRenderer.init({
       setComponentsState: storeAPI.setComponentsState,
+      applyComponentPatches: storeAPI.applyComponentPatches,
+      getVersion: () => useRendererStore.getState().version,
       setUIState: storeAPI.setUIState,
       setDraggingMaterial: storeAPI.setDraggingMaterial,
     });

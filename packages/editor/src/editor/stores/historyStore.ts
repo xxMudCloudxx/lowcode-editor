@@ -16,6 +16,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { applyPatches, type Patch } from "immer";
+import { patchEventBus } from "../utils/patchEventBus";
 
 /**
  * 一组补丁：包含正向补丁（用于 redo）和逆向补丁（用于 undo）
@@ -112,6 +113,8 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
 
         try {
           const useComponentsStore = await getComponentsStore();
+          const baseVersion = useComponentsStore.getState().version ?? 0;
+
           useComponentsStore.setState((state) => {
             const currentData = {
               components: state.components,
@@ -122,7 +125,15 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
               ...state,
               components: patched.components,
               rootId: patched.rootId,
+              version: baseVersion + 1,
             };
+          });
+
+          // 广播远程补丁到 iframe
+          patchEventBus.emit({
+            patches,
+            baseVersion,
+            currentVersion: baseVersion + 1,
           });
         } finally {
           set({ isApplyingRemotePatch: false });
@@ -140,6 +151,8 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
 
         try {
           const useComponentsStore = await getComponentsStore();
+          const baseVersion = useComponentsStore.getState().version ?? 0;
+
           useComponentsStore.setState((state) => {
             // 只对 components 和 rootId 应用补丁
             const currentData = {
@@ -148,13 +161,21 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
             };
             const patched = applyPatches(
               currentData,
-              lastPatchGroup.inversePatches
+              lastPatchGroup.inversePatches,
             );
             return {
               ...state,
               components: patched.components,
               rootId: patched.rootId,
+              version: baseVersion + 1,
             };
+          });
+
+          // 广播 undo 产生的逆向补丁到 iframe
+          patchEventBus.emit({
+            patches: lastPatchGroup.inversePatches,
+            baseVersion,
+            currentVersion: baseVersion + 1,
           });
 
           // 更新历史栈
@@ -178,6 +199,8 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
 
         try {
           const useComponentsStore = await getComponentsStore();
+          const baseVersion = useComponentsStore.getState().version ?? 0;
+
           useComponentsStore.setState((state) => {
             const currentData = {
               components: state.components,
@@ -188,7 +211,15 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
               ...state,
               components: patched.components,
               rootId: patched.rootId,
+              version: baseVersion + 1,
             };
+          });
+
+          // 广播 redo 产生的正向补丁到 iframe
+          patchEventBus.emit({
+            patches: nextPatchGroup.patches,
+            baseVersion,
+            currentVersion: baseVersion + 1,
           });
 
           set({
@@ -214,6 +245,6 @@ export const useHistoryStore = create<HistoryState & HistoryAction>()(
         past: state.past,
         future: state.future,
       }),
-    }
-  )
+    },
+  ),
 );

@@ -18,8 +18,10 @@ export enum MessageType {
   READY = "READY",
 
   // -------- Host -> Iframe --------
-  /** 同步完整的组件 Store 状态 */
+  /** 同步完整的组件 Store 状态（全量快照，附带版本号） */
   SYNC_COMPONENTS_STATE = "SYNC_COMPONENTS_STATE",
+  /** 同步增量补丁（版本化，附带 baseVersion 用于校验） */
+  SYNC_COMPONENTS_PATCH = "SYNC_COMPONENTS_PATCH",
   /** 同步 UI Store 状态（选中 ID、模式等） */
   SYNC_UI_STATE = "SYNC_UI_STATE",
   /** 同步物料配置（仅在初始化时发送一次） */
@@ -32,6 +34,8 @@ export enum MessageType {
   // -------- Iframe -> Host --------
   /** 请求 Host 执行一个 Store Action */
   DISPATCH_ACTION = "DISPATCH_ACTION",
+  /** Iframe 检测到版本断层，请求 Host 下发全量快照 */
+  REQUEST_FULL_SNAPSHOT = "REQUEST_FULL_SNAPSHOT",
   /** iframe 内部点击选中了组件 */
   SELECT_COMPONENT = "SELECT_COMPONENT",
   /** iframe 内部 hover 了组件 */
@@ -47,11 +51,26 @@ export interface ReadyPayload {
   version: string;
 }
 
-/** 完整 Components Store 状态 */
+/** 完整 Components Store 状态（全量快照） */
 export interface SyncComponentsStatePayload {
   components: Record<number, import("@lowcode/schema").Component>;
   rootId: number;
+  /** 快照基线版本号，Renderer 以此为起点接收后续增量补丁 */
+  version: number;
 }
+
+/** 增量组件补丁（版本化） */
+export interface SyncComponentsPatchPayload {
+  /** Immer patches 数组 */
+  patches: import("immer").Patch[];
+  /** 此补丁基于的版本号（Renderer 必须校验与自身 version 一致） */
+  baseVersion: number;
+  /** 应用补丁后的新版本号 */
+  currentVersion: number;
+}
+
+/** Iframe 请求全量快照（无载荷） */
+export interface RequestFullSnapshotPayload {}
 
 /** UI Store 状态子集 (只同步 iframe 需要的) */
 export interface SyncUIStatePayload {
