@@ -4,7 +4,7 @@
  */
 
 import type { IGeneratedFile, IRPage } from "./ir";
-import type { ModuleBuilder } from "./module-builder";
+import type { IModuleBuilder } from "./module-builder";
 import type { ProjectBuilder } from "./project-builder";
 
 /**
@@ -23,7 +23,7 @@ export interface IComponentPlugin {
    */
   run: (
     page: IRPage,
-    moduleBuilder: ModuleBuilder,
+    moduleBuilder: IModuleBuilder,
     projectBuilder?: ProjectBuilder,
   ) => void;
 }

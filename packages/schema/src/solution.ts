@@ -3,13 +3,15 @@
  * @description 定义可插拔多目标出码架构的核心抽象：ISolution、IProjectTemplate、ICodeChunk。
  */
 
-import type { IGeneratedFile, IRDependency } from "./ir";
+import type { IGeneratedFile, IRDependency, IRPage } from "./ir";
 import type {
   IComponentPlugin,
   IProjectPlugin,
   IPostProcessor,
 } from "./plugin";
 import type { IPublisher } from "./publisher";
+import type { IModuleBuilder } from "./module-builder";
+import type { ProjectBuilder } from "./project-builder";
 
 // --- Code Chunk ---
 
@@ -80,4 +82,24 @@ export interface ISolution {
   postProcessors: IPostProcessor[];
   /** 发布器 */
   publisher: IPublisher;
+
+  /**
+   * 自定义模块构建器工厂
+   * @description 不同框架可提供各自的 ModuleBuilder 实现（如 Vue SFC Builder）。
+   *              若为空则使用默认的 React ModuleBuilder。
+   */
+  createModuleBuilder?: () => IModuleBuilder;
+
+  /**
+   * 自定义页面文件发射策略
+   * @description 控制组件插件执行完毕后如何将 ModuleBuilder 的产出物写入 ProjectBuilder。
+   *              如 Vue 方案生成 .vue 单文件组件，React 方案生成 .tsx + .module.scss。
+   *              若为空则使用默认的 React 策略（.tsx + CSS Module）。
+   */
+  emitPageFiles?: (ctx: {
+    page: IRPage;
+    moduleBuilder: IModuleBuilder;
+    projectBuilder: ProjectBuilder;
+    componentPascalName: string;
+  }) => void;
 }

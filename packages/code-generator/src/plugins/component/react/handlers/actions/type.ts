@@ -5,7 +5,7 @@
  * @description 抽象出统一的 IActionHandler 接口，约束各类 Action 处理器的输入和输出。
  */
 
-import type { ModuleBuilder, IRAction } from "@lowcode/schema";
+import type { IModuleBuilder, IRAction } from "@lowcode/schema";
 
 /**
  * Action 处理器接口
@@ -14,5 +14,5 @@ import type { ModuleBuilder, IRAction } from "@lowcode/schema";
  * @returns {string} - 返回生成的单行可执行代码, e.g., "message.info('hello')"
  */
 export interface IActionHandler {
-  (action: IRAction, moduleBuilder: ModuleBuilder): string;
+  (action: IRAction, moduleBuilder: IModuleBuilder): string;
 }

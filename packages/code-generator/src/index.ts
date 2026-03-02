@@ -180,7 +180,9 @@ export async function exportSourceCode(
 
     // --- 6. 执行 Component Plugins（逐页面） ---
     transformedIrProject.pages.forEach((page: IRPage) => {
-      const moduleBuilder = projectBuilder.createModuleBuilder();
+      const moduleBuilder = solution.createModuleBuilder
+        ? solution.createModuleBuilder()
+        : projectBuilder.createModuleBuilder();
 
       // 应用所有组件插件
       solution.componentPlugins.forEach((plugin) => {
@@ -189,29 +191,41 @@ export async function exportSourceCode(
 
       // 生成页面文件
       const componentName = page.fileName;
-      const fileName = `${upperFirst(camelCase(componentName))}.tsx`;
       const componentPascalName = upperFirst(camelCase(componentName));
-      const filePath = `src/pages/${componentPascalName}/${fileName}`;
 
-      const content = moduleBuilder.generateModule(componentPascalName);
-      projectBuilder.addFile({
-        fileName,
-        filePath,
-        content,
-        fileType: "tsx",
-      });
-
-      // 生成 CSS Module 文件 (如果需要)
-      const cssContent = moduleBuilder.generateCssModule(componentPascalName);
-      if (cssContent) {
-        const cssFileName = `${componentPascalName}.module.scss`;
-        const cssFilePath = `src/pages/${componentPascalName}/${cssFileName}`;
-        projectBuilder.addFile({
-          fileName: cssFileName,
-          filePath: cssFilePath,
-          content: cssContent,
-          fileType: "scss",
+      if (solution.emitPageFiles) {
+        // 使用 Solution 自定义的页面文件发射策略（如 Vue SFC）
+        solution.emitPageFiles({
+          page,
+          moduleBuilder,
+          projectBuilder,
+          componentPascalName,
         });
+      } else {
+        // 默认 React 策略：生成 .tsx + .module.scss
+        const fileName = `${componentPascalName}.tsx`;
+        const filePath = `src/pages/${componentPascalName}/${fileName}`;
+
+        const content = moduleBuilder.generateModule(componentPascalName);
+        projectBuilder.addFile({
+          fileName,
+          filePath,
+          content,
+          fileType: "tsx",
+        });
+
+        // 生成 CSS Module 文件 (如果需要)
+        const cssContent = moduleBuilder.generateCssModule(componentPascalName);
+        if (cssContent) {
+          const cssFileName = `${componentPascalName}.module.scss`;
+          const cssFilePath = `src/pages/${componentPascalName}/${cssFileName}`;
+          projectBuilder.addFile({
+            fileName: cssFileName,
+            filePath: cssFilePath,
+            content: cssContent,
+            fileType: "scss",
+          });
+        }
       }
     });
     console.log("[CodeGenerator] 组件代码生成完毕。");
