@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "composite": true
+    "composite": true,
+    "types": ["vite/client"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

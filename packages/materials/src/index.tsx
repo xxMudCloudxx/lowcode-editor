@@ -57,7 +57,9 @@ const generatedMetaMap = new Map(
  * @description 将"手写物料"的 meta 映射为完整的 `ComponentConfig`。
  * 所有组件都使用 ComponentProtocol 格式
  */
-const manualList: ComponentConfig[] = Object.values(manualMetas);
+const manualList: ComponentConfig[] = Object.values(
+  manualMetas,
+) as ComponentConfig[];
 
 /**
  * @description 工具：合并事件，按 name 去重（手写优先，生成的补缺）
