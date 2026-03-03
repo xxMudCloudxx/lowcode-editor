@@ -10,12 +10,15 @@ import type {
   IRNode,
   IRPage,
   IRPropValue,
-  ModuleBuilder,
+  IModuleBuilder,
   IComponentPlugin,
 } from "@lowcode/schema";
+
 import { camelCase, upperFirst, uniqueId } from "lodash-es";
-import { getActionHandler } from "./handlers/actions";
+import { createActionHandlerRegistry } from "../shared/handlers/actions";
 import { getComponentCodeGenMeta } from "../../../const/component-metadata";
+
+const getActionHandler = createActionHandlerRegistry("antd");
 
 /**
  * 生成单条 Action 的核心调用代码字符串
@@ -25,7 +28,7 @@ import { getComponentCodeGenMeta } from "../../../const/component-metadata";
  */
 function generateActionCallString(
   action: IRAction,
-  moduleBuilder: ModuleBuilder,
+  moduleBuilder: IModuleBuilder,
 ): string {
   // 1. 获取处理器
   const handler = getActionHandler(action.actionType);
@@ -45,7 +48,7 @@ const jsxPlugin: IComponentPlugin = {
    * @param page - 页面。
    * @param moduleBuilder - 当前模块的构建器实例。
    */
-  run: (page: IRPage, moduleBuilder: ModuleBuilder) => {
+  run: (page: IRPage, moduleBuilder: IModuleBuilder) => {
     // [!> 新增：处理页面状态 (States) <!]
     if (page.states) {
       // 确保导入 useState
@@ -128,7 +131,7 @@ function transformExpression(value: string): string {
 // (我们将复用这个函数)
 function generateSingleActionMethod(
   action: IRAction,
-  moduleBuilder: ModuleBuilder,
+  moduleBuilder: IModuleBuilder,
 ): { handlerName: string; methodBody: string } {
   const handlerName = `handle${upperFirst(
     camelCase(action.actionType || "action"),
@@ -157,7 +160,7 @@ function generateSingleActionMethod(
  */
 function generateMultiActionMethod(
   actions: IRAction[],
-  moduleBuilder: ModuleBuilder,
+  moduleBuilder: IModuleBuilder,
 ): { handlerName: string; methodBody: string } {
   // 步骤 3：实现多事件处理
   const handlerName = `handleOnClick${uniqueId("Actions")}`;
@@ -209,7 +212,7 @@ function isIRActionArray(propValue: any): propValue is IRAction[] {
  */
 function generateJSX(
   irNode: IRNode,
-  moduleBuilder: ModuleBuilder,
+  moduleBuilder: IModuleBuilder,
   indentLevel: number,
   page: IRPage,
 ): string {
@@ -373,7 +376,7 @@ function generateJSX(
  */
 function generatePropsString(
   props: Record<string, IRPropValue>,
-  moduleBuilder: ModuleBuilder,
+  moduleBuilder: IModuleBuilder,
   indentLevel: number,
   page: IRPage,
 ): string {
@@ -440,7 +443,7 @@ function generatePropsString(
  */
 function generatePropValueString(
   propValue: IRPropValue,
-  moduleBuilder: ModuleBuilder,
+  moduleBuilder: IModuleBuilder,
   page: IRPage,
 ): string | undefined {
   // 1. IRAction[]

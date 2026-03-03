@@ -1,13 +1,13 @@
 /**
- * @file React + Vite 项目模板
+ * @file Vue + Vite 项目模板
  * @description 实现 IProjectTemplate 接口，提供不依赖 IR 的静态脚手架文件。
  */
 
 import type { IProjectTemplate, IGeneratedFile } from "@lowcode/schema";
 import { getTsconfigNodeJson, getGitignore } from "./shared";
 
-export const reactViteTemplate: IProjectTemplate = {
-  name: "react-vite",
+export const vueViteTemplate: IProjectTemplate = {
+  name: "vue-vite",
 
   getStaticFiles(): IGeneratedFile[] {
     return [
@@ -20,15 +20,15 @@ export const reactViteTemplate: IProjectTemplate = {
             compilerOptions: {
               target: "ES2020",
               useDefineForClassFields: true,
-              lib: ["ES2020", "DOM", "DOM.Iterable"],
               module: "ESNext",
+              lib: ["ES2020", "DOM", "DOM.Iterable"],
               skipLibCheck: true,
               moduleResolution: "bundler",
               allowImportingTsExtensions: true,
               resolveJsonModule: true,
               isolatedModules: true,
               noEmit: true,
-              jsx: "react-jsx",
+              jsx: "preserve",
               strict: true,
               noUnusedLocals: true,
               noUnusedParameters: false,
@@ -36,7 +36,7 @@ export const reactViteTemplate: IProjectTemplate = {
               baseUrl: ".",
               paths: { "@/*": ["./src/*"] },
             },
-            include: ["src"],
+            include: ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
             references: [{ path: "./tsconfig.node.json" }],
           },
           null,
@@ -53,14 +53,15 @@ export const reactViteTemplate: IProjectTemplate = {
         fileName: "vite.config.ts",
         filePath: "vite.config.ts",
         content: `import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
+import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [vue()],
   resolve: {
     alias: {
-      '@': '/src',
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   server: {
@@ -70,7 +71,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
-})`,
+})
+`,
         fileType: "ts",
       },
 
@@ -82,45 +84,34 @@ export default defineConfig({
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lowcode Generated Project</title>
+    <title>Lowcode Vue Project</title>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>`,
         fileType: "html",
       },
 
-      // --- .gitignore (共享) ---
-      getGitignore(),
-
-      // --- src/vite-env.d.ts ---
+      // --- env.d.ts ---
       {
-        fileName: "vite-env.d.ts",
-        filePath: "src/vite-env.d.ts",
+        fileName: "env.d.ts",
+        filePath: "src/env.d.ts",
         content: `/// <reference types="vite/client" />
 
-/**
- * 声明对 .scss 模块的类型支持
- * 这将允许 TypeScript 正确处理 import styles from './xxx.module.scss';
- */
-declare module '*.module.scss' {
-  const classes: { [key: string]: string };
-  export default classes;
+declare module '*.vue' {
+  import type { DefineComponent } from 'vue'
+  const component: DefineComponent<{}, {}, any>
+  export default component
 }
-
-/**
- * 声明对 .css 模块的类型支持
- */
-declare module '*.module.css' {
-  const classes: { [key: string]: string };
-  export default classes;
-}`,
+`,
         fileType: "ts",
       },
+
+      // --- .gitignore (共享) ---
+      getGitignore(),
     ];
   },
 };

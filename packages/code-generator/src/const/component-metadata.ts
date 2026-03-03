@@ -5,7 +5,7 @@
  * @description 定义了编辑器中使用的物料组件与其在最终代码中对应的导入信息等的映射关系。
  */
 
-import type { ModuleBuilder } from "@lowcode/schema";
+import type { IModuleBuilder } from "@lowcode/schema";
 import type {
   ICodeGenComponentMethod,
   IRDependency,
@@ -339,7 +339,7 @@ export interface ComponentCodeGenMeta {
    */
   getLogicFragments?: (
     props: Record<string, any>,
-    moduleBuilder: ModuleBuilder,
+    moduleBuilder: IModuleBuilder,
   ) => void;
 }
 

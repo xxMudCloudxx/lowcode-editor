@@ -1,4 +1,4 @@
-// src/code-generator/plugins/project/entry.ts
+// src/code-generator/plugins/project/react/entry.ts
 
 /**
  * @file 应用入口插件

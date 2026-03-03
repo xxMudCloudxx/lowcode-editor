@@ -1,4 +1,4 @@
-// src/code-generator/plugins/project/components.ts
+// src/code-generator/plugins/project/react/components.ts
 
 /**
  * @file 项目级运行时组件生成插件
