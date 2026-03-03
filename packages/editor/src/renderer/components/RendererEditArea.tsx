@@ -14,7 +14,6 @@
  */
 
 import React, {
-  Suspense,
   useMemo,
   useState,
   useCallback,
@@ -23,7 +22,6 @@ import React, {
   type ReactElement,
 } from "react";
 import { SchemaRenderer, type DesignHooks } from "@lowcode/renderer";
-import { UNIFIED_RENDERER } from "../../config/featureFlags";
 import { useRendererStore } from "../stores/rendererStore";
 import { simulatorRenderer } from "../../editor/simulator/SimulatorRenderer";
 import { materials, type ComponentConfig } from "@lowcode/materials";
@@ -153,53 +151,7 @@ export function RendererEditArea() {
     [],
   );
 
-  // ==================== Legacy 渲染路径（Feature Flag 回退） ====================
-
-  const LegacyRenderNode = useCallback(
-    ({ id }: { id: number }) => {
-      const component = components[id];
-      if (!component) return null;
-
-      const config = componentConfigMap[component.name];
-      if (!config) return null;
-
-      const ComponentToRender = config.component;
-      if (!ComponentToRender) return null;
-
-      const isContainer = config.editor.isContainer ?? false;
-
-      return (
-        <Suspense
-          key={component.id}
-          fallback={<div style={{ padding: 8, color: "#999" }}>Loading...</div>}
-        >
-          <RendererDraggableNode
-            id={component.id}
-            name={component.name}
-            isContainer={isContainer}
-          >
-            {React.createElement(
-              ComponentToRender,
-              {
-                ...config.defaultProps,
-                ...component.props,
-                style: component.styles,
-              },
-              component.children?.map((childId) => (
-                <LegacyRenderNode key={childId} id={childId} />
-              )),
-            )}
-          </RendererDraggableNode>
-        </Suspense>
-      );
-    },
-    [components],
-  );
-
-  const legacyComponentTree = useMemo(() => {
-    return rootId ? <LegacyRenderNode id={rootId} /> : null;
-  }, [rootId, LegacyRenderNode]);
-
+  // ==================== 渲染路径 ====================
   return (
     <div
       className="h-full edit-area overflow-auto relative"
@@ -212,17 +164,13 @@ export function RendererEditArea() {
         onMouseLeave={() => setHoverComponentId(undefined)}
         onClickCapture={handleClickCapture}
       >
-        {UNIFIED_RENDERER ? (
-          <SchemaRenderer
-            components={components}
-            rootId={rootId}
-            componentMap={componentConfigMap}
-            designMode="design"
-            designHooks={designHooks}
-          />
-        ) : (
-          legacyComponentTree
-        )}
+        <SchemaRenderer
+          components={components}
+          rootId={rootId}
+          componentMap={componentConfigMap}
+          designMode="design"
+          designHooks={designHooks}
+        />
 
         {/* Hover Mask */}
         {hoverComponentId &&

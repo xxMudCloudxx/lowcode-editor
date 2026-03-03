@@ -33,15 +33,3 @@ function readFlag(key: string, defaultValue: boolean): boolean {
   // 3. 默认值
   return defaultValue;
 }
-
-/**
- * 是否使用统一渲染引擎 SchemaRenderer（@lowcode/renderer）。
- *
- * - `true`（默认）: 使用新的 SchemaRenderer 渲染路径
- * - `false`: 回退到旧的内联 RenderNode 渲染路径
- *
- * 切换方式：
- * - URL: `?ff.unifiedRenderer=false`
- * - 控制台: `localStorage.setItem('ff.unifiedRenderer', 'false')` 然后刷新
- */
-export const UNIFIED_RENDERER = readFlag("unifiedRenderer", true);
