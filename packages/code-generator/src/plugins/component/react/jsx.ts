@@ -15,8 +15,10 @@ import type {
 } from "@lowcode/schema";
 
 import { camelCase, upperFirst, uniqueId } from "lodash-es";
-import { getActionHandler } from "./handlers/actions";
+import { createActionHandlerRegistry } from "../shared/handlers/actions";
 import { getComponentCodeGenMeta } from "../../../const/component-metadata";
+
+const getActionHandler = createActionHandlerRegistry("antd");
 
 /**
  * 生成单条 Action 的核心调用代码字符串

@@ -13,11 +13,13 @@ import jsxPlugin from "../plugins/component/react/jsx";
 import cssPlugin from "../plugins/component/style/css";
 
 // --- 项目级插件（动态文件，依赖 IR）---
-import globalStylePlugin from "../plugins/project/global-style";
-import routerPlugin from "../plugins/project/router";
-import entryPlugin from "../plugins/project/entry";
-import packageJsonPlugin from "../plugins/project/package-json";
-import componentsPlugin from "../plugins/project/components";
+import {
+  globalStylePlugin,
+  routerPlugin,
+  entryPlugin,
+  packageJsonPlugin,
+  componentsPlugin,
+} from "../plugins/project/react";
 
 /**
  * React + Vite 出码方案

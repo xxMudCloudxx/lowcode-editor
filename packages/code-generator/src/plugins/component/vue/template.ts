@@ -20,9 +20,11 @@ import type {
   IComponentPlugin,
 } from "@lowcode/schema";
 import { camelCase, upperFirst, uniqueId } from "lodash-es";
-import { getVueActionHandler } from "./handlers/actions";
+import { createActionHandlerRegistry } from "../shared/handlers/actions";
 import { getComponentCodeGenMeta } from "../../../const/component-metadata";
 import type { VueModuleBuilder } from "../../../utils/vue-module-builder";
+
+const getVueActionHandler = createActionHandlerRegistry("ant-design-vue");
 
 // ============================================================
 // Action 辅助函数

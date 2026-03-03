@@ -4,31 +4,23 @@
  */
 
 import type { ProjectBuilder, IProjectPlugin } from "@lowcode/schema";
-import { upperFirst, camelCase } from "lodash-es";
+import { generateRouteData } from "../shared/router-utils";
 
 const getRouterContent = (projectBuilder: ProjectBuilder): string => {
-  const { pages } = projectBuilder.getIrProject();
+  const routes = generateRouteData(projectBuilder, ".vue");
 
-  // 1. 生成路由导入
-  const routeImports = pages
-    .map((page) => {
-      const componentName = upperFirst(camelCase(page.fileName));
-      const importPath = `../pages/${componentName}/${componentName}.vue`;
-      return `import ${componentName} from '${importPath}';`;
-    })
+  const routeImports = routes
+    .map((r) => `import ${r.componentName} from '${r.importPath}';`)
     .join("\n");
 
-  // 2. 生成路由配置
-  const routeConfig = pages
-    .map((page) => {
-      const componentName = upperFirst(camelCase(page.fileName));
-      const path = page.fileName === "index" ? "/" : `/${page.fileName}`;
-      return `    {
-      path: '${path}',
-      name: '${componentName}',
-      component: ${componentName},
-    },`;
-    })
+  const routeConfig = routes
+    .map(
+      (r) => `    {
+      path: '${r.path}',
+      name: '${r.componentName}',
+      component: ${r.componentName},
+    },`,
+    )
     .join("\n");
 
   return `/**

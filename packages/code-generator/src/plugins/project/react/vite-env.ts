@@ -1,4 +1,4 @@
-// src/code-generator/plugins/project/vite-env.ts
+// src/code-generator/plugins/project/react/vite-env.ts
 
 import type { IProjectPlugin } from "@lowcode/schema";
 import type { ProjectBuilder } from "@lowcode/schema";

@@ -46,11 +46,13 @@ import vueTemplatePlugin from "../plugins/component/vue/template";
 import vueCssPlugin from "../plugins/component/vue/css";
 
 // --- 项目级插件 ---
-import vueGlobalStylePlugin from "../plugins/project/vue/global-style";
-import vueRouterPlugin from "../plugins/project/vue/router";
-import vueEntryPlugin from "../plugins/project/vue/entry";
-import vuePackageJsonPlugin from "../plugins/project/vue/package-json";
-import vueComponentsPlugin from "../plugins/project/vue/components";
+import {
+  globalStylePlugin as vueGlobalStylePlugin,
+  routerPlugin as vueRouterPlugin,
+  entryPlugin as vueEntryPlugin,
+  packageJsonPlugin as vuePackageJsonPlugin,
+  componentsPlugin as vueComponentsPlugin,
+} from "../plugins/project/vue";
 
 /**
  * Vue + Vite 出码方案

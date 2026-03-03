@@ -1,5 +1,5 @@
 /**
- * @file 调用页面方法的 Action 处理器
+ * @file 调用页面方法的 Action 处理器（框架无关）
  * @description 将 schema 中配置的 this.methods.xxx 形式的方法调用转换为可执行的 JS 调用代码字符串。
  */
 

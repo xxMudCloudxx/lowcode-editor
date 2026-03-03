@@ -1,10 +1,10 @@
 /**
  * @file Vue + Vite 项目模板
  * @description 实现 IProjectTemplate 接口，提供不依赖 IR 的静态脚手架文件。
- *              包含 tsconfig、vite.config、.gitignore、index.html、env.d.ts 等。
  */
 
 import type { IProjectTemplate, IGeneratedFile } from "@lowcode/schema";
+import { getTsconfigNodeJson, getGitignore } from "./shared";
 
 export const vueViteTemplate: IProjectTemplate = {
   name: "vue-vite",
@@ -45,26 +45,8 @@ export const vueViteTemplate: IProjectTemplate = {
         fileType: "json",
       },
 
-      // --- tsconfig.node.json ---
-      {
-        fileName: "tsconfig.node.json",
-        filePath: "tsconfig.node.json",
-        content: JSON.stringify(
-          {
-            compilerOptions: {
-              composite: true,
-              skipLibCheck: true,
-              module: "ESNext",
-              moduleResolution: "bundler",
-              allowSyntheticDefaultImports: true,
-            },
-            include: ["vite.config.ts"],
-          },
-          null,
-          2,
-        ),
-        fileType: "json",
-      },
+      // --- tsconfig.node.json (共享) ---
+      getTsconfigNodeJson(),
 
       // --- vite.config.ts ---
       {
@@ -129,37 +111,8 @@ declare module '*.vue' {
         fileType: "ts",
       },
 
-      // --- .gitignore ---
-      {
-        fileName: ".gitignore",
-        filePath: ".gitignore",
-        content: `# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-
-node_modules/
-dist/
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# TypeScript cache
-*.tsbuildinfo
-`,
-        fileType: "other",
-      },
+      // --- .gitignore (共享) ---
+      getGitignore(),
     ];
   },
 };

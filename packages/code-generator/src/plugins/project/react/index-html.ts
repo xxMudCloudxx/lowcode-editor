@@ -1,4 +1,4 @@
-// src/code-generator/plugins/project/index-html.ts
+// src/code-generator/plugins/project/react/index-html.ts
 
 import type { IProjectPlugin } from "@lowcode/schema";
 import type { ProjectBuilder } from "@lowcode/schema";
