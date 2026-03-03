@@ -39,7 +39,6 @@ import { vueViteTemplate } from "../templates/vue-vite-template";
 import { prettierPostProcessor } from "../postprocessor/prettier";
 import { zipPublisher } from "../publisher/zip-publisher";
 import { VueModuleBuilder } from "../utils/vue-module-builder";
-import { camelCase, upperFirst } from "lodash-es";
 
 // --- 组件级插件 ---
 import vueTemplatePlugin from "../plugins/component/vue/template";

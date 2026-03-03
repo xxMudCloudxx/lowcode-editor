@@ -21,8 +21,8 @@ export function createShowMessageHandler(uiPackage: string): IActionHandler {
       "message",
     );
 
-    return `message.${action.config.type || "info"}('${
+    return `message.${action.config.type || "info"}('${(
       action.config.text || ""
-    }');`;
+    ).replace(/'/g, "\\'")}');`;
   };
 }

@@ -33,9 +33,9 @@ export function traverseAndExtractStyles(
 
   // 6. 递归遍历子节点
   if (irNode.children && irNode.children.length > 0) {
-    irNode.children.forEach((child) =>
-      traverseAndExtractStyles(child, moduleBuilder),
-    );
+    irNode.children.forEach((child) => {
+      traverseAndExtractStyles(child, moduleBuilder);
+    });
   }
 
   // 7. 递归遍历 Props 中的 Slot
@@ -51,9 +51,9 @@ export function traverseAndExtractStyles(
         propValue[0] !== null &&
         "componentName" in propValue[0]
       ) {
-        (propValue as IRNode[]).forEach((child) =>
-          traverseAndExtractStyles(child, moduleBuilder),
-        );
+        (propValue as IRNode[]).forEach((child) => {
+          traverseAndExtractStyles(child, moduleBuilder);
+        });
       }
     }
     // 7b. 检查单个 Slot (e.g., Card.extra)

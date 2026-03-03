@@ -233,11 +233,7 @@ function generateVueChildrenString(
         page,
       );
     } else if ("type" in childrenProp) {
-      const val = generatePropValueForTemplate(
-        childrenProp,
-        moduleBuilder,
-        page,
-      );
+      const val = generatePropValueForTemplate(childrenProp);
       return val !== undefined ? `${indent}  {{ ${val} }}` : "";
     }
   } else if (
@@ -334,8 +330,8 @@ function generateVueAttrsString(
 function generateSingleAttr(
   key: string,
   propValue: IRPropValue,
-  moduleBuilder: VueModuleBuilder,
-  page: IRPage,
+  _moduleBuilder: VueModuleBuilder,
+  _page: IRPage,
 ): string | null {
   if (typeof propValue !== "object" || propValue === null) {
     if (propValue === null) return `:${key}="null"`;
@@ -393,8 +389,6 @@ function convertEventName(reactEventName: string): string {
  */
 function generatePropValueForTemplate(
   propValue: IRPropValue,
-  moduleBuilder: VueModuleBuilder,
-  page: IRPage,
 ): string | undefined {
   if (isIRActionArray(propValue)) return undefined;
 

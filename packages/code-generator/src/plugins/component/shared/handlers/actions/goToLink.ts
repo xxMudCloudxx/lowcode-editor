@@ -12,5 +12,5 @@ import type { IActionHandler } from "./type";
  */
 export const goToLinkHandler: IActionHandler = (action) => {
   const url = JSON.stringify(action.config.url);
-  return `window.open(${url}, "_blank");`;
+  return `window.open(${url}, "_blank", "noopener,noreferrer");`;
 };
