@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "postinstall": "pnpm --filter @lowcode/materials gen:meta",
     "dev": "pnpm --filter @lowcode/editor dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",

@@ -45,6 +45,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 生成组件元数据
+      - name: Generate materials metadata
+        run: pnpm --filter @lowcode/materials gen:meta
+
       # 构建项目
       # 注意: 必须先构建依赖包 (schema, code-generator)，因为它们导出的是编译后的 dist 目录
       - name: Build dependencies
