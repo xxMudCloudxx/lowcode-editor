@@ -14,7 +14,7 @@ dist-ssr
 *.local
 
 # Generated files
-packages\materials\src\_generated
+packages/materials/src/_generated
 # Editor directories and files
 /docs
 .agent
