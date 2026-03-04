@@ -32,6 +32,9 @@ importers:
 
   packages/code-generator:
     dependencies:
+      '@lowcode/materials':
+        specifier: workspace:*
+        version: link:../materials
       '@lowcode/schema':
         specifier: workspace:*
         version: link:../schema

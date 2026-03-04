@@ -66,7 +66,7 @@ const jsxPlugin: IComponentPlugin = {
     if (page.states) {
       // 确保导入 useState
       moduleBuilder.addImport(
-        { package: "reat", destructuring: true },
+        { package: "react", destructuring: true },
         "useState",
       );
 
@@ -87,11 +87,11 @@ const jsxPlugin: IComponentPlugin = {
         // (这是一个简易版实现，只支持 this.setState({ xxx: yyy }))
         funcBody = funcBody.replace(
           /this\.setState\(\s*\{([^}]+)\}\s*\)/g,
-          (stateChanges) => {
+          (_match, stateChanges) => {
             // stateChanges 是 " open_123: true "
             const [stateName, stateValue] = stateChanges.split(":");
             // e.g., set_open_123(true)
-            return `set_${stateName.trim()}(${stateValue.trim()});`;
+            return `set_${stateName.trim()}(${stateValue.trim()})`;
           },
         );
 
