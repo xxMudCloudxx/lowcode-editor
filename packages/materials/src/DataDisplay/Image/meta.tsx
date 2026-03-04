@@ -38,7 +38,11 @@ const ImageProtocol: ComponentProtocol = {
       props: { placeholder: "图片加载失败时的地址" },
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+  },
 };
 
 export default ImageProtocol;
-

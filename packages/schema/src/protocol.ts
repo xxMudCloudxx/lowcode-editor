@@ -11,6 +11,7 @@
  */
 
 import type { ComponentType } from "react";
+import type { ICodeGenDescriptor } from "./ir";
 
 // ===== 设置器配置 =====
 
@@ -159,6 +160,14 @@ export interface ComponentProtocol {
   events?: EventConfig[];
   /** 可调用方法 */
   methods?: MethodConfig[];
+
+  // ===== 出码层 =====
+  /**
+   * 出码描述符
+   * 定义组件在代码生成阶段的行为（依赖、标签名映射、props 转换等）
+   * 由 code-generator 消费，编辑器运行时忽略此字段
+   */
+  codegen?: Omit<ICodeGenDescriptor, "name">;
 }
 
 // ===== 类型别名 =====

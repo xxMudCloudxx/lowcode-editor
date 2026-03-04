@@ -23,6 +23,8 @@ import { SchemaParser } from "./parser/schema-parser";
 import { runPreprocessors } from "./preprocessor";
 import { downloadBlob } from "./utils/download";
 import { camelCase, upperFirst } from "lodash-es";
+import { CodeGenRegistry } from "./registry/codegen-registry";
+import { iconCustomLogic, tableCustomLogic } from "./registry/custom-logic";
 
 export { downloadBlob };
 
@@ -151,8 +153,17 @@ export async function exportSourceCode(
     const solution = resolveSolution(solutionInput);
     console.log(`[CodeGenerator] 开始执行出码，使用解决方案: ${solution.name}`);
 
+    // --- 0.5 初始化 CodeGenRegistry ---
+    const registry = new CodeGenRegistry();
+    if (solution.materialDescriptors) {
+      registry.registerDescriptors(solution.materialDescriptors);
+    }
+    // 注册程序式逃生舱
+    registry.registerCustomLogic("Icon", iconCustomLogic);
+    registry.registerCustomLogic("Table", tableCustomLogic);
+
     // --- 1. Schema → IR ---
-    const parser = new SchemaParser();
+    const parser = new SchemaParser(registry);
     const irProject = parser.parse(schema);
     const transformedIrProject = runPreprocessors(irProject);
 
@@ -186,7 +197,7 @@ export async function exportSourceCode(
 
       // 应用所有组件插件
       solution.componentPlugins.forEach((plugin) => {
-        plugin.run(page, moduleBuilder, projectBuilder);
+        plugin.run(page, moduleBuilder, projectBuilder, { registry });
       });
 
       // 生成页面文件

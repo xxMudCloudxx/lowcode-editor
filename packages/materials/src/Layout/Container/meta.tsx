@@ -23,7 +23,13 @@ const ContainerProtocol: ComponentProtocol = {
     interactiveInEditor: false,
     display: "block",
   },
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "", destructuring: false },
+    tagName: "div",
+    isContainer: true,
+  },
 };
 
 export default ContainerProtocol;
-

@@ -26,7 +26,12 @@ const FormProtocol: ComponentProtocol = {
   events: [{ name: "onFinish", label: "提交事件" }],
 
   methods: [{ name: "submit", label: "提交" }],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
 };
 
 export default FormProtocol;
-

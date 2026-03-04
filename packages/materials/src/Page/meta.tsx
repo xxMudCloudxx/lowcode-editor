@@ -19,7 +19,12 @@ const PageProtocol: ComponentProtocol = {
     isContainer: true,
     // Page 没有父组件，它是根
   },
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "./components/Page", destructuring: false },
+    isContainer: true,
+  },
 };
 
 export default PageProtocol;
-

@@ -70,7 +70,14 @@ const ButtonProtocol: ComponentProtocol = {
     { name: "onClick", label: "点击事件" },
     { name: "onDoubleClick", label: "双击事件" },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    propTransforms: {
+      rename: { text: "children" },
+    },
+  },
 };
 
 export default ButtonProtocol;
-

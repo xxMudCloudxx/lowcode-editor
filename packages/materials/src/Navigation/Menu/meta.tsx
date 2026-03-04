@@ -47,7 +47,12 @@ const MenuProtocol: ComponentProtocol = {
       options: ["vertical", "horizontal", "inline"],
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
 };
 
 export default MenuProtocol;
-

@@ -36,7 +36,20 @@ const TableColumnProtocol: ComponentProtocol = {
     { name: "title", label: "标题", type: "input" },
     { name: "dataIndex", label: "字段", type: "input" },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: {
+      package: "antd",
+      version: "^5.0.0",
+      destructuring: true,
+      exportName: "Table",
+      subName: "Column",
+    },
+    propTransforms: {
+      filter: ["type"],
+    },
+  },
 };
 
 export default TableColumnProtocol;
-

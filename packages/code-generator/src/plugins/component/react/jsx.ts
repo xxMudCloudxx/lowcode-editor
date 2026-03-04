@@ -16,7 +16,7 @@ import type {
 
 import { camelCase, upperFirst, uniqueId } from "lodash-es";
 import { createActionHandlerRegistry } from "../shared/handlers/actions";
-import { getComponentCodeGenMeta } from "../../../const/component-metadata";
+import type { CodeGenRegistry } from "../../../registry/codegen-registry";
 
 const getActionHandler = createActionHandlerRegistry("antd");
 
@@ -48,7 +48,20 @@ const jsxPlugin: IComponentPlugin = {
    * @param page - 页面。
    * @param moduleBuilder - 当前模块的构建器实例。
    */
-  run: (page: IRPage, moduleBuilder: IModuleBuilder) => {
+  run: (
+    page: IRPage,
+    moduleBuilder: IModuleBuilder,
+    _projectBuilder: any,
+    context?: { registry: CodeGenRegistry },
+  ) => {
+    // 从 context 中获取 registry
+    const registry = context?.registry;
+    if (!registry) {
+      throw new Error(
+        "[jsxPlugin] 缺少 CodeGenRegistry，请在 context 中传入 registry",
+      );
+    }
+
     // [!> 新增：处理页面状态 (States) <!]
     if (page.states) {
       // 确保导入 useState
@@ -97,7 +110,9 @@ const jsxPlugin: IComponentPlugin = {
     const irNode = page.node;
     if (irNode.componentName === "Page" && irNode.children) {
       const childrenJsxStrings = irNode.children
-        .map((childNode) => generateJSX(childNode, moduleBuilder, 0, page)) // [!> 传递 page <!]
+        .map((childNode) =>
+          generateJSX(childNode, moduleBuilder, 0, page, registry),
+        ) // [!> 传递 page 和 registry <!]
         .join("\n");
       moduleBuilder.setJSX(
         `<>
@@ -105,7 +120,7 @@ ${childrenJsxStrings}
 </>`,
       );
     } else {
-      const jsxString = generateJSX(irNode, moduleBuilder, 0, page); // [!> 传递 page <!]
+      const jsxString = generateJSX(irNode, moduleBuilder, 0, page, registry); // [!> 传递 page 和 registry <!]
       moduleBuilder.setJSX(jsxString);
     }
   },
@@ -215,11 +230,12 @@ function generateJSX(
   moduleBuilder: IModuleBuilder,
   indentLevel: number,
   page: IRPage,
+  registry: CodeGenRegistry,
 ): string {
   const indent = "  ".repeat(indentLevel + 2);
 
   // 1. 获取元数据和动态标签名
-  const meta = getComponentCodeGenMeta(irNode.componentName);
+  const meta = registry.resolve(irNode.componentName);
 
   // (使用可选链 ?. 保证了向后兼容性)
   // (这会读取 irNode.props 上的 'url' 或 'icon'，并向 moduleBuilder 添加 hooks/imports)
@@ -246,6 +262,7 @@ function generateJSX(
     moduleBuilder,
     indentLevel + 1,
     page,
+    registry,
   );
 
   // 6. 处理 Children
@@ -253,7 +270,9 @@ function generateJSX(
   if (irNode.children && irNode.children.length > 0) {
     // 6a. 优先处理真实的子节点 (irNode.children)
     childrenString = irNode.children
-      .map((child) => generateJSX(child, moduleBuilder, indentLevel + 1, page))
+      .map((child) =>
+        generateJSX(child, moduleBuilder, indentLevel + 1, page, registry),
+      )
       .join("\n");
   } else if (childrenProp) {
     // 6b. 再处理来自 props 的 children (例如 Button 的 text, Slot)
@@ -269,6 +288,7 @@ function generateJSX(
           childrenProp,
           moduleBuilder,
           page,
+          registry,
         );
         if (childValueString !== undefined) {
           childrenString = `${indent}  {${childValueString}}`;
@@ -280,6 +300,7 @@ function generateJSX(
           moduleBuilder,
           indentLevel + 1,
           page,
+          registry,
         );
       } else {
         // 6b-3. 子节点是 JSExpression, Variable 等
@@ -287,6 +308,7 @@ function generateJSX(
           childrenProp,
           moduleBuilder,
           page,
+          registry,
         );
         if (childValueString !== undefined) {
           childrenString = `${indent}  {${childValueString}}`;
@@ -300,7 +322,13 @@ function generateJSX(
       // 6b-4. 子节点是 IRNode 数组 (JSSlot with multiple nodes)
       childrenString = childrenProp
         .map((child) =>
-          generateJSX(child as IRNode, moduleBuilder, indentLevel + 1, page),
+          generateJSX(
+            child as IRNode,
+            moduleBuilder,
+            indentLevel + 1,
+            page,
+            registry,
+          ),
         )
         .join("\n");
     }
@@ -328,6 +356,7 @@ function generateJSX(
             classNamePropValue,
             moduleBuilder,
             page,
+            registry,
           );
           if (classNameValue !== undefined) {
             classList.push(`\${${classNameValue}}`); // 动态变量
@@ -379,6 +408,7 @@ function generatePropsString(
   moduleBuilder: IModuleBuilder,
   indentLevel: number,
   page: IRPage,
+  registry: CodeGenRegistry,
 ): string {
   const propStrings: string[] = [];
   const multiLineIndent = "  ".repeat(indentLevel + 1);
@@ -395,6 +425,7 @@ function generatePropsString(
       propValue,
       moduleBuilder,
       page,
+      registry,
     );
 
     if (propStringValue !== undefined) {
@@ -445,6 +476,7 @@ function generatePropValueString(
   propValue: IRPropValue,
   moduleBuilder: IModuleBuilder,
   page: IRPage,
+  registry: CodeGenRegistry,
 ): string | undefined {
   // 1. IRAction[]
   if (isIRActionArray(propValue)) {
@@ -469,7 +501,7 @@ function generatePropValueString(
       ${propValue
         .map((node) =>
           // 注意：JSSlot 内部的 JSX 缩进需要单独处理，这里暂定一个基础缩进
-          generateJSX(node as IRNode, moduleBuilder, 1, page),
+          generateJSX(node as IRNode, moduleBuilder, 1, page, registry),
         )
         .join(",\n")}
     ]`;
@@ -534,7 +566,7 @@ function generatePropValueString(
   if ("componentName" in propValue) {
     // 支持 JSSlot
     // 返回被括号包裹的 JSX 字符串
-    return `(${generateJSX(propValue as IRNode, moduleBuilder, 0, page)})`;
+    return `(${generateJSX(propValue as IRNode, moduleBuilder, 0, page, registry)})`;
   }
 
   // --- 默认 Fallback ---

@@ -7,6 +7,7 @@ import type { ISolution } from "@lowcode/schema";
 import { reactViteTemplate } from "../templates/react-vite-template";
 import { prettierPostProcessor } from "../postprocessor/prettier";
 import { zipPublisher } from "../publisher/zip-publisher";
+import { antdCodeGenDescriptors } from "@lowcode/materials/codegen";
 
 // --- 组件级插件 ---
 import jsxPlugin from "../plugins/component/react/jsx";
@@ -50,6 +51,8 @@ const reactViteSolution: ISolution = {
   postProcessors: [prettierPostProcessor()],
 
   publisher: zipPublisher,
+
+  materialDescriptors: antdCodeGenDescriptors,
 };
 
 export default reactViteSolution;

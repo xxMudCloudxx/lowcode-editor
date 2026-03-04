@@ -42,7 +42,18 @@ const FormItemProtocol: ComponentProtocol = {
       options: [{ label: "必填", value: "required" }],
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: {
+      package: "antd",
+      version: "^5.0.0",
+      destructuring: true,
+      exportName: "Form",
+      subName: "Item",
+    },
+    isContainer: true,
+  },
 };
 
 export default FormItemProtocol;
-

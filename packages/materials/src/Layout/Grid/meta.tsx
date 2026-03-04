@@ -68,7 +68,18 @@ const GridProtocol: ComponentProtocol = {
       ],
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: {
+      package: "antd",
+      version: "^5.0.0",
+      destructuring: true,
+      exportName: "Row",
+    },
+    tagName: "Row",
+    isContainer: true,
+  },
 };
 
 export default GridProtocol;
-

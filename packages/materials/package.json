@@ -4,6 +4,18 @@
   "main": "src/index.tsx",
   "module": "src/index.tsx",
   "types": "src/index.tsx",
+  "exports": {
+    ".": {
+      "import": "./src/index.tsx",
+      "require": "./src/index.tsx",
+      "types": "./src/index.tsx"
+    },
+    "./codegen": {
+      "import": "./src/codegen.ts",
+      "require": "./src/codegen.ts",
+      "types": "./src/codegen.ts"
+    }
+  },
   "scripts": {
     "gen:meta": "tsx scripts/gen-antd-metas.ts"
   },

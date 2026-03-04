@@ -66,7 +66,11 @@ const InputProtocol: ComponentProtocol = {
     { name: "allowClear", label: "允许清除", type: "switch" },
     { name: "disabled", label: "禁用", type: "switch" },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+  },
 };
 
 export default InputProtocol;
-

@@ -42,7 +42,12 @@ const AvatarProtocol: ComponentProtocol = {
     { name: "icon", label: "图标类型", type: "input" },
     { name: "alt", label: "替代文本", type: "input" },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
 };
 
 export default AvatarProtocol;
-

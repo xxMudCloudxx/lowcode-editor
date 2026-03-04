@@ -67,7 +67,30 @@ const TypographyProtocol: ComponentProtocol = {
       type: "switch",
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: {
+      package: "antd",
+      version: "^5.0.0",
+      destructuring: true,
+      exportName: "Typography",
+    },
+    tagName: {
+      prop: "type",
+      map: {
+        Text: "Typography.Text",
+        Title: "Typography.Title",
+        Paragraph: "Typography.Paragraph",
+        Link: "Typography.Link",
+      },
+      default: "Typography.Text",
+    },
+    propTransforms: {
+      rename: { content: "children" },
+      tagNameProp: "type",
+    },
+  },
 };
 
 export default TypographyProtocol;
-

@@ -18,14 +18,7 @@ import type {
   IRJSExpression,
   IRJSFunction,
 } from "@lowcode/schema";
-// 确认从 ./component-metadata 导入辅助函数
-import {
-  getComponentMetadata,
-  getAllDependencies,
-  getProjectDependencies,
-} from "./component-metadata";
-// 导入 componentMetadataMap 用于 getAllDependencies 函数
-import { componentMetadataMap } from "../const/component-metadata";
+import type { CodeGenRegistry } from "../registry/codegen-registry";
 import { uniqueId } from "lodash-es";
 import {
   nodeMapperRegistry,
@@ -44,8 +37,11 @@ export class SchemaParser {
    */
   private pageDependencies: Set<IRDependency>;
 
-  constructor() {
+  private registry: CodeGenRegistry;
+
+  constructor(registry: CodeGenRegistry) {
     this.pageDependencies = new Set();
+    this.registry = registry;
   }
 
   /**
@@ -77,10 +73,8 @@ export class SchemaParser {
     }
 
     // --- 聚合项目依赖 ---
-    // 从组件元数据中获取所有可能的依赖
-    const allDepsArray = getAllDependencies(componentMetadataMap);
-    // 转换为 package.json 需要的格式
-    project.dependencies = getProjectDependencies(allDepsArray);
+    // 通过 CodeGenRegistry 获取项目中所有可能用到的 npm 库依赖（包含 peerDependencies）
+    project.dependencies = this.registry.getAllDependencies();
 
     return project;
   }
@@ -125,11 +119,11 @@ export class SchemaParser {
         return result;
       }
     }
-    // getComponentMetadata 内部会使用 componentMetadataMap
-    const metadata = getComponentMetadata(schemaNode.name);
+    // getMetadata 内部会尝试寻找对应的声明式或逃生舱注册
+    const metadata = this.registry.getMetadata(schemaNode.name);
     if (!metadata) {
       // 对于无法识别的组件，打印错误日志并返回一个占位 div 节点
-      console.error(`未找到组件 '${schemaNode.name}' 的元数据定义。`);
+      console.warn(`未找到组件 '${schemaNode.name}' 的元数据定义。`);
       // 返回一个基础 div 节点作为容错处理
       return {
         id: schemaNode.id || uniqueId("unknown_"),

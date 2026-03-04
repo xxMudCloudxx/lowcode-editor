@@ -64,7 +64,12 @@ const TabsProtocol: ComponentProtocol = {
       ],
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
 };
 
 export default TabsProtocol;
-

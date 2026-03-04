@@ -28,7 +28,18 @@ const TabPaneProtocol: ComponentProtocol = {
       type: "input",
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: {
+      package: "antd",
+      version: "^5.0.0",
+      destructuring: true,
+      exportName: "Tabs",
+      subName: "TabPane",
+    },
+    isContainer: true,
+  },
 };
 
 export default TabPaneProtocol;
-

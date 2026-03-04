@@ -51,7 +51,31 @@ const ModalProtocol: ComponentProtocol = {
     { name: "open", label: "打开弹窗" },
     { name: "close", label: "关闭弹窗" },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+    propTransforms: {
+      filter: ["visibleInEditor"],
+    },
+    methods: [
+      {
+        name: "open",
+        stateBinding: { prop: "open", value: true },
+      },
+      {
+        name: "close",
+        stateBinding: { prop: "open", value: false },
+        eventBinding: "onCancel",
+      },
+      {
+        name: "handleOk",
+        stateBinding: { prop: "open", value: false },
+        eventBinding: "onOk",
+      },
+    ],
+  },
 };
 
 export default ModalProtocol;
-

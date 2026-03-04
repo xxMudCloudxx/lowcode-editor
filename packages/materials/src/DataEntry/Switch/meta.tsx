@@ -39,7 +39,11 @@ const SwitchProtocol: ComponentProtocol = {
     { name: "checkedChildren", label: "选中时内容", type: "input" },
     { name: "unCheckedChildren", label: "非选中内容", type: "input" },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+  },
 };
 
 export default SwitchProtocol;
-

@@ -57,7 +57,26 @@ const DropdownProtocol: ComponentProtocol = {
       ],
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+    propTransforms: {
+      rename: { buttonText: "children" },
+    },
+    methods: [
+      {
+        name: "open",
+        stateBinding: { prop: "open", value: true },
+      },
+      {
+        name: "close",
+        stateBinding: { prop: "open", value: false },
+        eventBinding: "onOpenChange",
+      },
+    ],
+  },
 };
 
 export default DropdownProtocol;
-

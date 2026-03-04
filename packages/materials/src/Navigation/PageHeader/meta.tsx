@@ -34,7 +34,14 @@ const PageHeaderProtocol: ComponentProtocol = {
       type: "input",
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: {
+      package: "@/components",
+      destructuring: true,
+    },
+  },
 };
 
 export default PageHeaderProtocol;
-

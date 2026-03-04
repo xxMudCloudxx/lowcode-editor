@@ -13,6 +13,7 @@
     "file-saver": "^2.0.5",
     "lodash-es": "^4.17.21",
     "@lowcode/schema": "workspace:*",
+    "@lowcode/materials": "workspace:*",
     "prettier": "^3.1.0"
   },
   "devDependencies": {

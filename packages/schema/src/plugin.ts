@@ -25,6 +25,7 @@ export interface IComponentPlugin {
     page: IRPage,
     moduleBuilder: IModuleBuilder,
     projectBuilder?: ProjectBuilder,
+    context?: any,
   ) => void;
 }
 

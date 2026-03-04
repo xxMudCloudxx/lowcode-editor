@@ -21,7 +21,7 @@ import type {
 } from "@lowcode/schema";
 import { camelCase, upperFirst, uniqueId } from "lodash-es";
 import { createActionHandlerRegistry } from "../shared/handlers/actions";
-import { getComponentCodeGenMeta } from "../../../const/component-metadata";
+import type { CodeGenRegistry } from "../../../registry/codegen-registry";
 import type { VueModuleBuilder } from "../../../utils/vue-module-builder";
 
 const getVueActionHandler = createActionHandlerRegistry("ant-design-vue");
@@ -126,11 +126,12 @@ function generateVueTemplate(
   moduleBuilder: VueModuleBuilder,
   indentLevel: number,
   page: IRPage,
+  registry: CodeGenRegistry,
 ): string {
   const indent = "  ".repeat(indentLevel + 1);
 
   // 1. 获取元数据
-  const meta = getComponentCodeGenMeta(irNode.componentName);
+  const meta = registry.resolve(irNode.componentName);
   meta.getLogicFragments?.(irNode.props, moduleBuilder as any);
   const tagName = resolveVueTagName(meta.getTagName(irNode.props));
 
@@ -184,7 +185,13 @@ function generateVueTemplate(
   if (irNode.children && irNode.children.length > 0) {
     childrenString = irNode.children
       .map((child) =>
-        generateVueTemplate(child, moduleBuilder, indentLevel + 1, page),
+        generateVueTemplate(
+          child,
+          moduleBuilder,
+          indentLevel + 1,
+          page,
+          registry,
+        ),
       )
       .join("\n");
   } else if (childrenProp) {
@@ -194,6 +201,7 @@ function generateVueTemplate(
       indentLevel,
       page,
       indent,
+      registry,
     );
   }
 
@@ -214,6 +222,7 @@ function generateVueChildrenString(
   indentLevel: number,
   page: IRPage,
   indent: string,
+  registry: CodeGenRegistry,
 ): string {
   if (
     typeof childrenProp === "object" &&
@@ -231,6 +240,7 @@ function generateVueChildrenString(
         moduleBuilder,
         indentLevel + 1,
         page,
+        registry,
       );
     } else if ("type" in childrenProp) {
       const val = generatePropValueForTemplate(childrenProp);
@@ -250,6 +260,7 @@ function generateVueChildrenString(
           moduleBuilder,
           indentLevel + 1,
           page,
+          registry,
         ),
       )
       .join("\n");
@@ -421,7 +432,19 @@ const vueTemplatePlugin: IComponentPlugin = {
   type: "component",
   name: "vue-template",
 
-  run: (page: IRPage, moduleBuilder: IModuleBuilder) => {
+  run: (
+    page: IRPage,
+    moduleBuilder: IModuleBuilder,
+    _projectBuilder: any,
+    context?: { registry: CodeGenRegistry },
+  ) => {
+    const registry = context?.registry;
+    if (!registry) {
+      throw new Error(
+        "[vueTemplatePlugin] 缺少 CodeGenRegistry，请在 context 中传入 registry",
+      );
+    }
+
     const builder = moduleBuilder as VueModuleBuilder;
 
     // 1. 处理页面状态 (States)
@@ -462,11 +485,19 @@ const vueTemplatePlugin: IComponentPlugin = {
     const irNode = page.node;
     if (irNode.componentName === "Page" && irNode.children) {
       const childrenTemplateStrings = irNode.children
-        .map((childNode) => generateVueTemplate(childNode, builder, 0, page))
+        .map((childNode) =>
+          generateVueTemplate(childNode, builder, 0, page, registry),
+        )
         .join("\n");
       builder.setJSX(`  <div>\n${childrenTemplateStrings}\n  </div>`);
     } else {
-      const templateString = generateVueTemplate(irNode, builder, 0, page);
+      const templateString = generateVueTemplate(
+        irNode,
+        builder,
+        0,
+        page,
+        registry,
+      );
       builder.setJSX(templateString);
     }
   },

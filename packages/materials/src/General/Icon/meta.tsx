@@ -55,7 +55,19 @@ const IconProtocol: ComponentProtocol = {
       type: "inputNumber",
     },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: {
+      package: "@ant-design/icons",
+      version: "^5.0.0",
+      destructuring: true,
+      exportName: "QuestionCircleOutlined",
+    },
+    propTransforms: {
+      filter: ["icon", "type"],
+    },
+  },
 };
 
 export default IconProtocol;
-

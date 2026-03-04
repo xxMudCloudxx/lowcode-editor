@@ -3,7 +3,12 @@
  * @description 定义可插拔多目标出码架构的核心抽象：ISolution、IProjectTemplate、ICodeChunk。
  */
 
-import type { IGeneratedFile, IRDependency, IRPage } from "./ir";
+import type {
+  IGeneratedFile,
+  ICodeGenDescriptor,
+  IRDependency,
+  IRPage,
+} from "./ir";
 import type {
   IComponentPlugin,
   IProjectPlugin,
@@ -102,4 +107,12 @@ export interface ISolution {
     projectBuilder: ProjectBuilder;
     componentPascalName: string;
   }) => void;
+
+  /**
+   * 物料出码描述符列表
+   * @description 描述该 Solution 使用的物料组件的出码行为。
+   *              出码器据此知道每个组件从哪个包导入、标签名是什么、prop 如何转换。
+   *              如为空则出码器使用默认行为（所有组件降级为 div）。
+   */
+  materialDescriptors?: ICodeGenDescriptor[];
 }

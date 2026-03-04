@@ -55,7 +55,12 @@ const StepsProtocol: ComponentProtocol = {
     { name: "next", label: "下一步" },
     { name: "prev", label: "上一步" },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
 };
 
 export default StepsProtocol;
-

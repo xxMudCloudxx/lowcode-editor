@@ -29,7 +29,12 @@ const CardProtocol: ComponentProtocol = {
     { name: "bordered", label: "显示边框", type: "switch" },
     { name: "hoverable", label: "可悬浮", type: "switch" },
   ],
+
+  // ===== 出码层 =====
+  codegen: {
+    dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+    isContainer: true,
+  },
 };
 
 export default CardProtocol;
-

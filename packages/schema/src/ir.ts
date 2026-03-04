@@ -263,3 +263,142 @@ export interface ICodeGenComponentMethod {
    */
   eventBinding?: string;
 }
+
+// --- 出码描述符 (Code-Gen Descriptor) ---
+
+/**
+ * 标签名映射规则
+ * @description 根据某个 prop 的值动态决定组件的 JSX 标签名。
+ *
+ * @example
+ * // Typography 根据 type prop 映射到不同子组件
+ * {
+ *   prop: "type",
+ *   map: {
+ *     Text: "Typography.Text",
+ *     Title: "Typography.Title",
+ *     Paragraph: "Typography.Paragraph",
+ *   },
+ *   default: "Typography.Text",
+ * }
+ */
+export interface ITagNameMapping {
+  /** 根据哪个 prop 的值决定标签名 */
+  prop: string;
+  /** prop 值 → 标签名的映射表 */
+  map: Record<string, string>;
+  /** 当 prop 值不在 map 中时的兜底标签名 */
+  default: string;
+}
+
+/**
+ * Props 转换规则（声明式）
+ * @description 描述组件在出码阶段需要进行的 prop 转换操作。
+ * 所有转换由 code-generator 的通用解释器执行，物料包只需提供规则数据。
+ *
+ * @example
+ * // Button: text → children, 同时过滤 visibleInEditor
+ * {
+ *   rename: { text: "children" },
+ *   filter: ["visibleInEditor"],
+ * }
+ */
+export interface IPropTransforms {
+  /**
+   * Prop 重命名映射
+   * key: Schema 中的 prop 名, value: 出码时的 prop 名
+   * @example { text: "children", content: "children" }
+   */
+  rename?: Record<string, string>;
+
+  /**
+   * 需要过滤掉的 prop 列表（编辑器专属、不应出现在最终代码中的 prop）
+   * @example ["visibleInEditor", "desc", "parentId"]
+   */
+  filter?: string[];
+
+  /**
+   * 用于决定标签名的 prop 名称
+   * 该 prop 会在出码时被自动过滤，不透传给组件
+   * 通常与 ICodeGenDescriptor.tagName (ITagNameMapping) 配合使用
+   * @example "type" // Typography 的 type prop 用于决定标签名
+   */
+  tagNameProp?: string;
+}
+
+/**
+ * 出码描述符 — 物料与出码器之间的声明式契约
+ *
+ * @description
+ * 每个物料组件通过此接口描述自己在出码阶段的行为：
+ * - 从哪个包导入、如何导入
+ * - JSX 标签名是什么（静态或动态映射）
+ * - Props 需要哪些转换（重命名、过滤）
+ * - 是否有状态绑定方法（如 Modal 的 open/close）
+ *
+ * 设计原则：
+ * 1. **纯数据** — 不包含任何函数，不引用 IR 内部类型
+ * 2. **物料自描述** — 由物料包提供，放在物料的 codegen.ts 文件中
+ * 3. **声明式** — code-generator 的通用解释器负责执行对应逻辑
+ * 4. **向下兼容** — 所有字段除 name 和 dependency 外均可选，
+ *    未提供时 code-generator 使用默认行为
+ *
+ * @example
+ * // packages/materials/src/General/Button/codegen.ts
+ * const descriptor: ICodeGenDescriptor = {
+ *   name: "Button",
+ *   dependency: { package: "antd", version: "^5.0.0", destructuring: true },
+ *   propTransforms: {
+ *     rename: { text: "children" },
+ *   },
+ * };
+ */
+export interface ICodeGenDescriptor {
+  /**
+   * 组件在 Schema 中的唯一名称
+   * 必须与 ComponentProtocol.name / ISchemaNode.name 一致
+   * @example "Button", "Typography", "Modal"
+   */
+  name: string;
+
+  /**
+   * 组件的导入依赖信息
+   * 描述该组件应该从哪个包、如何导入
+   */
+  dependency: IRDependency;
+
+  /**
+   * JSX 标签名
+   * - string: 静态标签名 (e.g., "Button", "Form.Item")
+   * - ITagNameMapping: 根据 prop 值动态映射
+   * - undefined: 默认使用 dependency.exportName 或 name
+   */
+  tagName?: string | ITagNameMapping;
+
+  /**
+   * Props 转换规则
+   * 声明式地描述 prop 的重命名、过滤等操作
+   */
+  propTransforms?: IPropTransforms;
+
+  /**
+   * 组件暴露的可调用方法
+   * 用于 state-lifter 预处理器自动生成状态提升逻辑
+   * @example Modal 的 open/close 方法
+   */
+  methods?: ICodeGenComponentMethod[];
+
+  /**
+   * 是否是容器组件
+   * 影响出码器对子节点的处理策略
+   */
+  isContainer?: boolean;
+
+  /**
+   * 额外的 NPM 依赖（Peer Dependencies）
+   * 某些组件可能需要额外安装的包（如 Icon 需要 @ant-design/icons）
+   * 这些依赖会被添加到生成项目的 package.json 中
+   * @example [{ package: "@ant-design/icons", version: "^5.0.0" }]
+   */
+  peerDependencies?: Array<{ package: string; version: string }>;
+}
