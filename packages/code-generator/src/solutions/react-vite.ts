@@ -8,6 +8,7 @@ import { reactViteTemplate } from "../templates/react-vite-template";
 import { prettierPostProcessor } from "../postprocessor/prettier";
 import { zipPublisher } from "../publisher/zip-publisher";
 import { antdCodeGenDescriptors } from "@lowcode/materials/codegen";
+import { stateLifterPreprocessor } from "../preprocessor";
 
 // --- 组件级插件 ---
 import jsxPlugin from "../plugins/component/react/jsx";
@@ -37,6 +38,8 @@ const reactViteSolution: ISolution = {
   description: "基于 React 18 + Vite 5 + TypeScript 的标准 SPA 项目",
 
   template: reactViteTemplate,
+
+  preprocessors: [stateLifterPreprocessor],
 
   componentPlugins: [cssPlugin, jsxPlugin],
 

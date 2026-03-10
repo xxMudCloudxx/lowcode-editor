@@ -227,3 +227,13 @@ export function runStateLifter(
 
   return irProject;
 }
+
+/**
+ * StateLifter 预处理器（IPreprocessor 格式）
+ * 可直接在 ISolution.preprocessors 中使用。
+ */
+import type { IPreprocessor } from "@lowcode/schema";
+export const stateLifterPreprocessor: IPreprocessor = {
+  name: "state-lifter",
+  run: (irProject, { registry }) => runStateLifter(irProject, registry),
+};

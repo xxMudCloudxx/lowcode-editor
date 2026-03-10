@@ -3,7 +3,7 @@
  * @description 定义了不同类型的插件及其执行签名
  */
 
-import type { IGeneratedFile, IRPage } from "./ir";
+import type { IGeneratedFile, IRPage, IRProject } from "./ir";
 import type { IModuleBuilder } from "./module-builder";
 import type { ProjectBuilder } from "./project-builder";
 
@@ -64,6 +64,16 @@ export interface IProjectPlugin {
 export type IPostProcessor = (
   file: IGeneratedFile,
 ) => Promise<IGeneratedFile> | IGeneratedFile;
+
+/**
+ * @interface IPreprocessor
+ * @description IR 预处理器：在插件管线之前执行 IR→IR 变换（如状态提升），不生成文件。
+ * @example stateLifterPreprocessor
+ */
+export interface IPreprocessor {
+  name: string;
+  run: (irProject: IRProject, context: { registry: any }) => IRProject;
+}
 
 /**
  * @type CodeGeneratorPlugin

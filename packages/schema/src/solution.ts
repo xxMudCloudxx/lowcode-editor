@@ -13,6 +13,7 @@ import type {
   IComponentPlugin,
   IProjectPlugin,
   IPostProcessor,
+  IPreprocessor,
 } from "./plugin";
 import type { IPublisher } from "./publisher";
 import type { IModuleBuilder } from "./module-builder";
@@ -79,6 +80,12 @@ export interface ISolution {
   description: string;
   /** 框架模板（决定生成什么脚手架文件） */
   template: IProjectTemplate;
+  /**
+   * IR 预处理器管线（在所有插件之前执行）
+   * 负责 IR→IR 变换（如状态提升），不生成文件。
+   * 若为空则跳过预处理阶段。
+   */
+  preprocessors?: IPreprocessor[];
   /** 组件级插件流水线 */
   componentPlugins: IComponentPlugin[];
   /** 项目级插件流水线 */

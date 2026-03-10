@@ -20,7 +20,6 @@ import vueSolution from "./solutions/vue-vite";
 
 // 工具函数
 import { SchemaParser } from "./parser/schema-parser";
-import { runPreprocessors } from "./preprocessor";
 import { downloadBlob } from "./utils/download";
 import { camelCase, upperFirst } from "lodash-es";
 import { CodeGenRegistry } from "./registry/codegen-registry";
@@ -169,11 +168,17 @@ export async function exportSourceCode(
 
     // --- 1. Schema → IR ---
     const parser = new SchemaParser(registry);
-    const irProject = parser.parse(schema);
-    const transformedIrProject = runPreprocessors(irProject, registry);
+    let irProject = parser.parse(schema);
+
+    // --- 1.5 执行 Solution 预处理器（IR→IR 变换） ---
+    if (solution.preprocessors) {
+      for (const preprocessor of solution.preprocessors) {
+        irProject = preprocessor.run(irProject, { registry });
+      }
+    }
 
     // --- 2. 初始化 ProjectBuilder ---
-    const projectBuilder = new ProjectBuilder(transformedIrProject);
+    const projectBuilder = new ProjectBuilder(irProject);
 
     // --- 3. 注入 Template 静态文件 ---
     const staticFiles = solution.template.getStaticFiles();
@@ -195,7 +200,7 @@ export async function exportSourceCode(
     }
 
     // --- 6. 执行 Component Plugins（逐页面） ---
-    transformedIrProject.pages.forEach((page: IRPage) => {
+    irProject.pages.forEach((page: IRPage) => {
       const moduleBuilder = solution.createModuleBuilder
         ? solution.createModuleBuilder()
         : projectBuilder.createModuleBuilder();

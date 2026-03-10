@@ -1,33 +1,8 @@
 // src/code-generator/preprocessor/index.ts
 
 /**
- * @file IR 预处理器入口
- * @description 串联执行所有 IR 预处理步骤（例如状态提升），为后续插件阶段准备好可用的 IRProject 结构。
+ * @file IR 预处理器
+ * @description 导出预处理器实例，供 Solution 的 preprocessors 字段使用。
  */
 
-import type { IRProject } from "@lowcode/schema";
-import type { CodeGenRegistry } from "../registry/codegen-registry";
-import { runStateLifter } from "./state-lifter";
-// import { runDataSourceTransformer } from './datasource-transformer'; // 示例：未来可以添加更多
-
-/**
- * IR 预处理器流水线
- * 负责对 Parser 输出的 IRProject 进行“再加工”，
- * 为后续的 Plugins 阶段做好准备。
- */
-export function runPreprocessors(
-  irProject: IRProject,
-  registry: CodeGenRegistry,
-): IRProject {
-  let transformedIR = irProject;
-
-  // 预处理器1: 状态提升
-  transformedIR = runStateLifter(transformedIR, registry);
-
-  // 预处理器2: (示例) 处理数据源
-  // transformedIR = runDataSourceTransformer(transformedIR);
-
-  // ...
-
-  return transformedIR;
-}
+export { runStateLifter, stateLifterPreprocessor } from "./state-lifter";

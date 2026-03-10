@@ -40,6 +40,7 @@ import { prettierPostProcessor } from "../postprocessor/prettier";
 import { zipPublisher } from "../publisher/zip-publisher";
 import { VueModuleBuilder } from "../utils/vue-module-builder";
 import { antdCodeGenDescriptors } from "@lowcode/materials/codegen";
+import { stateLifterPreprocessor } from "../preprocessor";
 
 // --- 组件级插件 ---
 import vueTemplatePlugin from "../plugins/component/vue/template";
@@ -62,6 +63,8 @@ const vueSolution: ISolution = {
   description: "基于 Vue 3 + Vite 5 + TypeScript 的 SPA 项目",
 
   template: vueViteTemplate,
+
+  preprocessors: [stateLifterPreprocessor],
 
   componentPlugins: [vueCssPlugin, vueTemplatePlugin],
 
