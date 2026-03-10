@@ -6,21 +6,26 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --tsconfig tsconfig.build.json",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch --tsconfig tsconfig.build.json"
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch --tsconfig tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "jszip": "^3.10.1",
-    "file-saver": "^2.0.5",
-    "lodash-es": "^4.17.21",
-    "@lowcode/schema": "workspace:*",
     "@lowcode/materials": "workspace:*",
+    "@lowcode/schema": "workspace:*",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
+    "lodash-es": "^4.17.21",
     "prettier": "^3.1.0"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
+    "@types/lodash-es": "^4.17.0",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "@types/lodash-es": "^4.17.0",
-    "@types/file-saver": "^2.0.7",
-    "@types/node": "^22.0.0"
+    "vitest": "^4.0.18"
   }
 }

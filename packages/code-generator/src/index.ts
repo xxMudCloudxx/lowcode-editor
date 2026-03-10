@@ -93,7 +93,9 @@ export interface IExportResult {
 /**
  * 解析 Solution 参数
  */
-function resolveSolution(input: string | ISolution = "react-vite"): ISolution {
+export function resolveSolution(
+  input: string | ISolution = "react-vite",
+): ISolution {
   if (typeof input === "string") {
     const solution = solutionRegistry[input];
     if (!solution) {
@@ -109,7 +111,7 @@ function resolveSolution(input: string | ISolution = "react-vite"): ISolution {
 /**
  * 按 phase 和 weight 排序 Project Plugins
  */
-function sortProjectPlugins(plugins: IProjectPlugin[]): {
+export function sortProjectPlugins(plugins: IProjectPlugin[]): {
   pre: IProjectPlugin[];
   post: IProjectPlugin[];
 } {
