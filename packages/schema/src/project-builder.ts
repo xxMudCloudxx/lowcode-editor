@@ -6,8 +6,7 @@
  */
 
 import { ModuleBuilder } from "./module-builder";
-import type { IRProject, IRPage, IGeneratedFile } from "./ir";
-import { camelCase, upperFirst } from "lodash-es"; // 确保导入
+import type { IRProject, IGeneratedFile } from "./ir";
 import type { IPostProcessor } from "./plugin";
 
 /**

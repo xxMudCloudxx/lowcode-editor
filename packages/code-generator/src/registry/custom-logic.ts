@@ -93,3 +93,30 @@ export const tableCustomLogic: ComponentCodeGenMeta = {
     return irProps;
   },
 };
+
+/**
+ * FormItem 组件的程序式逃生舱逻辑
+ * 负责将 name 属性从数字转换为字符串
+ */
+export const formItemCustomLogic: ComponentCodeGenMeta = {
+  getTagName: () => "Form.Item",
+  getTransformedProps: (props) => {
+    const { id, parentId, desc, ...rest } = props;
+
+    // 对 name 进行特殊处理：如果 name 是数字，则转为字符串
+    if (typeof rest.name === "number") {
+      rest.name = String(rest.name);
+    }
+
+    const irProps: Record<string, IRPropValue> = {};
+    for (const [k, v] of Object.entries(rest)) {
+      if (typeof v === "object" && v !== null && "type" in v) {
+        irProps[k] = v;
+      } else {
+        irProps[k] = createLiteral(v);
+      }
+    }
+
+    return irProps;
+  },
+};

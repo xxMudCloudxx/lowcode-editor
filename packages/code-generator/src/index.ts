@@ -24,7 +24,11 @@ import { runPreprocessors } from "./preprocessor";
 import { downloadBlob } from "./utils/download";
 import { camelCase, upperFirst } from "lodash-es";
 import { CodeGenRegistry } from "./registry/codegen-registry";
-import { iconCustomLogic, tableCustomLogic } from "./registry/custom-logic";
+import {
+  iconCustomLogic,
+  tableCustomLogic,
+  formItemCustomLogic,
+} from "./registry/custom-logic";
 
 export { downloadBlob };
 
@@ -161,6 +165,7 @@ export async function exportSourceCode(
     // 注册程序式逃生舱
     registry.registerCustomLogic("Icon", iconCustomLogic);
     registry.registerCustomLogic("Table", tableCustomLogic);
+    registry.registerCustomLogic("FormItem", formItemCustomLogic);
 
     // --- 1. Schema → IR ---
     const parser = new SchemaParser(registry);

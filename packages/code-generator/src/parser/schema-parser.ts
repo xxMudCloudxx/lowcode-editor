@@ -20,12 +20,6 @@ import type {
 } from "@lowcode/schema";
 import type { CodeGenRegistry } from "../registry/codegen-registry";
 import { uniqueId } from "lodash-es";
-import {
-  nodeMapperRegistry,
-  nodeTransformerRegistry,
-  propMapperRegistry,
-  type IParserContext,
-} from "./component-handlers";
 
 /**
  * Schema 解析器类
@@ -102,23 +96,6 @@ export class SchemaParser {
    * @returns 解析后的 IRNode 对象。
    */
   private parseNode(schemaNode: ISchemaNode): IRNode {
-    const transformer = Object.prototype.hasOwnProperty.call(
-      nodeTransformerRegistry,
-      schemaNode.name,
-    )
-      ? nodeTransformerRegistry[schemaNode.name]
-      : undefined;
-    if (transformer) {
-      const context: IParserContext = {
-        pageDependencies: this.pageDependencies,
-        parseNode: this.parseNode.bind(this),
-        parsePropValue: this.parsePropValue.bind(this),
-      };
-      const result = transformer(schemaNode, context);
-      if (result) {
-        return result;
-      }
-    }
     // getMetadata 内部会尝试寻找对应的声明式或逃生舱注册
     const metadata = this.registry.getMetadata(schemaNode.name);
     if (!metadata) {
@@ -176,16 +153,6 @@ export class SchemaParser {
       }
     }
 
-    const mapper = Object.prototype.hasOwnProperty.call(
-      nodeMapperRegistry,
-      schemaNode.name,
-    )
-      ? nodeMapperRegistry[schemaNode.name]
-      : undefined;
-    if (mapper) {
-      mapper(irNode, schemaNode);
-    }
-
     // --- 解析 Children ---
     if (schemaNode.children && schemaNode.children.length > 0) {
       // 递归调用 parseNode 处理每个子节点
@@ -209,22 +176,7 @@ export class SchemaParser {
     value: any,
     schemaNode: ISchemaNode,
   ): IRPropValue {
-    // 步骤 1: (高优先级) 运行“组件特定”处理器 (e.g., FormItem)
-    const propMapper = Object.prototype.hasOwnProperty.call(
-      propMapperRegistry,
-      schemaNode.name,
-    )
-      ? propMapperRegistry[schemaNode.name]
-      : undefined;
-
-    if (propMapper) {
-      const result = propMapper(value, key, schemaNode);
-      if (result) {
-        return result; // 组件特定处理器已处理 (e.g., FormItem.name)
-      }
-    }
-
-    // 步骤 2: (中优先级) 基于 "值结构" (Value Structure) 进行全局解析
+    // 步骤 2: 基于 "值结构" (Value Structure) 进行全局解析
 
     // 2a. 检查是否为 Action 结构
     // (不再检查 key === 'onClick'，自动支持所有 { actions: [...] } 结构的事件)
