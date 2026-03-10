@@ -6,6 +6,7 @@
  */
 
 import type { IRProject } from "@lowcode/schema";
+import type { CodeGenRegistry } from "../registry/codegen-registry";
 import { runStateLifter } from "./state-lifter";
 // import { runDataSourceTransformer } from './datasource-transformer'; // 示例：未来可以添加更多
 
@@ -14,11 +15,14 @@ import { runStateLifter } from "./state-lifter";
  * 负责对 Parser 输出的 IRProject 进行“再加工”，
  * 为后续的 Plugins 阶段做好准备。
  */
-export function runPreprocessors(irProject: IRProject): IRProject {
+export function runPreprocessors(
+  irProject: IRProject,
+  registry: CodeGenRegistry,
+): IRProject {
   let transformedIR = irProject;
 
   // 预处理器1: 状态提升
-  transformedIR = runStateLifter(transformedIR);
+  transformedIR = runStateLifter(transformedIR, registry);
 
   // 预处理器2: (示例) 处理数据源
   // transformedIR = runDataSourceTransformer(transformedIR);

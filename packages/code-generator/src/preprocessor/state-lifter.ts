@@ -5,7 +5,7 @@
 // src/code-generator/preprocessor/state-lifter.ts
 
 import { upperFirst } from "lodash-es";
-import { getComponentMetadata } from "../parser/component-metadata";
+import type { CodeGenRegistry } from "../registry/codegen-registry";
 import type {
   IRProject,
   IRNode,
@@ -21,13 +21,13 @@ import { buildIrNodeMap, isIRActionArray } from "../utils/ir-helper";
  * 遍历并转换单个页面的 IR 树
  * @param page - 整个 IRPage 对象
  */
-function transformPage(page: IRPage): IRPage {
+function transformPage(page: IRPage, registry: CodeGenRegistry): IRPage {
   // 1. 构建一个 IRNode 映射表
   const irNodeMap = new Map<number | string, IRNode>();
   buildIrNodeMap(page.node, irNodeMap); // 从页面的根节点开始构建
 
   // 2. 执行转换 (现在传入整个 page 对象)
-  transformComponentMethods(page, irNodeMap);
+  transformComponentMethods(page, irNodeMap, registry);
 
   return page;
 }
@@ -38,8 +38,9 @@ function transformPage(page: IRPage): IRPage {
  * @param irNodeMap - IR 节点映射表
  */
 function transformComponentMethods(
-  page: IRPage, // [!> 签名变更 <!]
+  page: IRPage,
   irNodeMap: Map<number | string, IRNode>,
+  registry: CodeGenRegistry,
 ) {
   const traverse = (irNode: IRNode) => {
     // 1. 遍历当前节点的所有 Props
@@ -57,11 +58,7 @@ function transformComponentMethods(
           .map((action) => {
             if (action.actionType === "componentMethod") {
               // 3. 发现 componentMethod，执行状态提升
-              return liftComponentMethod(
-                action,
-                page, // [!> 传递 page 对象 <!]
-                irNodeMap,
-              );
+              return liftComponentMethod(action, page, irNodeMap, registry);
             }
             return action; // 保留其他类型的 action
           })
@@ -107,8 +104,9 @@ function transformComponentMethods(
  */
 function liftComponentMethod(
   action: IRAction,
-  page: IRPage, // [!> 签名变更 <!]
+  page: IRPage,
   irNodeMap: Map<number | string, IRNode>,
+  registry: CodeGenRegistry,
 ): IRAction | null {
   const config = action.config;
   const targetComponentId = config.componentId;
@@ -128,8 +126,8 @@ function liftComponentMethod(
     return null;
   }
 
-  // 2. 查询元数据 (Modal.methods.open)
-  const metadata = getComponentMetadata(targetIrNode.componentName);
+  // 2. 查询元数据 (Modal.methods.open) —— 从 CodeGenRegistry 获取
+  const metadata = registry.getMetadata(targetIrNode.componentName);
   if (!metadata) {
     console.warn(
       `[StateLifter] 组件 ${targetIrNode.componentName} 的方法 ${targetMethod} 没有定义 stateBinding。`,
@@ -218,10 +216,13 @@ function liftComponentMethod(
  * @param irProject - 原始的 IRProject
  * @returns 转换后的 IRProject
  */
-export function runStateLifter(irProject: IRProject): IRProject {
+export function runStateLifter(
+  irProject: IRProject,
+  registry: CodeGenRegistry,
+): IRProject {
   // 遍历所有页面，对每个页面的 IR 树进行转换
   irProject.pages.forEach((page) => {
-    transformPage(page); // [!> 传入整个 page 对象 <!]
+    transformPage(page, registry);
   });
 
   return irProject;

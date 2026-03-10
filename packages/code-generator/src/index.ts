@@ -165,7 +165,7 @@ export async function exportSourceCode(
     // --- 1. Schema → IR ---
     const parser = new SchemaParser(registry);
     const irProject = parser.parse(schema);
-    const transformedIrProject = runPreprocessors(irProject);
+    const transformedIrProject = runPreprocessors(irProject, registry);
 
     // --- 2. 初始化 ProjectBuilder ---
     const projectBuilder = new ProjectBuilder(transformedIrProject);
