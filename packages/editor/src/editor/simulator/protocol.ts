@@ -69,8 +69,11 @@ export interface SyncComponentsPatchPayload {
   currentVersion: number;
 }
 
-/** Iframe 请求全量快照（无载荷） */
-export interface RequestFullSnapshotPayload {}
+/** Iframe 请求全量快照（携带本地版本号用于 WAL 回放判定） */
+export interface RequestFullSnapshotPayload {
+  /** Renderer 侧当前持有的版本号，Host 据此判断是否可通过 WAL 补发缺失 patches */
+  localVersion?: number;
+}
 
 /** UI Store 状态子集 (只同步 iframe 需要的) */
 export interface SyncUIStatePayload {

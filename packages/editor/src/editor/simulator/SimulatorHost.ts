@@ -19,6 +19,7 @@
  * @module Simulator/Host
  */
 
+import type { Patch } from "immer";
 import {
   MessageType,
   createMessage,
@@ -32,6 +33,7 @@ import {
   type SelectComponentPayload,
   type HoverComponentPayload,
   type ForwardKeyboardEventPayload,
+  type RequestFullSnapshotPayload,
 } from "./protocol";
 
 import { useComponentsStore } from "../stores/components";
@@ -47,6 +49,24 @@ export class SimulatorHost {
   // ---------- 补丁批处理 ----------
   private pendingPatches: PatchEvent[] = [];
   private flushScheduled = false;
+
+  // ---------- L5: WAL 环形缓冲 ----------
+  private static readonly WAL_CAPACITY = 50;
+  private walBuffer: SyncComponentsPatchPayload[] = [];
+
+  // ---------- L5: WAL 运行时统计 ----------
+  private walStats = {
+    hits: 0,
+    misses: 0,
+    fullSnapshots: 0,
+    depths: [] as number[],
+  };
+
+  // ---------- L5: 模拟断层（开发调试） ----------
+  private _dropNextN = 0;
+
+  // ---------- L6: 刷新策略 ----------
+  private flushStrategy: "microtask" | "raf" = "microtask";
 
   // ==================== 生命周期 ====================
 
@@ -77,6 +97,7 @@ export class SimulatorHost {
     this.messageQueue = [];
     this.pendingPatches = [];
     this.flushScheduled = false;
+    this.walBuffer = [];
   }
 
   /**
@@ -144,7 +165,7 @@ export class SimulatorHost {
         this.onForwardKeyboardEvent(payload as ForwardKeyboardEventPayload);
         break;
       case MessageType.REQUEST_FULL_SNAPSHOT:
-        this.onRequestFullSnapshot();
+        this.onRequestFullSnapshot(payload as RequestFullSnapshotPayload);
         break;
     }
   };
@@ -175,9 +196,65 @@ export class SimulatorHost {
 
   /**
    * iframe 请求全量快照（版本断层自愈）
+   *
+   * L5 WAL 回放：如果 Renderer 携带了 localVersion，
+   * 优先检查 WAL 缓冲区是否能覆盖版本差距。
+   * 能覆盖 → 补发缺失的 patches（轻量）；
+   * 不能覆盖 → 降级为全量快照。
    */
-  private onRequestFullSnapshot() {
+  private onRequestFullSnapshot(payload?: RequestFullSnapshotPayload) {
+    if (payload?.localVersion != null) {
+      const replayed = this.tryReplayFromWAL(payload.localVersion);
+      if (replayed) {
+        this.send<SyncComponentsPatchPayload>(
+          MessageType.SYNC_COMPONENTS_PATCH,
+          replayed,
+        );
+        return;
+      }
+    }
+    // 降级：全量快照
+    this.walStats.fullSnapshots++;
     this.syncFullState();
+  }
+
+  /**
+   * L5: 尝试从 WAL 环形缓冲区中找到从 fromVersion 到最新的连续 patch 链。
+   * @returns 合并后的 SyncComponentsPatchPayload，或 null（无法覆盖）
+   */
+  private tryReplayFromWAL(
+    fromVersion: number,
+  ): SyncComponentsPatchPayload | null {
+    const startIdx = this.walBuffer.findIndex(
+      (e) => e.baseVersion === fromVersion,
+    );
+    if (startIdx === -1) {
+      this.walStats.misses++;
+      return null;
+    }
+
+    const entries = this.walBuffer.slice(startIdx);
+
+    // 校验连续性：每条记录的 baseVersion 必须等于前一条的 currentVersion
+    for (let i = 1; i < entries.length; i++) {
+      if (entries[i].baseVersion !== entries[i - 1].currentVersion) {
+        this.walStats.misses++;
+        return null; // 链断裂，无法回放
+      }
+    }
+
+    // 记录命中统计
+    this.walStats.hits++;
+    this.walStats.depths.push(entries.length);
+    console.log(
+      `[WAL] ✅ 命中！回放 ${entries.length} 条补丁 (version ${fromVersion} → ${entries[entries.length - 1].currentVersion})`,
+    );
+
+    return {
+      patches: entries.flatMap((e) => e.patches),
+      baseVersion: fromVersion,
+      currentVersion: entries[entries.length - 1].currentVersion,
+    };
   }
 
   /**
@@ -291,21 +368,32 @@ export class SimulatorHost {
 
   /**
    * 收到 patchEventBus 补丁时的回调。
-   * 使用微任务（queueMicrotask）级别的批处理，
-   * 将同一个事件循环 tick 内的多个补丁合并为一条消息发送，
-   * 避免高频操作（如快速拖拽、连续修改 props）时的消息风暴。
+   * 将补丁压入队列，按当前刷新策略调度 flush。
    */
   private onPatchGenerated = (event: PatchEvent) => {
     this.pendingPatches.push(event);
-
-    if (!this.flushScheduled) {
-      this.flushScheduled = true;
-      queueMicrotask(() => this.flushPatches());
-    }
+    this.scheduleFlush();
   };
 
   /**
-   * 将所有 pending 补丁合并为一条 SYNC_COMPONENTS_PATCH 消息发出
+   * L6: 按策略调度 flush
+   * - "microtask": 微任务级（同一 tick 内合批，最低延迟）
+   * - "raf": 帧级（每个动画帧最多发一条，适合高频拖拽）
+   */
+  private scheduleFlush() {
+    if (this.flushScheduled) return;
+    this.flushScheduled = true;
+
+    if (this.flushStrategy === "raf") {
+      requestAnimationFrame(() => this.flushPatches());
+    } else {
+      queueMicrotask(() => this.flushPatches());
+    }
+  }
+
+  /**
+   * 将所有 pending 补丁合并为一条 SYNC_COMPONENTS_PATCH 消息发出。
+   * 包含 L4 补丁压缩 + L5 WAL 存储。
    */
   private flushPatches() {
     if (this.pendingPatches.length === 0) {
@@ -313,20 +401,70 @@ export class SimulatorHost {
       return;
     }
 
+    const rawPatches = this.pendingPatches.flatMap((e) => e.patches);
+
     const merged: SyncComponentsPatchPayload = {
-      patches: this.pendingPatches.flatMap((e) => e.patches),
+      // L4: 补丁压缩——同路径 replace 去重
+      patches: this.compactPatches(rawPatches),
       baseVersion: this.pendingPatches[0].baseVersion,
       currentVersion:
         this.pendingPatches[this.pendingPatches.length - 1].currentVersion,
     };
 
-    this.send<SyncComponentsPatchPayload>(
-      MessageType.SYNC_COMPONENTS_PATCH,
-      merged,
-    );
+    // L5: 存入 WAL 环形缓冲（无论是否实际发送，WAL 都要记录）
+    this.walBuffer.push(merged);
+    if (this.walBuffer.length > SimulatorHost.WAL_CAPACITY) {
+      this.walBuffer.shift();
+    }
+
+    // 开发调试：模拟版本断层——跳过发送但 WAL 已记录
+    if (this._dropNextN > 0) {
+      this._dropNextN--;
+      console.warn(
+        `[WAL] 🧪 模拟断层：丢弃 patch (v${merged.baseVersion}→v${merged.currentVersion})，剩余 ${this._dropNextN} 次`,
+      );
+    } else {
+      this.send<SyncComponentsPatchPayload>(
+        MessageType.SYNC_COMPONENTS_PATCH,
+        merged,
+      );
+    }
 
     this.pendingPatches = [];
     this.flushScheduled = false;
+  }
+
+  // ==================== L4: 补丁压缩 ====================
+
+  /**
+   * 对同路径的 replace 操作去重，只保留最终值。
+   * add/remove 操作保持原序不动（它们影响结构完整性）。
+   *
+   * 例：用户用颜色选择器快速滑动产生 3 个 replace：
+   *   [set color=#f00, set color=#0f0, set color=#00f]
+   * 压缩后：[set color=#00f]
+   */
+  private compactPatches(patches: Patch[]): Patch[] {
+    if (patches.length <= 1) return patches;
+
+    // 记录每个路径上最后出现的 replace 操作的索引
+    const lastReplaceByPath = new Map<string, number>();
+    const removableIndices = new Set<number>();
+
+    for (let i = 0; i < patches.length; i++) {
+      const patch = patches[i];
+      if (patch.op === "replace") {
+        const pathKey = patch.path.join("/");
+        const prevIndex = lastReplaceByPath.get(pathKey);
+        if (prevIndex !== undefined) {
+          removableIndices.add(prevIndex);
+        }
+        lastReplaceByPath.set(pathKey, i);
+      }
+    }
+
+    if (removableIndices.size === 0) return patches;
+    return patches.filter((_, i) => !removableIndices.has(i));
   }
 
   // ==================== Store 订阅 ====================
@@ -351,12 +489,67 @@ export class SimulatorHost {
     this.unsubscribers.push(unsubPatch, unsubUI);
   }
 
+  // ==================== 对外配置 API ====================
+
+  /**
+   * L6: 切换刷新策略
+   */
+  setFlushStrategy(strategy: "microtask" | "raf") {
+    this.flushStrategy = strategy;
+  }
+
+  /**
+   * L5: 获取 WAL 运行时统计
+   */
+  getWALStats() {
+    const { hits, misses, fullSnapshots, depths } = this.walStats;
+    return {
+      hits,
+      misses,
+      fullSnapshots,
+      depths,
+      avgDepth:
+        depths.length > 0
+          ? depths.reduce((a, b) => a + b, 0) / depths.length
+          : 0,
+      maxDepth: depths.length > 0 ? Math.max(...depths) : 0,
+      walBufferSize: this.walBuffer.length,
+    };
+  }
+
+  /**
+   * L5: 重置统计数据
+   */
+  resetWALStats() {
+    this.walStats = { hits: 0, misses: 0, fullSnapshots: 0, depths: [] };
+  }
+
+  /**
+   * 开发调试：模拟版本断层
+   * 调用后，接下来的 N 次 patch 会被故意丢弃（不发给 iframe），
+   * 但 WAL 仍然记录。等第 N+1 次 patch 正常发出时，
+   * Renderer 检测到版本不匹配 → 触发 REQUEST_FULL_SNAPSHOT → WAL 回放。
+   *
+   * 用法（浏览器控制台）：
+   *   __LOWCODE_WAL__.simulateGap(3)   // 丢弃 3 个 patch
+   *   // 然后正常操作 4 次（前 3 次被丢弃，第 4 次触发 WAL 回放）
+   *   __LOWCODE_WAL__.stats()           // 查看统计
+   */
+  simulateVersionGap(n: number) {
+    this._dropNextN = n;
+    console.log(
+      `[WAL] 🧪 将丢弃接下来 ${n} 个 patch 以模拟版本断层。请进行 ${n + 1} 次编辑操作。`,
+    );
+  }
+
   // ==================== 对外拖拽桥接 API ====================
 
   /**
    * 通知 iframe 有物料开始被拖拽
    */
   sendDragStartMetadata(data: DragStartMetadataPayload) {
+    // L6: 拖拽开始 → 切换为帧级节流，避免高频消息风暴
+    this.setFlushStrategy("raf");
     this.send<DragStartMetadataPayload>(MessageType.DRAG_START_METADATA, data);
   }
 
@@ -365,6 +558,8 @@ export class SimulatorHost {
    */
   sendDragEnd() {
     this.send(MessageType.DRAG_END, {});
+    // L6: 拖拽结束 → 切回微任务级，恢复最低延迟精确模式
+    this.setFlushStrategy("microtask");
   }
 }
 
@@ -372,3 +567,35 @@ export class SimulatorHost {
  * 全局单例
  */
 export const simulatorHost = new SimulatorHost();
+
+// ==================== 开发调试 API ====================
+if (import.meta.env.DEV) {
+  (window as any).__LOWCODE_WAL__ = {
+    /** 查看 WAL 统计 */
+    stats: () => {
+      const s = simulatorHost.getWALStats();
+      console.table({
+        "命中次数": s.hits,
+        "未命中次数": s.misses,
+        "全量快照降级": s.fullSnapshots,
+        "平均回放深度": s.avgDepth.toFixed(2),
+        "最大回放深度": s.maxDepth,
+        "当前缓冲条数": s.walBufferSize,
+      });
+      if (s.depths.length > 0) {
+        console.log("深度分布:", s.depths);
+      }
+      return s;
+    },
+    /** 模拟版本断层 */
+    simulateGap: (n: number) => simulatorHost.simulateVersionGap(n),
+    /** 重置统计 */
+    reset: () => simulatorHost.resetWALStats(),
+  };
+  console.log(
+    "[WAL Debug] 已挂载 __LOWCODE_WAL__。用法:\n" +
+      "  __LOWCODE_WAL__.simulateGap(3)  // 模拟丢弃 3 个 patch\n" +
+      "  __LOWCODE_WAL__.stats()          // 查看统计\n" +
+      "  __LOWCODE_WAL__.reset()          // 重置统计",
+  );
+}

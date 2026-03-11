@@ -149,7 +149,9 @@ export class SimulatorRenderer {
       console.warn(
         `[SimulatorRenderer] Version mismatch: local=${localVersion}, base=${payload.baseVersion}. Requesting full snapshot.`,
       );
-      this.sendToHost(MessageType.REQUEST_FULL_SNAPSHOT, {});
+      this.sendToHost(MessageType.REQUEST_FULL_SNAPSHOT, {
+        localVersion,
+      });
       return;
     }
 
