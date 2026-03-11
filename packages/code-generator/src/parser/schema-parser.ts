@@ -218,11 +218,18 @@ export class SchemaParser {
   ): IRPropValue {
     const actions: IRAction[] = value.actions
       .map((action: any) => {
-        if (action && action.type && action.config) {
+        if (action && action.type) {
+          // 归一化：如果已有 config 则直接使用，否则将 type 以外的所有字段收拢为 config
+          const config = action.config
+            ? action.config
+            : (() => {
+                const { type, ...rest } = action;
+                return rest;
+              })();
           return {
             type: "Action",
             actionType: action.type,
-            config: action.config,
+            config,
           } as IRAction;
         }
         return null;
