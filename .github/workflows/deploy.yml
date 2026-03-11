@@ -45,6 +45,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 运行测试
+      - name: Run tests
+        run: pnpm test
+
       # 生成组件元数据
       - name: Generate materials metadata
         run: pnpm --filter @lowcode/materials gen:meta
