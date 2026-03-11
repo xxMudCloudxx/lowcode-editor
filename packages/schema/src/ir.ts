@@ -1,8 +1,9 @@
 // src/code-generator/types/ir.ts
 
 /**
- * @file 中间表示 (IR) 类型定义
+ * @file 中间表示 (IR) 类型定义 & 出码元数据接口
  * @description 定义了代码生成器在解析 schema 后、生成最终代码前内部使用的数据结构。
+ *              同时定义了物料系统与出码器之间的契约接口（ComponentCodeGenMeta、IMaterialCodeGenPack）。
  */
 
 // --- 基础值类型 ---
@@ -401,4 +402,50 @@ export interface ICodeGenDescriptor {
    * @example [{ package: "@ant-design/icons", version: "^5.0.0" }]
    */
   peerDependencies?: Array<{ package: string; version: string }>;
+}
+
+// --- 出码元数据函数式接口 ---
+
+import type { IModuleBuilder } from "./module-builder";
+
+/**
+ * 组件出码元数据 — Plugin 侧消费的函数式接口
+ * @description 每个组件在出码阶段的行为被解释为三个函数：
+ * - getTagName: 根据 props 决定最终 JSX 标签名
+ * - getTransformedProps: 过滤/重命名/转换 props 为 IRPropValue 格式
+ * - getLogicFragments: （可选）程序式逃生舱，注入额外的 import / 代码片段
+ */
+export interface ComponentCodeGenMeta {
+  getTagName: (props: Record<string, any>) => string;
+  getTransformedProps: (
+    props: Record<string, any>,
+  ) => Record<string, IRPropValue>;
+  getLogicFragments?: (
+    props: Record<string, any>,
+    moduleBuilder: IModuleBuilder,
+  ) => void;
+}
+
+/**
+ * 物料出码配置包 — 物料系统与出码器之间的完整契约
+ * @description 一个物料系统（如 antd、Element Plus）通过此接口导出其全部出码知识：
+ * - descriptors: 声明式 ICodeGenDescriptor 列表
+ * - customLogic: 程序式逃生舱（ComponentCodeGenMeta）映射表
+ *
+ * 由 Editor 层作为参数传递给 code-generator，code-generator 不硬编码任何物料信息。
+ *
+ * @example
+ * const antdCodeGenPack: IMaterialCodeGenPack = {
+ *   descriptors: antdCodeGenDescriptors,
+ *   customLogic: {
+ *     Icon: iconCustomLogic,
+ *     Table: tableCustomLogic,
+ *   },
+ * };
+ */
+export interface IMaterialCodeGenPack {
+  /** 声明式出码描述符列表 */
+  descriptors: ICodeGenDescriptor[];
+  /** 程序式逃生舱映射表（组件名 → 函数式 meta） */
+  customLogic?: Record<string, ComponentCodeGenMeta>;
 }

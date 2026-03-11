@@ -11,6 +11,7 @@ import type {
   IProjectPlugin,
   IRPage,
   IPublishResult,
+  IMaterialCodeGenPack,
 } from "@lowcode/schema";
 import { ProjectBuilder } from "@lowcode/schema";
 
@@ -23,11 +24,6 @@ import { SchemaParser } from "./parser/schema-parser";
 import { downloadBlob } from "./utils/download";
 import { camelCase, upperFirst } from "lodash-es";
 import { CodeGenRegistry } from "./registry/codegen-registry";
-import {
-  iconCustomLogic,
-  tableCustomLogic,
-  formItemCustomLogic,
-} from "./registry/custom-logic";
 
 export { downloadBlob };
 
@@ -63,6 +59,12 @@ export interface IExportOptions {
    * @default 'react-vite'
    */
   solution?: string | ISolution;
+  /**
+   * 物料出码配置包
+   * @description 由 Editor 侧提供，包含当前物料系统的声明式描述符和程序式逃生舱。
+   *              若未提供则所有组件使用默认行为。
+   */
+  materialPack?: IMaterialCodeGenPack;
   /**
    * 是否跳过发布器（仅返回内存中的文件列表，用于测试）
    * @default false
@@ -149,6 +151,7 @@ export async function exportSourceCode(
 ): Promise<IExportResult> {
   const {
     solution: solutionInput = "react-vite",
+    materialPack,
     skipPublisher = false,
     projectName = "lowcode-project",
   } = options;
@@ -160,13 +163,9 @@ export async function exportSourceCode(
 
     // --- 0.5 初始化 CodeGenRegistry ---
     const registry = new CodeGenRegistry();
-    if (solution.materialDescriptors) {
-      registry.registerDescriptors(solution.materialDescriptors);
+    if (materialPack) {
+      registry.loadPack(materialPack);
     }
-    // 注册程序式逃生舱
-    registry.registerCustomLogic("Icon", iconCustomLogic);
-    registry.registerCustomLogic("Table", tableCustomLogic);
-    registry.registerCustomLogic("FormItem", formItemCustomLogic);
 
     // --- 1. Schema → IR ---
     const parser = new SchemaParser(registry);

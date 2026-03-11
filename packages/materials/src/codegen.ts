@@ -12,7 +12,7 @@
  * @module Materials/CodeGen
  */
 
-import type { ICodeGenDescriptor, ComponentProtocol } from "@lowcode/schema";
+import type { ICodeGenDescriptor, ComponentProtocol, IMaterialCodeGenPack } from "@lowcode/schema";
 
 // --- General ---
 import ButtonProtocol from "./General/Button/meta";
@@ -126,3 +126,23 @@ const allProtocols: ComponentProtocol[] = [
 export const antdCodeGenDescriptors: ICodeGenDescriptor[] = allProtocols
   .map(extractDescriptor)
   .filter((d): d is ICodeGenDescriptor => d !== null);
+
+// --- 程序式逃生舱 ---
+import {
+  iconCustomLogic,
+  tableCustomLogic,
+  formItemCustomLogic,
+} from "./custom-logic";
+
+/**
+ * antd 物料系统的完整出码配置包
+ * 包含声明式描述符 + 程序式逃生舱
+ */
+export const antdCodeGenPack: IMaterialCodeGenPack = {
+  descriptors: antdCodeGenDescriptors,
+  customLogic: {
+    Icon: iconCustomLogic,
+    Table: tableCustomLogic,
+    FormItem: formItemCustomLogic,
+  },
+};

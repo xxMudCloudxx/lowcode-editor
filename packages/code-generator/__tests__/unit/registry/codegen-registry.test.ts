@@ -34,6 +34,48 @@ describe("CodeGenRegistry — registration", () => {
 });
 
 // ============================================================
+// loadPack
+// ============================================================
+describe("CodeGenRegistry — loadPack", () => {
+  it("should register descriptors from a material pack", () => {
+    registry.loadPack({
+      descriptors: [
+        createDescriptor({ name: "Card" }),
+        createDescriptor({ name: "Modal" }),
+      ],
+    });
+
+    expect(registry.has("Card")).toBe(true);
+    expect(registry.has("Modal")).toBe(true);
+  });
+
+  it("should register customLogic from a material pack", () => {
+    registry.loadPack({
+      descriptors: [createDescriptor({ name: "Icon" })],
+      customLogic: {
+        Icon: {
+          getTagName: () => "SmileOutlined",
+          getTransformedProps: () => ({}),
+        },
+      },
+    });
+
+    expect(registry.has("Icon")).toBe(true);
+    const meta = registry.resolve("Icon");
+    expect(meta.getTagName({})).toBe("SmileOutlined");
+  });
+
+  it("should work without customLogic", () => {
+    registry.loadPack({
+      descriptors: [createDescriptor({ name: "Table", tagName: "Table" })],
+    });
+
+    const meta = registry.resolve("Table");
+    expect(meta.getTagName({})).toBe("Table");
+  });
+});
+
+// ============================================================
 // getMetadata
 // ============================================================
 describe("CodeGenRegistry — getMetadata", () => {

@@ -42,6 +42,7 @@ import { useUIStore } from "../../stores/uiStore";
 import { useHistoryStore } from "../../stores/historyStore";
 import { exportSourceCode } from "@lowcode/code-generator";
 import type { IGeneratedFile, ISchema } from "@lowcode/schema";
+import { antdCodeGenPack } from "@lowcode/materials/codegen";
 import { useState } from "react";
 import { CodePreviewDrawer } from "../CodePreviewDrawer";
 
@@ -133,6 +134,7 @@ export function Header() {
     try {
       const result = await exportSourceCode(schema as ISchema, {
         solution: solutionName,
+        materialPack: antdCodeGenPack,
         skipPublisher: true,
       });
 

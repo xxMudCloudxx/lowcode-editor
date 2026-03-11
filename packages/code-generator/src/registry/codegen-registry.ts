@@ -19,21 +19,12 @@ import type {
   IRLiteral,
   IRPropValue,
   IModuleBuilder,
+  ComponentCodeGenMeta,
+  IMaterialCodeGenPack,
 } from "@lowcode/schema";
 
-// ---- ComponentCodeGenMeta —— Plugin 侧消费的函数式接口 ----
-// (从旧 const/component-metadata.ts 迁移过来的接口定义)
-
-export interface ComponentCodeGenMeta {
-  getTagName: (props: Record<string, any>) => string;
-  getTransformedProps: (
-    props: Record<string, any>,
-  ) => Record<string, IRPropValue>;
-  getLogicFragments?: (
-    props: Record<string, any>,
-    moduleBuilder: IModuleBuilder,
-  ) => void;
-}
+// ---- ComponentCodeGenMeta —— re-export from @lowcode/schema ----
+export type { ComponentCodeGenMeta } from "@lowcode/schema";
 
 // ---- Parser 侧消费的元数据 ----
 
@@ -71,6 +62,19 @@ export class CodeGenRegistry {
    */
   registerCustomLogic(name: string, logic: ComponentCodeGenMeta): void {
     this.customLogic.set(name, logic);
+  }
+
+  /**
+   * 一次性加载完整的物料出码配置包
+   * 注册其中的声明式描述符和程序式逃生舱
+   */
+  loadPack(pack: IMaterialCodeGenPack): void {
+    this.registerDescriptors(pack.descriptors);
+    if (pack.customLogic) {
+      for (const [name, logic] of Object.entries(pack.customLogic)) {
+        this.registerCustomLogic(name, logic);
+      }
+    }
   }
 
   // ---- 消费 API ----

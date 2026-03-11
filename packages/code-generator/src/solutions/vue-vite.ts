@@ -39,7 +39,6 @@ import { vueViteTemplate } from "../templates/vue-vite-template";
 import { prettierPostProcessor } from "../postprocessor/prettier";
 import { zipPublisher } from "../publisher/zip-publisher";
 import { VueModuleBuilder } from "../utils/vue-module-builder";
-import { antdCodeGenDescriptors } from "@lowcode/materials/codegen";
 import { stateLifterPreprocessor } from "../preprocessor";
 
 // --- 组件级插件 ---
@@ -110,8 +109,6 @@ const vueSolution: ISolution = {
       fileType: "other", // .vue 文件类型标记为 "other"
     });
   },
-
-  materialDescriptors: antdCodeGenDescriptors,
 };
 
 export default vueSolution;

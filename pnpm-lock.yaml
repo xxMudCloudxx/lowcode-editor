@@ -32,9 +32,6 @@ importers:
 
   packages/code-generator:
     dependencies:
-      '@lowcode/materials':
-        specifier: workspace:*
-        version: link:../materials
       '@lowcode/schema':
         specifier: workspace:*
         version: link:../schema
@@ -193,6 +190,9 @@ importers:
       antd:
         specifier: ^5.14.0
         version: 5.29.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      lodash-es:
+        specifier: ^4.17.21
+        version: 4.17.23
       react:
         specifier: ^18.2.0
         version: 18.3.1

@@ -12,6 +12,8 @@ import type {
   IRProject,
   IRDependency,
   ICodeGenDescriptor,
+  IMaterialCodeGenPack,
+  ComponentCodeGenMeta,
 } from "@lowcode/schema";
 import { CodeGenRegistry } from "../../src/registry/codegen-registry";
 
@@ -113,9 +115,11 @@ export function createDescriptor(
 /**
  * 创建一个预注册了基础描述符的 CodeGenRegistry 实例
  * @param descriptors 自定义描述符数组，为空则注册默认的 Button + Page
+ * @param customLogic 自定义逃生舱映射表
  */
 export function createRegistry(
   descriptors?: ICodeGenDescriptor[],
+  customLogic?: Record<string, ComponentCodeGenMeta>,
 ): CodeGenRegistry {
   const registry = new CodeGenRegistry();
   const descs = descriptors ?? [
@@ -130,5 +134,32 @@ export function createRegistry(
     }),
   ];
   registry.registerDescriptors(descs);
+  if (customLogic) {
+    for (const [name, logic] of Object.entries(customLogic)) {
+      registry.registerCustomLogic(name, logic);
+    }
+  }
   return registry;
+}
+
+/**
+ * 创建一个最小的 IMaterialCodeGenPack
+ */
+export function createMaterialPack(
+  overrides: Partial<IMaterialCodeGenPack> = {},
+): IMaterialCodeGenPack {
+  return {
+    descriptors: overrides.descriptors ?? [
+      createDescriptor({ name: "Button" }),
+      createDescriptor({
+        name: "Page",
+        dependency: createDependency({
+          package: "",
+          destructuring: false,
+        }),
+        isContainer: true,
+      }),
+    ],
+    ...overrides,
+  };
 }
