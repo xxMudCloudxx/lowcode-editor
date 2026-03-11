@@ -18,15 +18,6 @@ export interface IRLiteral {
 }
 
 /**
- * 变量引用
- * @description 代表对组件作用域内变量的引用 (例如 state 变量、循环变量)。
- */
-export interface IRVariable {
-  type: "Variable";
-  name: string; // 变量名，如 'state.count', 'item'
-}
-
-/**
  * JS 表达式
  * @description 代表一个 JavaScript 表达式字符串。
  */
@@ -54,6 +45,39 @@ export interface IRAction {
   config: Record<string, any>; // 保留原始配置，由特定插件处理
 }
 
+// --- 状态提升专用类型（由 state-lifter 预处理器注入，框架无关） ---
+
+/**
+ * 页面状态引用
+ * @description 引用页面级的某个 state，由 state-lifter 注入到组件 props 中。
+ *              框架无关：React 插件翻译为 `stateName`，Vue 插件翻译为 `stateName.value`。
+ */
+export interface IRStateRef {
+  type: "StateRef";
+  stateName: string; // 引用的 state 名称，如 "visible_modal_100"
+}
+
+/**
+ * 页面状态更新器
+ * @description 描述一个"设置某个 state 为某个值"的方法，由 state-lifter 注入到 page.methods 中。
+ *              框架无关：React 插件翻译为 `set_xxx(value)`，Vue 插件翻译为 `xxx.value = value`。
+ */
+export interface IRStateUpdater {
+  type: "StateUpdater";
+  stateName: string; // 目标 state 名称
+  value: any; // 要设置的值
+}
+
+/**
+ * 页面方法引用
+ * @description 引用页面级的某个 method，由 state-lifter 注入到组件 props 或 action config 中。
+ *              框架无关：各插件直接使用 methodName 作为调用标识符。
+ */
+export interface IRMethodRef {
+  type: "MethodRef";
+  methodName: string; // 引用的方法名称，如 "handleOpen_modal_100"
+}
+
 // --- 节点与页面结构 ---
 
 /**
@@ -73,16 +97,6 @@ export interface IRDependency {
   subName?: string;
   /** 是否是主入口 (有些库需要 import 'xxx/dist/index.css') */
   main?: string | boolean;
-}
-
-/**
- * 代表一个组件的状态
- * @description 存储页面所需的状态。
- */
-
-export interface IState {
-  name: string; // 状态名, e.g., "modal_1761401141684_open"
-  initialValue: any; // 初始值, e.g., false
 }
 
 /**
@@ -130,9 +144,10 @@ export interface IRNode {
  */
 export type IRPropValue =
   | IRLiteral
-  | IRVariable
   | IRJSExpression
   | IRJSFunction
+  | IRStateRef
+  | IRMethodRef
   | IRAction[]
   | IRAction
   | IRNode // 用于处理 Slot 或 Render Props
@@ -152,16 +167,16 @@ export interface IRPage {
   /**
    * 页面级别的状态定义
    * (由 preprocessor/state-lifter 注入)
-   * e.g., { "modal_visible_123": { type: "Literal", value: false } }
+   * e.g., { "visible_modal_100": { type: "Literal", value: false } }
    */
-  states?: Record<string, IRLiteral | IRJSExpression>;
+  states?: Record<string, IRLiteral>;
 
   /**
    * 页面级别的方法定义
    * (由 preprocessor/state-lifter 注入)
-   * e.g., { "openModal_123": { type: "JSFunction", value: "..." } }
+   * e.g., { "handleOpen_modal_100": { type: "StateUpdater", stateName: "visible_modal_100", value: true } }
    */
-  methods?: Record<string, IRJSFunction>;
+  methods?: Record<string, IRStateUpdater>;
   /** 页面生命周期 (未来扩展) */
   // lifeCycles?: {
   //   componentDidMount?: IRJSFunction;

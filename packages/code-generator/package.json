@@ -21,7 +21,7 @@
   "devDependencies": {
     "@types/file-saver": "^2.0.7",
     "@types/lodash-es": "^4.17.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.11",
     "@vitest/coverage-v8": "^4.0.18",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",

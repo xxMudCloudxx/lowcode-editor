@@ -91,12 +91,6 @@ ${actionCalls}
 // ============================================================
 
 function transformExpression(value: string): string {
-  if (value.startsWith("this.state.")) {
-    return value.substring("this.state.".length);
-  }
-  if (value.startsWith("this.methods.")) {
-    return value.substring("this.methods.".length);
-  }
   return value;
 }
 
@@ -375,8 +369,10 @@ function generateSingleAttr(
       return `:${key}="${transformExpression(propValue.value)}"`;
     case "JSFunction":
       return `:${key}="${transformExpression(propValue.value)}"`;
-    case "Variable":
-      return `:${key}="${propValue.name}"`;
+    case "StateRef":
+      return `:${key}="${propValue.stateName}"`;
+    case "MethodRef":
+      return `:${key}="${propValue.methodName}"`;
     default:
       return null;
   }
@@ -417,8 +413,10 @@ function generatePropValueForTemplate(
       return transformExpression(propValue.value);
     case "JSFunction":
       return transformExpression(propValue.value);
-    case "Variable":
-      return propValue.name;
+    case "StateRef":
+      return propValue.stateName;
+    case "MethodRef":
+      return propValue.methodName;
     default:
       return undefined;
   }
@@ -459,24 +457,10 @@ const vueTemplatePlugin: IComponentPlugin = {
 
     // 2. 处理页面方法 (Methods)
     if (page.methods) {
-      for (const [methodName, jsFunction] of Object.entries(page.methods)) {
-        let funcBody = jsFunction.value;
-
-        // 将 this.setState({ xxx: yyy }) 转换为 xxx.value = yyy
-        funcBody = funcBody.replace(
-          /this\.setState\(\s*\{([^}]+)\}\s*\)/g,
-          (_match: string, stateChanges: string) => {
-            const [stateName, stateValue] = stateChanges.split(":");
-            return `${stateName.trim()}.value = ${stateValue.trim()};`;
-          },
-        );
-
-        // 移除 function() { ... } 包裹
-        funcBody = funcBody
-          .replace(/^function\s*\(\)\s*\{/, "")
-          .replace(/\s*\}$/, "");
-
-        const methodConst = `const ${methodName} = () => {\n  ${funcBody}\n};`;
+      for (const [methodName, stateUpdater] of Object.entries(page.methods)) {
+        // IRStateUpdater → Vue: const xxx = () => { stateName.value = value; };
+        const { stateName, value } = stateUpdater;
+        const methodConst = `const ${methodName} = () => {\n  ${stateName}.value = ${JSON.stringify(value)};\n};`;
         builder.addMethod(methodConst);
       }
     }

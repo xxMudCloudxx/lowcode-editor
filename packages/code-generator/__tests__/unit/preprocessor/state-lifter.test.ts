@@ -9,7 +9,7 @@ import {
   createDependency,
 } from "../../helpers/factory";
 import type { CodeGenRegistry } from "../../../src/registry/codegen-registry";
-import type { IRAction, IRJSExpression } from "@lowcode/schema";
+import type { IRAction, IRStateRef, IRMethodRef } from "@lowcode/schema";
 
 let registry: CodeGenRegistry;
 
@@ -114,16 +114,14 @@ describe("runStateLifter", () => {
     expect(resultPage.methods).toBeDefined();
     const methodKey = `handleOpen_${modalId}`;
     expect(resultPage.methods![methodKey]).toBeDefined();
-    expect(resultPage.methods![methodKey].type).toBe("JSFunction");
+    expect(resultPage.methods![methodKey].type).toBe("StateUpdater");
+    expect(resultPage.methods![methodKey].stateName).toBe(stateKey);
+    expect(resultPage.methods![methodKey].value).toBe(true);
 
-    // 3. Modal 的 visible prop 应被绑定为 JSExpression
+    // 3. Modal 的 visible prop 应被绑定为 StateRef
     const resultModal = resultPage.node.children![1];
-    expect((resultModal.props.visible as IRJSExpression).type).toBe(
-      "JSExpression",
-    );
-    expect((resultModal.props.visible as IRJSExpression).value).toContain(
-      stateKey,
-    );
+    expect((resultModal.props.visible as IRStateRef).type).toBe("StateRef");
+    expect((resultModal.props.visible as IRStateRef).stateName).toBe(stateKey);
 
     // 4. 原 action 应被替换为 callMethod
     const resultBtn = resultPage.node.children![0];
@@ -162,8 +160,9 @@ describe("runStateLifter", () => {
 
     // Modal 的 onCancel 应被自动绑定
     expect(resultModal.props.onCancel).toBeDefined();
-    expect((resultModal.props.onCancel as IRJSExpression).type).toBe(
-      "JSExpression",
+    expect((resultModal.props.onCancel as IRMethodRef).type).toBe("MethodRef");
+    expect((resultModal.props.onCancel as IRMethodRef).methodName).toBe(
+      `handleClose_${modalId}`,
     );
   });
 

@@ -10,8 +10,9 @@ import type {
   IRProject,
   IRNode,
   IRAction,
-  IRJSFunction,
-  IRJSExpression,
+  IRStateUpdater,
+  IRStateRef,
+  IRMethodRef,
   IRLiteral,
   IRPage,
 } from "@lowcode/schema";
@@ -161,19 +162,18 @@ function liftComponentMethod(
     } as IRLiteral;
   }
 
-  // 注入 Method (e.g., openModal)
+  // 注入 Method (e.g., handleOpen_modal_100) — 结构化描述"设置 state 为 value"
   page.methods[methodName] = {
-    type: "JSFunction",
-    value: `function() { this.setState({ ${stateName}: ${JSON.stringify(
-      stateValue,
-    )} }) }`,
-  } as IRJSFunction;
+    type: "StateUpdater",
+    stateName,
+    value: stateValue,
+  } as IRStateUpdater;
 
-  // 5. 绑定目标组件 Prop (visible={this.state.visible_...})
+  // 5. 绑定目标组件 Prop (visible → 引用 state)
   targetIrNode.props[statePropName] = {
-    type: "JSExpression",
-    value: `this.state.${stateName}`,
-  } as IRJSExpression;
+    type: "StateRef",
+    stateName,
+  } as IRStateRef;
 
   // 6. 自动绑定关闭方法 (onCancel, onOk)
   metadata.methods?.forEach((meta) => {
@@ -183,21 +183,21 @@ function liftComponentMethod(
       meta.eventBinding
     ) {
       const mName = `handle${upperFirst(meta.name)}_${targetComponentId}`;
-      const closeMethodName = `this.methods.${mName}`;
 
       // 确保 close method 也被创建
       if (!page.methods![mName]) {
         page.methods![mName] = {
-          type: "JSFunction",
-          value: `function() { this.setState({ ${stateName}: false }) }`,
-        } as IRJSFunction;
+          type: "StateUpdater",
+          stateName,
+          value: false,
+        } as IRStateUpdater;
       }
 
-      // 绑定到事件 (e.g., onCancel={this.methods.close_123})
+      // 绑定到事件 (e.g., onCancel → 引用 close method)
       targetIrNode.props[meta.eventBinding] = {
-        type: "JSExpression",
-        value: closeMethodName,
-      } as IRJSExpression;
+        type: "MethodRef",
+        methodName: mName,
+      } as IRMethodRef;
     }
   });
 
@@ -206,7 +206,7 @@ function liftComponentMethod(
     type: "Action",
     actionType: "callMethod",
     config: {
-      methodName: `this.methods.${methodName}`,
+      methodName,
     },
   };
 }

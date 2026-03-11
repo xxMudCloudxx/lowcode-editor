@@ -80,28 +80,10 @@ const jsxPlugin: IComponentPlugin = {
 
     // [!> 新增：处理页面方法 (Methods) <!]
     if (page.methods) {
-      for (const [methodName, jsFunction] of Object.entries(page.methods)) {
-        let funcBody = jsFunction.value;
-
-        // [!> 转换 this.setState <!]
-        // (这是一个简易版实现，只支持 this.setState({ xxx: yyy }))
-        funcBody = funcBody.replace(
-          /this\.setState\(\s*\{([^}]+)\}\s*\)/g,
-          (_match, stateChanges) => {
-            // stateChanges 是 " open_123: true "
-            const [stateName, stateValue] = stateChanges.split(":");
-            // e.g., set_open_123(true)
-            return `set_${stateName.trim()}(${stateValue.trim()})`;
-          },
-        );
-
-        // 移除 function() { ... }
-        funcBody = funcBody
-          .replace(/^function\s*\(\)\s*\{/, "")
-          .replace(/\s*\}$/, "");
-
-        // e.g., const open_123 = () => { set_open_123(true); };
-        const methodConst = `const ${methodName} = () => {\n  ${funcBody}\n};`;
+      for (const [methodName, stateUpdater] of Object.entries(page.methods)) {
+        // IRStateUpdater → React: const xxx = () => { set_stateName(value); };
+        const { stateName, value } = stateUpdater;
+        const methodConst = `const ${methodName} = () => {\n  set_${stateName}(${JSON.stringify(value)});\n};`;
         moduleBuilder.addMethod(methodConst);
       }
     }
@@ -129,16 +111,9 @@ ${childrenJsxStrings}
 export default jsxPlugin;
 
 /**
- *新增辅助函数
- * 转换 this.state.xxx 和 this.methods.xxx
+ * 辅助函数：透传 JS 表达式/函数的原始值
  */
 function transformExpression(value: string): string {
-  if (value.startsWith("this.state.")) {
-    return value.substring("this.state.".length);
-  }
-  if (value.startsWith("this.methods.")) {
-    return value.substring("this.methods.".length);
-  }
   return value;
 }
 
@@ -524,7 +499,7 @@ function generatePropValueString(
     return handlerName;
   }
 
-  // 4. (IRLiteral | IRVariable | IRJSExpression | IRJSFunction)
+  // 4. (IRLiteral | IRJSExpression | IRJSFunction | IRStateRef | IRMethodRef)
   if ("type" in propValue) {
     switch (propValue.type) {
       case "Literal":
@@ -549,8 +524,10 @@ function generatePropValueString(
         return transformExpression(propValue.value);
       case "JSFunction":
         return transformExpression(propValue.value);
-      case "Variable":
-        return propValue.name;
+      case "StateRef":
+        return propValue.stateName;
+      case "MethodRef":
+        return propValue.methodName;
 
       default:
         console.warn(

@@ -1,22 +1,17 @@
 /**
  * @file 调用页面方法的 Action 处理器（框架无关）
- * @description 将 schema 中配置的 this.methods.xxx 形式的方法调用转换为可执行的 JS 调用代码字符串。
+ * @description 将 state-lifter 注入的 callMethod action 转换为可执行的 JS 调用代码字符串。
  */
 
 import type { IActionHandler } from "./type";
 
 /**
  * 生成调用页面方法的代码字符串。
- * @param action - 当前 IRAction，`config.methodName` 通常形如 `"this.methods.xxx"`
- * @returns 去掉 `this.methods.` 前缀后的调用代码，例如 `"open_123();"`
+ * @param action - 当前 IRAction，`config.methodName` 为方法名（如 `"handleOpen_modal_100"`）
+ * @returns 方法调用代码，例如 `"handleOpen_modal_100();"`
  */
 export const callMethodHandler: IActionHandler = (action) => {
-  let callName = action.config.methodName; // "this.methods.open_123"
-
-  // 移除 "this.methods." 前缀, page 插件会处理好上下文
-  if (callName.startsWith("this.methods.")) {
-    callName = callName.substring("this.methods.".length);
-  }
+  const callName = action.config.methodName;
 
   // 返回实际的 JS 调用代码
   return `${callName}();`;
