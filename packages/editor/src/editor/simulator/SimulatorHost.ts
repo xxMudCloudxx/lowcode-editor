@@ -26,6 +26,7 @@ import {
   isLowcodeMessage,
   type MessageEnvelope,
   type SyncComponentsStatePayload,
+  type SyncComponentsStateChunkPayload,
   type SyncComponentsPatchPayload,
   type SyncUIStatePayload,
   type DragStartMetadataPayload,
@@ -53,6 +54,10 @@ export class SimulatorHost {
   // ---------- L5: WAL 环形缓冲 ----------
   private static readonly WAL_CAPACITY = 50;
   private walBuffer: SyncComponentsPatchPayload[] = [];
+
+  // ---------- 分片传输 ----------
+  private static readonly CHUNK_SIZE = 100;
+  private static _transferCounter = 0;
 
   // ---------- L5: WAL 运行时统计 ----------
   private walStats = {
@@ -176,7 +181,8 @@ export class SimulatorHost {
    * iframe 报告自己已就绪
    */
   private onReady() {
-    this.iframeReady = true;
+    // 注意：不立即设置 iframeReady = true
+    // 分片传输期间保持 false，防止新 patch 立即发送干扰未完成的快照
 
     // 清除所有排队的增量补丁——全量快照会覆盖一切
     this.messageQueue = this.messageQueue.filter(
@@ -187,11 +193,11 @@ export class SimulatorHost {
     this.pendingPatches = [];
     this.flushScheduled = false;
 
-    // 1. 首次同步完整状态
-    this.syncFullState();
-
-    // 2. 清空剩余排队消息（UI State、拖拽等）
-    this.flushQueue();
+    // 同步完整状态，完成后才启用 iframeReady
+    this.syncFullState(() => {
+      this.iframeReady = true;
+      this.flushQueue();
+    });
   }
 
   /**
@@ -216,6 +222,88 @@ export class SimulatorHost {
     // 降级：全量快照
     this.walStats.fullSnapshots++;
     this.syncFullState();
+  }
+
+  /**
+   * 同步完整的 Store 状态到 iframe。
+   * 组件数 ≤ CHUNK_SIZE 时单消息发送；
+   * 组件数 > CHUNK_SIZE 时拆分为多个 chunk，通过 setTimeout(0) 逐帧发送，
+   * 避免 structured clone 序列化阻塞主线程。
+   *
+   * @param onComplete 全部 chunk 发送完成后的回调
+   */
+  syncFullState(onComplete?: () => void) {
+    const { components, rootId, version } = useComponentsStore.getState();
+    const { curComponentId, mode } = useUIStore.getState();
+
+    const componentKeys = Object.keys(components);
+
+    if (componentKeys.length <= SimulatorHost.CHUNK_SIZE) {
+      // 小负载：单消息发送（原始行为）
+      this.postToIframe(
+        createMessage<SyncComponentsStatePayload>(
+          MessageType.SYNC_COMPONENTS_STATE,
+          { components, rootId, version },
+        ),
+      );
+      this.postToIframe(
+        createMessage<SyncUIStatePayload>(MessageType.SYNC_UI_STATE, {
+          curComponentId,
+          mode,
+        }),
+      );
+      onComplete?.();
+      return;
+    }
+
+    // 大负载：分片传输
+    const totalChunks = Math.ceil(
+      componentKeys.length / SimulatorHost.CHUNK_SIZE,
+    );
+    const transferId = `xfer_${++SimulatorHost._transferCounter}`;
+
+    const sendChunk = (index: number) => {
+      if (index >= totalChunks) {
+        // 所有 chunk 发送完毕，发送 UI 状态
+        this.postToIframe(
+          createMessage<SyncUIStatePayload>(MessageType.SYNC_UI_STATE, {
+            curComponentId,
+            mode,
+          }),
+        );
+        onComplete?.();
+        return;
+      }
+
+      const start = index * SimulatorHost.CHUNK_SIZE;
+      const chunkKeys = componentKeys.slice(
+        start,
+        start + SimulatorHost.CHUNK_SIZE,
+      );
+      const chunkComponents: Record<number, any> = {};
+      for (const key of chunkKeys) {
+        chunkComponents[Number(key)] = components[Number(key)];
+      }
+
+      this.postToIframe(
+        createMessage<SyncComponentsStateChunkPayload>(
+          MessageType.SYNC_COMPONENTS_STATE_CHUNK,
+          {
+            transferId,
+            chunkIndex: index,
+            totalChunks,
+            components: chunkComponents,
+            rootId,
+            version,
+          },
+        ),
+      );
+
+      // 让出主线程，下一帧发送下一个 chunk
+      setTimeout(() => sendChunk(index + 1), 0);
+    };
+
+    sendChunk(0);
   }
 
   /**
@@ -255,24 +343,6 @@ export class SimulatorHost {
       baseVersion: fromVersion,
       currentVersion: entries[entries.length - 1].currentVersion,
     };
-  }
-
-  /**
-   * 同步完整的 Store 状态到 iframe（附带当前 version）
-   */
-  syncFullState() {
-    const { components, rootId, version } = useComponentsStore.getState();
-    const { curComponentId, mode } = useUIStore.getState();
-
-    this.send<SyncComponentsStatePayload>(MessageType.SYNC_COMPONENTS_STATE, {
-      components,
-      rootId,
-      version,
-    });
-    this.send<SyncUIStatePayload>(MessageType.SYNC_UI_STATE, {
-      curComponentId,
-      mode,
-    });
   }
 
   /**
@@ -575,12 +645,12 @@ if (import.meta.env.DEV) {
     stats: () => {
       const s = simulatorHost.getWALStats();
       console.table({
-        "命中次数": s.hits,
-        "未命中次数": s.misses,
-        "全量快照降级": s.fullSnapshots,
-        "平均回放深度": s.avgDepth.toFixed(2),
-        "最大回放深度": s.maxDepth,
-        "当前缓冲条数": s.walBufferSize,
+        命中次数: s.hits,
+        未命中次数: s.misses,
+        全量快照降级: s.fullSnapshots,
+        平均回放深度: s.avgDepth.toFixed(2),
+        最大回放深度: s.maxDepth,
+        当前缓冲条数: s.walBufferSize,
       });
       if (s.depths.length > 0) {
         console.log("深度分布:", s.depths);

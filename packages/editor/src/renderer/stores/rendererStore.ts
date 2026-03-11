@@ -14,6 +14,7 @@
  */
 
 import { create } from "zustand";
+import { startTransition } from "react";
 import { applyPatches, type Patch } from "immer";
 import type { Component } from "@lowcode/schema";
 import type { DragStartMetadataPayload } from "../../editor/simulator/protocol";
@@ -67,21 +68,25 @@ export const useRendererStore = create<RendererStore>((set) => ({
   draggingMaterial: null,
 
   setComponentsState: (components, rootId, version) => {
-    set({ components, rootId, version });
+    startTransition(() => {
+      set({ components, rootId, version });
+    });
   },
 
   applyComponentPatches: (patches, version) => {
-    set((state) => {
-      const currentData = {
-        components: state.components,
-        rootId: state.rootId,
-      };
-      const patched = applyPatches(currentData, patches);
-      return {
-        components: patched.components,
-        rootId: patched.rootId,
-        version,
-      };
+    startTransition(() => {
+      set((state) => {
+        const currentData = {
+          components: state.components,
+          rootId: state.rootId,
+        };
+        const patched = applyPatches(currentData, patches);
+        return {
+          components: patched.components,
+          rootId: patched.rootId,
+          version,
+        };
+      });
     });
   },
 

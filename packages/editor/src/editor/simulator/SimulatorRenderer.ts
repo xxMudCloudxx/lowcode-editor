@@ -23,6 +23,7 @@ import {
   createMessage,
   isLowcodeMessage,
   type SyncComponentsStatePayload,
+  type SyncComponentsStateChunkPayload,
   type SyncComponentsPatchPayload,
   type SyncUIStatePayload,
   type DragStartMetadataPayload,
@@ -49,6 +50,11 @@ export interface RendererStoreAPI {
 
 export class SimulatorRenderer {
   private storeAPI: RendererStoreAPI | null = null;
+
+  // ---------- 分片接收缓冲 ----------
+  private _chunkBuffer: Record<number, import("@lowcode/schema").Component> = {};
+  private _currentTransferId: string | null = null;
+  private _chunksReceived = 0;
 
   // ==================== 生命周期 ====================
 
@@ -105,6 +111,11 @@ export class SimulatorRenderer {
       case MessageType.SYNC_COMPONENTS_STATE:
         this.onSyncComponentsState(payload as SyncComponentsStatePayload);
         break;
+      case MessageType.SYNC_COMPONENTS_STATE_CHUNK:
+        this.onSyncComponentsStateChunk(
+          payload as SyncComponentsStateChunkPayload,
+        );
+        break;
       case MessageType.SYNC_COMPONENTS_PATCH:
         this.onSyncComponentsPatch(payload as SyncComponentsPatchPayload);
         break;
@@ -131,6 +142,35 @@ export class SimulatorRenderer {
       payload.rootId,
       payload.version,
     );
+  }
+
+  /**
+   * 接收全量快照分片：
+   * 所有的 chunk 到齐后再应用到 store 中，防止渲染不完整状态。
+   */
+  private onSyncComponentsStateChunk(payload: SyncComponentsStateChunkPayload) {
+    if (this._currentTransferId !== payload.transferId) {
+      // 开启新一轮分片接收
+      this._chunkBuffer = {};
+      this._currentTransferId = payload.transferId;
+      this._chunksReceived = 0;
+    }
+
+    // 合并当前分片数据
+    Object.assign(this._chunkBuffer, payload.components);
+    this._chunksReceived++;
+
+    // 如果接收完整，一次性触发 Store 更新
+    if (this._chunksReceived === payload.totalChunks) {
+      this.storeAPI?.setComponentsState(
+        this._chunkBuffer,
+        payload.rootId,
+        payload.version,
+      );
+      // 清理内存
+      this._chunkBuffer = {};
+      this._currentTransferId = null;
+    }
   }
 
   /**

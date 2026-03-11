@@ -26,6 +26,8 @@ export enum MessageType {
   SYNC_UI_STATE = "SYNC_UI_STATE",
   /** 同步物料配置（仅在初始化时发送一次） */
   SYNC_COMPONENT_CONFIG = "SYNC_COMPONENT_CONFIG",
+  /** 全量快照分片（大组件树拆分传输，避免序列化阻塞主线程） */
+  SYNC_COMPONENTS_STATE_CHUNK = "SYNC_COMPONENTS_STATE_CHUNK",
   /** 从主窗口开始拖拽物料，传递 schema 元数据 */
   DRAG_START_METADATA = "DRAG_START_METADATA",
   /** 拖拽结束 */
@@ -56,6 +58,22 @@ export interface SyncComponentsStatePayload {
   components: Record<number, import("@lowcode/schema").Component>;
   rootId: number;
   /** 快照基线版本号，Renderer 以此为起点接收后续增量补丁 */
+  version: number;
+}
+
+/** 全量快照分片（大组件树拆分传输） */
+export interface SyncComponentsStateChunkPayload {
+  /** 本次传输的唯一标识，用于区分不同批次的分片 */
+  transferId: string;
+  /** 当前分片索引 (0-based) */
+  chunkIndex: number;
+  /** 总分片数 */
+  totalChunks: number;
+  /** 本分片包含的 components 子集 */
+  components: Record<number, import("@lowcode/schema").Component>;
+  /** 根节点 ID（所有分片共用） */
+  rootId: number;
+  /** 版本号（所有分片共用） */
   version: number;
 }
 
