@@ -159,30 +159,55 @@ export function useShortcutKeys() {
 
 /**
  * @description
- * 从范式化的 components Map 中构建以指定组件为根节点的树状结构，
+ * 从范式化的 components Map 中构建以指定组件为根节点的树状结构（显式栈迭代），
  * 用于剪切板（clipboard）存储。
  */
 function buildClipboardTree(
   id: number,
   components: Record<number, Component>,
 ): ComponentTree | null {
-  const node = components[id];
-  if (!node) return null;
+  const rootNode = components[id];
+  if (!rootNode) return null;
 
-  const children =
-    node.children && node.children.length > 0
-      ? (node.children
-          .map((childId) => buildClipboardTree(childId, components))
-          .filter(Boolean) as ComponentTree[])
-      : undefined;
+  // Phase 1: DFS 收集所有可达节点 ID
+  const order: number[] = [];
+  const dfsStack: number[] = [id];
+  while (dfsStack.length > 0) {
+    const curId = dfsStack.pop()!;
+    const node = components[curId];
+    if (!node) continue;
+    order.push(curId);
+    if (node.children && node.children.length > 0) {
+      for (let i = node.children.length - 1; i >= 0; i--) {
+        dfsStack.push(node.children[i]);
+      }
+    }
+  }
 
-  return {
-    id: node.id,
-    name: node.name,
-    props: node.props,
-    desc: node.desc,
-    parentId: node.parentId,
-    children,
-    styles: node.styles,
-  };
+  // Phase 2: 逆序构建树节点（叶子先就绪）
+  const treeNodeMap = new Map<number, ComponentTree>();
+  for (let i = order.length - 1; i >= 0; i--) {
+    const curId = order[i];
+    const node = components[curId];
+    if (!node) continue;
+
+    const children =
+      node.children && node.children.length > 0
+        ? (node.children
+            .map((childId) => treeNodeMap.get(childId))
+            .filter(Boolean) as ComponentTree[])
+        : undefined;
+
+    treeNodeMap.set(curId, {
+      id: node.id,
+      name: node.name,
+      props: node.props,
+      desc: node.desc,
+      parentId: node.parentId,
+      children,
+      styles: node.styles,
+    });
+  }
+
+  return treeNodeMap.get(id) ?? null;
 }

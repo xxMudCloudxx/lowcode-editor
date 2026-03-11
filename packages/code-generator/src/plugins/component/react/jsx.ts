@@ -193,8 +193,10 @@ function isIRActionArray(propValue: any): propValue is IRAction[] {
 }
 // --- JSX 生成核心逻辑 ---
 
+const MAX_JSX_DEPTH = 500;
+
 /**
- * 递归生成 JSX 字符串。
+ * 生成 JSX 字符串（带深度保护，防止深嵌套栈溢出）。
  * @param irNode - 当前要生成 JSX 的 IRNode。
  * @param moduleBuilder - 用于添加导入和方法的 ModuleBuilder 实例。
  * @param indentLevel - 当前的缩进级别。
@@ -207,6 +209,12 @@ function generateJSX(
   page: IRPage,
   registry: CodeGenRegistry,
 ): string {
+  if (indentLevel > MAX_JSX_DEPTH) {
+    console.warn(
+      `[CodeGenerator] 组件嵌套深度超过 ${MAX_JSX_DEPTH}，已截断: ${irNode.componentName}`,
+    );
+    return `${"  ".repeat(indentLevel + 2)}{/* 嵌套深度超限，已截断 */}`;
+  }
   const indent = "  ".repeat(indentLevel + 2);
 
   // 1. 获取元数据和动态标签名

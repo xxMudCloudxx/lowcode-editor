@@ -378,7 +378,7 @@ const creator: StateCreator<ComponentsStore, [["zustand/immer", never]]> = (
 });
 
 /**
- * @description 递归地从剪切板组件树中生成新的 id，并构建范式化的组件 Map
+ * @description 从剪切板组件树中生成新的 id，并构建范式化的组件 Map（显式栈迭代）
  * 返回：
  * - map: 新的 (id -> Component) 映射
  * - rootId: 新根节点的 id
@@ -389,37 +389,51 @@ function regenerateIds(tree: ComponentTree): {
 } {
   const map: Record<number, Component> = {};
 
-  const traverse = (node: ComponentTree, parentId: number | null): number => {
+  const rootId = generateUniqueId();
+  map[rootId] = {
+    id: rootId,
+    name: tree.name,
+    props: structuredClone(tree.props ?? {}),
+    desc: tree.desc ?? "",
+    parentId: null,
+    children: [],
+    styles: tree.styles ? { ...tree.styles } : undefined,
+  };
+
+  const stack: { node: ComponentTree; parentNewId: number }[] = [];
+  if (tree.children && tree.children.length > 0) {
+    for (let i = tree.children.length - 1; i >= 0; i--) {
+      stack.push({ node: tree.children[i], parentNewId: rootId });
+    }
+  }
+
+  while (stack.length > 0) {
+    const { node, parentNewId } = stack.pop()!;
     const newId = generateUniqueId();
 
-    const normalized: Component = {
+    map[newId] = {
       id: newId,
       name: node.name,
       props: structuredClone(node.props ?? {}),
       desc: node.desc ?? "",
-      parentId,
+      parentId: parentNewId,
       children: [],
       styles: node.styles ? { ...node.styles } : undefined,
     };
-
-    map[newId] = normalized;
+    map[parentNewId].children!.push(newId);
 
     if (node.children && node.children.length > 0) {
-      normalized.children = node.children.map((child) =>
-        traverse(child, newId),
-      );
+      for (let i = node.children.length - 1; i >= 0; i--) {
+        stack.push({ node: node.children[i], parentNewId: newId });
+      }
     }
-
-    return newId;
-  };
-
-  const rootId = traverse(tree, null);
+  }
 
   return { map, rootId };
 }
 
 /**
- * @description 将树状结构的组件数组转换为范式化的 Map 结构
+ * @description 将树状结构的组件数组转换为范式化的 Map 结构（显式栈迭代）
  * 通常用于：
  * - 大纲树拖拽后更新
  * - 源码面板导入 Schema
@@ -431,7 +445,21 @@ function normalizeComponentTree(tree: ComponentTree[]): {
   const map: Record<number, Component> = {};
   let rootId = INITIAL_ROOT_ID;
 
-  const traverse = (node: ComponentTree, parentId: number | null) => {
+  if (tree.length > 0) {
+    const rawRootId = tree[0].id;
+    rootId =
+      typeof rawRootId === "string"
+        ? Number.parseInt(rawRootId, 10)
+        : (rawRootId as number);
+  }
+
+  const stack: { node: ComponentTree; parentId: number | null }[] = [];
+  for (let i = tree.length - 1; i >= 0; i--) {
+    stack.push({ node: tree[i], parentId: null });
+  }
+
+  while (stack.length > 0) {
+    const { node, parentId } = stack.pop()!;
     const rawId = node.id;
     const id =
       typeof rawId === "string"
@@ -458,45 +486,55 @@ function normalizeComponentTree(tree: ComponentTree[]): {
           : (childRawId as number);
       });
 
-      node.children.forEach((child) => {
-        traverse(child, id);
-      });
+      for (let i = node.children.length - 1; i >= 0; i--) {
+        stack.push({ node: node.children[i], parentId: id });
+      }
     }
-  };
-
-  if (tree.length > 0) {
-    const rawRootId = tree[0].id;
-    rootId =
-      typeof rawRootId === "string"
-        ? Number.parseInt(rawRootId, 10)
-        : (rawRootId as number);
   }
-
-  tree.forEach((root) => traverse(root, null));
 
   return { map, rootId };
 }
 
 /**
- * @description 从范式化 Map 中构建树状结构（用于渲染或导出 Schema）
+ * @description 从范式化 Map 中构建树状结构（显式栈迭代，用于渲染或导出 Schema）
  * 返回一个根节点数组，目前通常只有一个 Page 根节点。
  */
 export function buildComponentTree(
   components: Record<number, Component>,
   rootId: number,
 ): ComponentTree[] {
-  const buildNode = (id: number): ComponentTree | null => {
+  if (!components[rootId]) return [];
+
+  // Phase 1: DFS 收集所有可达节点 ID
+  const order: number[] = [];
+  const dfsStack: number[] = [rootId];
+  while (dfsStack.length > 0) {
+    const id = dfsStack.pop()!;
     const node = components[id];
-    if (!node) return null;
+    if (!node) continue;
+    order.push(id);
+    if (node.children && node.children.length > 0) {
+      for (let i = node.children.length - 1; i >= 0; i--) {
+        dfsStack.push(node.children[i]);
+      }
+    }
+  }
+
+  // Phase 2: 逆序处理（后序），叶子节点先构建，确保子节点结果已就绪
+  const treeNodeMap = new Map<number, ComponentTree>();
+  for (let i = order.length - 1; i >= 0; i--) {
+    const id = order[i];
+    const node = components[id];
+    if (!node) continue;
 
     const children =
       node.children && node.children.length > 0
         ? (node.children
-            .map((childId) => buildNode(childId))
+            .map((childId) => treeNodeMap.get(childId))
             .filter(Boolean) as ComponentTree[])
         : undefined;
 
-    return {
+    treeNodeMap.set(id, {
       id: node.id,
       name: node.name,
       props: node.props,
@@ -504,11 +542,11 @@ export function buildComponentTree(
       parentId: node.parentId,
       children,
       styles: node.styles,
-    };
-  };
+    });
+  }
 
-  const root = buildNode(rootId);
-  return root ? [root] : [];
+  const rootTree = treeNodeMap.get(rootId);
+  return rootTree ? [rootTree] : [];
 }
 
 /**
