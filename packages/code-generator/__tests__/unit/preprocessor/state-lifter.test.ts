@@ -190,13 +190,9 @@ describe("runStateLifter", () => {
     // 不应抛异常
     const result = runStateLifter(project, registry);
 
-    // action 应被过滤掉（返回 null -> filter）
+    // action 全部被剪枝后，onClick prop 应被删除
     const resultBtn = result.pages[0].node.children![0];
-    // onClick 可能变成空数组或被移除
-    const onClick = resultBtn.props.onClick;
-    if (Array.isArray(onClick)) {
-      expect(onClick).toHaveLength(0);
-    }
+    expect(resultBtn.props.onClick).toBeUndefined();
   });
 
   it("should handle component without stateBinding gracefully", () => {
@@ -238,5 +234,9 @@ describe("runStateLifter", () => {
     // 不应抛异常
     const result = runStateLifter(project, registry);
     expect(result.pages[0].states).toBeUndefined();
+
+    // action 全部被剪枝后，onClick prop 应被删除
+    const resultBtn = result.pages[0].node.children![0];
+    expect(resultBtn.props.onClick).toBeUndefined();
   });
 });

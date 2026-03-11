@@ -65,9 +65,13 @@ function transformComponentMethods(
           })
           .filter((action): action is IRAction => !!action); // 过滤掉返回 null 的
 
-        // 4. 用转换后的 action 数组替换旧的 prop
-        irNode.props[key] =
-          newActions.length === 1 ? newActions[0] : newActions;
+        // 4. 用转换后的 action 数组替换旧的 prop（空数组则剪枝删除）
+        if (newActions.length === 0) {
+          delete irNode.props[key];
+        } else {
+          irNode.props[key] =
+            newActions.length === 1 ? newActions[0] : newActions;
+        }
       }
     }
 
