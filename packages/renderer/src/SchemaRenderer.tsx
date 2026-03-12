@@ -15,6 +15,10 @@
 import React, {
   Suspense,
   useMemo,
+  useRef,
+  useCallback,
+  useEffect,
+  useSyncExternalStore,
   createContext,
   useContext,
   type ReactElement,
@@ -32,9 +36,14 @@ import type {
 
 /**
  * 渲染上下文 — 通过 Context 避免逐层 props drilling
+ *
+ * 关键设计：`components` 不放入 Context。
+ * 而是通过 getComponent + subscribe 让每个 RenderNode 按 ID 独立订阅。
+ * 这样当 components 变更时，只有实际被修改的节点触发重渲染（Immer 保留未修改对象引用）。
  */
 interface RendererContextValue {
-  components: Record<number, Component>;
+  getComponent: (id: number) => Component | undefined;
+  subscribe: (callback: () => void) => () => void;
   componentMap: Record<string, ComponentConfig>;
   designMode: "design" | "live";
   designHooks: DesignHooks;
@@ -59,12 +68,13 @@ function useRendererContext(): RendererContextValue {
 
 /**
  * 递归渲染单节点。
- * 从 RendererContext 获取 components / componentMap / hooks 等信息，
- * 根据 designMode 走不同分支。
+ * 通过 useSyncExternalStore 按 ID 订阅自身组件数据，
+ * Immer 保留未修改对象引用 → 只有实际变更的节点重渲染。
  */
 const RenderNode: React.FC<RenderNodeProps> = React.memo(({ id }) => {
   const {
-    components,
+    getComponent,
+    subscribe,
     componentMap,
     designMode,
     designHooks,
@@ -73,7 +83,9 @@ const RenderNode: React.FC<RenderNodeProps> = React.memo(({ id }) => {
     suspenseFallback,
   } = useRendererContext();
 
-  const component = components[id];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const getSnapshot = useCallback(() => getComponent(id), [getComponent, id]);
+  const component = useSyncExternalStore(subscribe, getSnapshot);
   if (!component) return null;
 
   const config = componentMap[component.name];
@@ -191,9 +203,38 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = React.memo(
     onCompRef,
     suspenseFallback = DEFAULT_FALLBACK,
   }) => {
+    // ---- Per-node subscription pattern ----
+    // components 存入 ref（同步更新），通过 subscribe/getComponent 暴露给 RenderNode。
+    // 每个 RenderNode 通过 useSyncExternalStore 只订阅自己的 Component 对象，
+    // Immer 保留未修改对象引用 → Object.is 比较 → 只有实际变更的节点重渲染。
+
+    const componentsRef = useRef(components);
+    componentsRef.current = components;
+
+    const listenersRef = useRef(new Set<() => void>());
+
+    // components 引用变化时通知所有订阅者
+    useEffect(() => {
+      listenersRef.current.forEach((fn) => fn());
+    }, [components]);
+
+    const getComponent = useCallback(
+      (id: number) => componentsRef.current[id],
+      [],
+    );
+
+    const subscribe = useCallback((listener: () => void) => {
+      listenersRef.current.add(listener);
+      return () => {
+        listenersRef.current.delete(listener);
+      };
+    }, []);
+
+    // Context 值不包含 components → 引用稳定 → 不会击穿子树 memo
     const contextValue = useMemo<RendererContextValue>(
       () => ({
-        components,
+        getComponent,
+        subscribe,
         componentMap,
         designMode,
         designHooks,
@@ -202,7 +243,8 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = React.memo(
         suspenseFallback,
       }),
       [
-        components,
+        getComponent,
+        subscribe,
         componentMap,
         designMode,
         designHooks,

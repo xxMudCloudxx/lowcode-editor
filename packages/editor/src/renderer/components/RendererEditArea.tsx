@@ -8,13 +8,14 @@
  * 核心差异：
  * - 从 rendererStore（Slave Store）读取数据，而非 useComponentsStore
  * - 交互事件通过 SimulatorRenderer 的 postMessage 传递给 Host
- * - 独立的 DndProvider 上下文（由 RendererApp 提供）
+ * - DnD 通过 useDelegatedDnD 事件委托处理，不依赖 react-dnd
  *
  * @module Renderer/Components/RendererEditArea
  */
 
 import React, {
   useMemo,
+  useRef,
   useState,
   useCallback,
   type MouseEventHandler,
@@ -28,6 +29,7 @@ import { materials, type ComponentConfig } from "@lowcode/materials";
 import { RendererDraggableNode } from "./RendererDraggableNode";
 import { RendererHoverMask } from "./RendererHoverMask";
 import { RendererSelectedMask } from "./RendererSelectedMask";
+import { useDelegatedDnD } from "../hooks/useDelegatedDnD";
 
 // 物料配置 Map（在 iframe 内本地构建，避免依赖 Host 的 componentConfig Store）
 const componentConfigMap: Record<string, ComponentConfig> = {};
@@ -36,8 +38,16 @@ for (const m of materials) {
 }
 
 export function RendererEditArea() {
-  const { components, rootId, curComponentId } = useRendererStore();
+  // Zustand 精确选择器 — 只订阅需要的字段，避免无关字段变更触发重渲染
+  const components = useRendererStore((s) => s.components);
+  const rootId = useRendererStore((s) => s.rootId);
+  const curComponentId = useRendererStore((s) => s.curComponentId);
   const [hoverComponentId, setHoverComponentId] = useState<number>();
+  const simulatorRef = useRef<HTMLDivElement>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // 事件委托式 DnD — 替代每个节点注册独立 useDrag/useDrop
+  const isDraggingRef = useDelegatedDnD(simulatorRef);
 
   // ==================== 样式 ====================
 
@@ -74,14 +84,28 @@ export function RendererEditArea() {
    * 鼠标悬浮事件 — 直接在 iframe 内处理，不需要 postMessage
    */
   const handleMouseOver: MouseEventHandler = (e) => {
+    // 拖拽进行中时跳过 hover 更新，避免无意义的重渲染
+    if (isDraggingRef.current) return;
+
     const path = e.nativeEvent.composedPath();
+    let targetId: number | undefined;
     for (let i = 0; i < path.length; i += 1) {
       const ele = path[i] as HTMLElement;
       const componentId = ele.dataset?.componentId;
       if (componentId) {
-        setHoverComponentId(+componentId);
-        return;
+        targetId = +componentId;
+        break;
       }
+    }
+
+    // 目标未变 → 忽略
+    if (targetId === hoverComponentId) return;
+
+    clearTimeout(hoverTimerRef.current);
+    if (targetId === undefined) {
+      setHoverComponentId(undefined);
+    } else {
+      setHoverComponentId(targetId);
     }
   };
 
@@ -158,10 +182,14 @@ export function RendererEditArea() {
       style={workspaceStyle}
     >
       <div
+        ref={simulatorRef}
         className="simulator-container"
         style={simulatorStyle}
         onMouseOver={handleMouseOver}
-        onMouseLeave={() => setHoverComponentId(undefined)}
+        onMouseLeave={() => {
+          clearTimeout(hoverTimerRef.current);
+          setHoverComponentId(undefined);
+        }}
         onClickCapture={handleClickCapture}
       >
         <SchemaRenderer

@@ -5,7 +5,7 @@
  * 仅将数据源从 useComponentsStore 改为 useRendererStore。
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRendererStore } from "../stores/rendererStore";
 
@@ -29,7 +29,14 @@ export function RendererHoverMask({
     labelLeft: 0,
   });
 
-  const { components } = useRendererStore();
+  // 精确订阅单个组件，避免其他组件变更触发重渲染
+  const selector = useCallback(
+    (s: { components: Record<number, unknown> }) => s.components[componentId],
+    [componentId],
+  );
+  const curComponent = useRendererStore(selector) as
+    | (Record<string, unknown> & { desc?: string })
+    | undefined;
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
   useEffect(() => {
@@ -70,10 +77,6 @@ export function RendererHoverMask({
       labelTop,
     });
   }
-
-  const curComponent = useMemo(() => {
-    return components[componentId] ?? null;
-  }, [componentId, components]);
 
   if (!portalEl) return null;
 

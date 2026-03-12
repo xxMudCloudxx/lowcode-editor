@@ -8,7 +8,13 @@
  * - 选中状态变更通过 SimulatorRenderer.selectComponent 通知 Host
  */
 
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
 import { createPortal } from "react-dom";
 import { useRendererStore } from "../stores/rendererStore";
 import { simulatorRenderer } from "../../editor/simulator/SimulatorRenderer";
@@ -41,7 +47,9 @@ export function RendererSelectedMask({
     labelFlipToRight: false,
   });
 
-  const { components, curComponentId } = useRendererStore();
+  // 精确订阅，避免无关组件变更触发重渲染
+  const components = useRendererStore((s) => s.components);
+  const curComponentId = useRendererStore((s) => s.curComponentId);
   const [portalEl, setPortalEl] = useState<Element | null>(null);
 
   useEffect(() => {

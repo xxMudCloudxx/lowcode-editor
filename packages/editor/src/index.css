@@ -239,16 +239,9 @@ body {
    组件本身保持纯净，不包含任何编辑器特有的样式逻辑。
    ============================================================================= */
 
-/* 容器组件基础样式 - 虚线边框和最小高度 */
-.edit-area [data-component-type="Container"],
-.edit-area [data-component-type="Grid"],
-.edit-area [data-component-type="GridColumn"],
-.edit-area [data-component-type="Space"],
-.edit-area [data-component-type="List"],
-.edit-area [data-component-type="ListItem"],
-.edit-area [data-component-type="Modal"],
-.edit-area [data-component-type="Form"],
-.edit-area [data-component-type="TabPane"] {
+/* 容器组件基础样式 — 通过 data-is-container 属性自动匹配，新增容器类型无需修改 CSS
+   Page 作为根容器排除，不需要编辑指示边框 */
+.edit-area [data-is-container="true"]:not([data-component-type="Page"]) {
   min-height: 60px;
   outline: 1px dashed var(--color-neutral-300);
   outline-offset: -1px;
@@ -304,27 +297,14 @@ body {
   z-index: 999;
 }
 
-/* 容器悬浮时高亮边框（排除 Card 和 Table，上面已用 ::after 处理） */
-.edit-area [data-component-type="Container"]:hover,
-.edit-area [data-component-type="Grid"]:hover,
-.edit-area [data-component-type="GridColumn"]:hover,
-.edit-area [data-component-type="Space"]:hover,
-.edit-area [data-component-type="List"]:hover,
-.edit-area [data-component-type="Form"]:hover,
-.edit-area [data-component-type="ListItem"]:hover {
+/* 容器悬浮高亮（Card/Table 的 outline:none !important 使此规则对它们无效，由 ::after 处理） */
+.edit-area [data-is-container="true"]:not([data-component-type="Page"]):hover {
   outline-color: var(--color-accent-400);
 }
 
-/* 空容器占位提示 - 使用 :empty 伪类 */
-.edit-area [data-component-type="Container"]:empty::before,
-.edit-area [data-component-type="Grid"]:empty::before,
-.edit-area [data-component-type="GridColumn"]:empty::before,
-.edit-area [data-component-type="Form"]:empty::before,
-.edit-area [data-component-type="ListItem"]:empty::before,
-.edit-area [data-component-type="List"]:empty::before,
-.edit-area [data-component-type="Card"]:empty::before,
-.edit-area [data-component-type="Table"]:empty::before,
-.edit-area [data-component-type="Space"]:empty::before {
+/* 空容器占位提示 — 通用规则，Page 排除 */
+.edit-area
+  [data-is-container="true"]:not([data-component-type="Page"]):empty::before {
   content: "拖拽组件到这里";
   display: flex;
   justify-content: center;
@@ -337,6 +317,56 @@ body {
   background-color: var(--color-neutral-100);
   pointer-events: none;
   user-select: none;
+}
+
+/*
+ * =============================================================================
+ * 拖拽期间性能优化（千级组件场景）
+ *
+ * 核心思路：拖拽时只有组件包装器（[data-component-id]）需要响应指针事件，
+ * 组件内部 DOM（antd button/input/table 的实际标签）全部 pointer-events:none。
+ * 效果：浏览器 hit test 跳过 90%+ 的 DOM 节点 → 大幅减少 hit test、paint 开销。
+ *
+ * 原理：CSS 规范允许 pointer-events:none 的父元素的子元素设为 auto 后仍可接收事件，
+ * 所以即使 antd 中间层包装器（如 .ant-space-item）是 none，
+ * 内部的组件包装器（[data-component-id]）设为 auto 后仍然可拖拽。
+ * =============================================================================
+ */
+.edit-area .is-dragging * {
+  pointer-events: none;
+}
+.edit-area .is-dragging [data-component-id] {
+  pointer-events: auto;
+}
+
+/* 拖拽期间禁用所有 transition，消除逐帧动画开销 */
+.edit-area .is-dragging [data-component-type] {
+  transition: none !important;
+}
+
+/* 拖拽期间抑制容器 :hover 样式变化（通用选择器，新增容器无需修改）
+   不隐藏轮廓本身 — 用户需要看到容器边界来决定放置位置 */
+.edit-area .is-dragging [data-is-container="true"]:hover {
+  outline-color: var(--color-neutral-300) !important;
+}
+.edit-area .is-dragging [data-component-type="Card"]:hover::after,
+.edit-area .is-dragging [data-component-type="Table"]:hover::after {
+  border-color: var(--color-neutral-300) !important;
+}
+
+/* 拖拽期间 data-is-over 高亮必须覆盖上面的 :hover 抑制规则 */
+.edit-area .is-dragging [data-is-over="true"] {
+  outline: 2px solid var(--ant-color-primary, #1677ff) !important;
+  outline-offset: -2px !important;
+}
+.edit-area
+  .is-dragging
+  [data-component-type="Card"][data-is-over="true"]::after,
+.edit-area
+  .is-dragging
+  [data-component-type="Table"][data-is-over="true"]::after {
+  border: 2px solid var(--ant-color-primary, #1677ff) !important;
+  z-index: 999;
 }
 
 /* GridColumn 和 Space 特殊提示 */
