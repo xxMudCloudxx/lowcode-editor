@@ -58,6 +58,12 @@ jobs:
       - name: Build dependencies
         run: pnpm --filter @lowcode/schema --filter @lowcode/code-generator build
 
+      # 设置出码服务 URL（生产环境指向已部署的 codegen-server）
+      # 在 GitHub 仓库的 Settings -> Secrets and variables -> Actions 中添加
+      # CODEGEN_SERVER_URL = https://your-app.onrender.com
+      - name: Set codegen server URL
+        run: echo "CODEGEN_SERVER_URL=${{ secrets.CODEGEN_SERVER_URL }}" >> $GITHUB_ENV
+
       # 构建编辑器 (包含运行时所需的所有资源)
       - name: Build editor
         run: pnpm --filter @lowcode/editor build

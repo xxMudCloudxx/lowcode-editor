@@ -40,9 +40,7 @@ import {
 } from "../../stores/components";
 import { useUIStore } from "../../stores/uiStore";
 import { useHistoryStore } from "../../stores/historyStore";
-import { exportSourceCode } from "@lowcode/code-generator";
 import type { IGeneratedFile, ISchema } from "@lowcode/schema";
-import { antdCodeGenPack } from "@lowcode/materials/codegen";
 import { useState } from "react";
 import { CodePreviewDrawer } from "../CodePreviewDrawer";
 
@@ -132,23 +130,37 @@ export function Header() {
     }
 
     try {
-      const result = await exportSourceCode(schema as ISchema, {
-        solution: solutionName,
-        materialPack: antdCodeGenPack,
-        skipPublisher: true,
+      const response = await fetch("/api/codegen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          schema: schema as ISchema,
+          solution: solutionName,
+        }),
       });
+
+      if (!response.ok) {
+        const err = await response
+          .json()
+          .catch(() => ({ message: response.statusText }));
+        throw new Error(err.message ?? "服务端出码请求失败");
+      }
+
+      const result: {
+        success: boolean;
+        files?: IGeneratedFile[];
+        message?: string;
+      } = await response.json();
 
       if (result.success && result.files) {
         setGeneratedFiles(result.files);
-        // 如果是首次打开（Drawer 不可见），则显示 Drawer
-        // 如果是切换 Solution（Drawer 可见），则只更新 files
         setIsDrawerVisible(true);
       } else {
         console.error("出码失败:", result.message);
         alert(`出码失败: ${result.message}`);
       }
     } catch (error) {
-      console.error("执行 exportSourceCode 时发生异常", error);
+      console.error("服务端出码请求异常", error);
       alert(`出码异常: ${error}`);
     } finally {
       setIsExporting(false);

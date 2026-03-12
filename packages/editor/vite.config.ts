@@ -26,6 +26,11 @@ export default defineConfig({
       // 允许访问根目录下的 assets
       allow: ["..", "../../assets"],
     },
+    proxy: {
+      // 开发环境将出码请求代理到本地 codegen-server
+      // 生产环境通过 CODEGEN_SERVER_URL 环境变量覆盖
+      "/api/codegen": process.env.CODEGEN_SERVER_URL ?? "http://localhost:3001",
+    },
   },
   // MPA 多入口：主编辑器 + Renderer (iframe)
   build: {
