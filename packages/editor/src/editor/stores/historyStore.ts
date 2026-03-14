@@ -14,7 +14,6 @@
  */
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { applyPatches, type Patch } from "immer";
 import { patchEventBus } from "../utils/patchEventBus";
 
@@ -57,6 +56,9 @@ interface HistoryAction {
   applyRemotePatch: (patches: Patch[]) => Promise<void>;
 }
 
+const HISTORY_STORAGE_KEY = "lowcode-history";
+const MAX_HISTORY_STEPS = 50;
+
 /**
  * 延迟导入 useComponentsStore 避免循环依赖
  */
@@ -69,182 +71,188 @@ const getComponentsStore = async () => {
   return componentsStoreModule.useComponentsStore;
 };
 
+const clearLegacyHistoryStorage = () => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.removeItem(HISTORY_STORAGE_KEY);
+  } catch {
+    // Ignore storage cleanup failures to keep the history store usable.
+  }
+};
+
+clearLegacyHistoryStorage();
+
 export const useHistoryStore = create<HistoryState & HistoryAction>()(
-  persist(
-    (set, get) => ({
-      past: [],
-      future: [],
-      isApplyingPatches: false,
-      isApplyingRemotePatch: false,
+  (set, get) => ({
+    past: [],
+    future: [],
+    isApplyingPatches: false,
+    isApplyingRemotePatch: false,
 
-      setApplyingPatches: (value) => {
-        set({ isApplyingPatches: value });
-      },
-
-      setApplyingRemotePatch: (value) => {
-        set({ isApplyingRemotePatch: value });
-      },
-
-      addPatch: (patches, inversePatches) => {
-        if (get().isApplyingPatches) return;
-        if (get().isApplyingRemotePatch) return;
-        if (patches.length === 0 && inversePatches.length === 0) return;
-
-        set((state) => ({
-          past: [...state.past, { patches, inversePatches }],
-          future: [], // 新操作会清空 future
-        }));
-      },
-
-      /**
-       * 应用来自远程协同者的补丁
-       * 确保不会进入本地撤销栈
-       *
-       * @example
-       * // WebSocket 消息处理
-       * socket.on('remote_patch', (patches) => {
-       *   useHistoryStore.getState().applyRemotePatch(patches);
-       * });
-       */
-      applyRemotePatch: async (patches) => {
-        if (patches.length === 0) return;
-
-        set({ isApplyingRemotePatch: true });
-
-        try {
-          const useComponentsStore = await getComponentsStore();
-          const baseVersion = useComponentsStore.getState().version ?? 0;
-
-          useComponentsStore.setState((state) => {
-            const currentData = {
-              components: state.components,
-              rootId: state.rootId,
-            };
-            const patched = applyPatches(currentData, patches);
-            return {
-              ...state,
-              components: patched.components,
-              rootId: patched.rootId,
-              version: baseVersion + 1,
-            };
-          });
-
-          // 广播远程补丁到 iframe
-          patchEventBus.emit({
-            patches,
-            baseVersion,
-            currentVersion: baseVersion + 1,
-          });
-        } finally {
-          set({ isApplyingRemotePatch: false });
-        }
-      },
-
-      undo: async () => {
-        const { past, future } = get();
-        if (past.length === 0) return;
-
-        const lastPatchGroup = past[past.length - 1];
-        const newPast = past.slice(0, -1);
-
-        set({ isApplyingPatches: true });
-
-        try {
-          const useComponentsStore = await getComponentsStore();
-          const baseVersion = useComponentsStore.getState().version ?? 0;
-
-          useComponentsStore.setState((state) => {
-            // 只对 components 和 rootId 应用补丁
-            const currentData = {
-              components: state.components,
-              rootId: state.rootId,
-            };
-            const patched = applyPatches(
-              currentData,
-              lastPatchGroup.inversePatches,
-            );
-            return {
-              ...state,
-              components: patched.components,
-              rootId: patched.rootId,
-              version: baseVersion + 1,
-            };
-          });
-
-          // 广播 undo 产生的逆向补丁到 iframe
-          patchEventBus.emit({
-            patches: lastPatchGroup.inversePatches,
-            baseVersion,
-            currentVersion: baseVersion + 1,
-          });
-
-          // 更新历史栈
-          set({
-            past: newPast,
-            future: [lastPatchGroup, ...future],
-          });
-        } finally {
-          set({ isApplyingPatches: false });
-        }
-      },
-
-      redo: async () => {
-        const { past, future } = get();
-        if (future.length === 0) return;
-
-        const nextPatchGroup = future[0];
-        const newFuture = future.slice(1);
-
-        set({ isApplyingPatches: true });
-
-        try {
-          const useComponentsStore = await getComponentsStore();
-          const baseVersion = useComponentsStore.getState().version ?? 0;
-
-          useComponentsStore.setState((state) => {
-            const currentData = {
-              components: state.components,
-              rootId: state.rootId,
-            };
-            const patched = applyPatches(currentData, nextPatchGroup.patches);
-            return {
-              ...state,
-              components: patched.components,
-              rootId: patched.rootId,
-              version: baseVersion + 1,
-            };
-          });
-
-          // 广播 redo 产生的正向补丁到 iframe
-          patchEventBus.emit({
-            patches: nextPatchGroup.patches,
-            baseVersion,
-            currentVersion: baseVersion + 1,
-          });
-
-          set({
-            past: [...past, nextPatchGroup],
-            future: newFuture,
-          });
-        } finally {
-          set({ isApplyingPatches: false });
-        }
-      },
-
-      clear: () => {
-        set({ past: [], future: [] });
-      },
-
-      canUndo: () => get().past.length > 0,
-      canRedo: () => get().future.length > 0,
-    }),
-    {
-      name: "lowcode-history",
-      // 只持久化 past 和 future，不持久化临时标志位
-      partialize: (state) => ({
-        past: state.past,
-        future: state.future,
-      }),
+    setApplyingPatches: (value) => {
+      set({ isApplyingPatches: value });
     },
-  ),
+
+    setApplyingRemotePatch: (value) => {
+      set({ isApplyingRemotePatch: value });
+    },
+
+    addPatch: (patches, inversePatches) => {
+      if (get().isApplyingPatches) return;
+      if (get().isApplyingRemotePatch) return;
+      if (patches.length === 0 && inversePatches.length === 0) return;
+
+      set((state) => ({
+        past: [
+          ...state.past.slice(-(MAX_HISTORY_STEPS - 1)),
+          { patches, inversePatches },
+        ],
+        future: [], // 新操作会清空 future
+      }));
+    },
+
+    /**
+     * 应用来自远程协同者的补丁
+     * 确保不会进入本地撤销栈
+     *
+     * @example
+     * // WebSocket 消息处理
+     * socket.on('remote_patch', (patches) => {
+     *   useHistoryStore.getState().applyRemotePatch(patches);
+     * });
+     */
+    applyRemotePatch: async (patches) => {
+      if (patches.length === 0) return;
+
+      set({ isApplyingRemotePatch: true });
+
+      try {
+        const useComponentsStore = await getComponentsStore();
+        const baseVersion = useComponentsStore.getState().version ?? 0;
+
+        useComponentsStore.setState((state) => {
+          const currentData = {
+            components: state.components,
+            rootId: state.rootId,
+          };
+          const patched = applyPatches(currentData, patches);
+          return {
+            ...state,
+            components: patched.components,
+            rootId: patched.rootId,
+            version: baseVersion + 1,
+          };
+        });
+
+        // 广播远程补丁到 iframe
+        patchEventBus.emit({
+          patches,
+          baseVersion,
+          currentVersion: baseVersion + 1,
+        });
+      } finally {
+        set({ isApplyingRemotePatch: false });
+      }
+    },
+
+    undo: async () => {
+      const { past, future } = get();
+      if (past.length === 0) return;
+
+      const lastPatchGroup = past[past.length - 1];
+      const newPast = past.slice(0, -1);
+
+      set({ isApplyingPatches: true });
+
+      try {
+        const useComponentsStore = await getComponentsStore();
+        const baseVersion = useComponentsStore.getState().version ?? 0;
+
+        useComponentsStore.setState((state) => {
+          // 只对 components 和 rootId 应用补丁
+          const currentData = {
+            components: state.components,
+            rootId: state.rootId,
+          };
+          const patched = applyPatches(
+            currentData,
+            lastPatchGroup.inversePatches,
+          );
+          return {
+            ...state,
+            components: patched.components,
+            rootId: patched.rootId,
+            version: baseVersion + 1,
+          };
+        });
+
+        // 广播 undo 产生的逆向补丁到 iframe
+        patchEventBus.emit({
+          patches: lastPatchGroup.inversePatches,
+          baseVersion,
+          currentVersion: baseVersion + 1,
+        });
+
+        // 更新历史栈
+        set({
+          past: newPast,
+          future: [lastPatchGroup, ...future],
+        });
+      } finally {
+        set({ isApplyingPatches: false });
+      }
+    },
+
+    redo: async () => {
+      const { past, future } = get();
+      if (future.length === 0) return;
+
+      const nextPatchGroup = future[0];
+      const newFuture = future.slice(1);
+
+      set({ isApplyingPatches: true });
+
+      try {
+        const useComponentsStore = await getComponentsStore();
+        const baseVersion = useComponentsStore.getState().version ?? 0;
+
+        useComponentsStore.setState((state) => {
+          const currentData = {
+            components: state.components,
+            rootId: state.rootId,
+          };
+          const patched = applyPatches(currentData, nextPatchGroup.patches);
+          return {
+            ...state,
+            components: patched.components,
+            rootId: patched.rootId,
+            version: baseVersion + 1,
+          };
+        });
+
+        // 广播 redo 产生的正向补丁到 iframe
+        patchEventBus.emit({
+          patches: nextPatchGroup.patches,
+          baseVersion,
+          currentVersion: baseVersion + 1,
+        });
+
+        set({
+          past: [...past, nextPatchGroup],
+          future: newFuture,
+        });
+      } finally {
+        set({ isApplyingPatches: false });
+      }
+    },
+
+    clear: () => {
+      clearLegacyHistoryStorage();
+      set({ past: [], future: [] });
+    },
+
+    canUndo: () => get().past.length > 0,
+    canRedo: () => get().future.length > 0,
+  }),
 );

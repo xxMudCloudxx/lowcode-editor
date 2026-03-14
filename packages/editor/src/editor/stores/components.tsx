@@ -17,6 +17,7 @@ import { persist } from "zustand/middleware";
 import type { Component, ComponentTree } from "@lowcode/schema";
 import { useUIStore } from "./uiStore";
 import { undoMiddleware } from "./middleware/undoMiddleware";
+import { buildComponentTree } from "../utils/componentTree";
 
 /**
  * @interface State
@@ -495,59 +496,7 @@ function normalizeComponentTree(tree: ComponentTree[]): {
   return { map, rootId };
 }
 
-/**
- * @description 从范式化 Map 中构建树状结构（显式栈迭代，用于渲染或导出 Schema）
- * 返回一个根节点数组，目前通常只有一个 Page 根节点。
- */
-export function buildComponentTree(
-  components: Record<number, Component>,
-  rootId: number,
-): ComponentTree[] {
-  if (!components[rootId]) return [];
-
-  // Phase 1: DFS 收集所有可达节点 ID
-  const order: number[] = [];
-  const dfsStack: number[] = [rootId];
-  while (dfsStack.length > 0) {
-    const id = dfsStack.pop()!;
-    const node = components[id];
-    if (!node) continue;
-    order.push(id);
-    if (node.children && node.children.length > 0) {
-      for (let i = node.children.length - 1; i >= 0; i--) {
-        dfsStack.push(node.children[i]);
-      }
-    }
-  }
-
-  // Phase 2: 逆序处理（后序），叶子节点先构建，确保子节点结果已就绪
-  const treeNodeMap = new Map<number, ComponentTree>();
-  for (let i = order.length - 1; i >= 0; i--) {
-    const id = order[i];
-    const node = components[id];
-    if (!node) continue;
-
-    const children =
-      node.children && node.children.length > 0
-        ? (node.children
-            .map((childId) => treeNodeMap.get(childId))
-            .filter(Boolean) as ComponentTree[])
-        : undefined;
-
-    treeNodeMap.set(id, {
-      id: node.id,
-      name: node.name,
-      props: node.props,
-      desc: node.desc,
-      parentId: node.parentId,
-      children,
-      styles: node.styles,
-    });
-  }
-
-  const rootTree = treeNodeMap.get(rootId);
-  return rootTree ? [rootTree] : [];
-}
+export { buildComponentTree } from "../utils/componentTree";
 
 /**
  * @description 基于 Map 的 O(1) 组件查找

@@ -1,6 +1,6 @@
 import { Tree } from "antd";
 import type { TreeProps } from "antd/es/tree";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState, type Key } from "react";
 import {
   useComponentsStore,
   buildComponentTree,
@@ -8,18 +8,81 @@ import {
 import { useUIStore } from "../../../stores/uiStore";
 import { useComponentConfigStore } from "../../../stores/component-config";
 
+const OUTLINE_TREE_MIN_HEIGHT = 240;
+const OUTLINE_TREE_BOTTOM_OFFSET = 80;
+
+function areExpandedKeysEqual(
+  prevExpandedKeys: Key[],
+  nextExpandedKeys: Key[],
+) {
+  if (prevExpandedKeys.length !== nextExpandedKeys.length) {
+    return false;
+  }
+
+  return prevExpandedKeys.every((key, index) => key === nextExpandedKeys[index]);
+}
+
 /**
  * 大纲树组件，展示当前组件树结构，并支持通过拖拽调整层级。
  */
 export function Outline() {
-  const { components, rootId, moveComponentInOutline } = useComponentsStore();
-  const { setCurComponentId } = useUIStore();
-  const { componentConfig } = useComponentConfigStore();
+  const components = useComponentsStore((state) => state.components);
+  const rootId = useComponentsStore((state) => state.rootId);
+  const moveComponentInOutline = useComponentsStore(
+    (state) => state.moveComponentInOutline,
+  );
+  const setCurComponentId = useUIStore((state) => state.setCurComponentId);
+  const componentConfig = useComponentConfigStore((state) => state.componentConfig);
+  const treeViewportRef = useRef<HTMLDivElement>(null);
+  const [expandedKeys, setExpandedKeys] = useState<Key[]>([rootId]);
+  const [treeHeight, setTreeHeight] = useState(OUTLINE_TREE_MIN_HEIGHT);
 
   const treeData = useMemo(
     () => buildComponentTree(components, rootId),
-    [components, rootId]
+    [components, rootId],
   );
+
+  useEffect(() => {
+    setExpandedKeys((prevExpandedKeys) => {
+      const nextExpandedKeys = prevExpandedKeys.filter(
+        (key) => components[Number(key)] != null,
+      );
+
+      if (components[rootId] && !nextExpandedKeys.includes(rootId)) {
+        nextExpandedKeys.unshift(rootId);
+      }
+
+      return areExpandedKeysEqual(prevExpandedKeys, nextExpandedKeys)
+        ? prevExpandedKeys
+        : nextExpandedKeys;
+    });
+  }, [components, rootId]);
+
+  useEffect(() => {
+    const viewport = treeViewportRef.current;
+    if (!viewport) return;
+
+    const updateTreeHeight = (nextHeight: number) => {
+      const normalizedHeight = Math.max(
+        OUTLINE_TREE_MIN_HEIGHT,
+        Math.floor(nextHeight),
+      );
+
+      setTreeHeight((prevHeight) =>
+        prevHeight === normalizedHeight ? prevHeight : normalizedHeight,
+      );
+    };
+
+    updateTreeHeight(viewport.getBoundingClientRect().height);
+
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      updateTreeHeight(entry.contentRect.height);
+    });
+
+    resizeObserver.observe(viewport);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   /**
    * 拖拽结束时的核心处理器。
@@ -53,7 +116,7 @@ export function Outline() {
     if (!dropComponent || !dragComponent) return false;
 
     const dragParentTypes =
-      componentConfig[dragComponent.name].editor.parentTypes;
+      componentConfig[dragComponent.name]?.editor.parentTypes;
     if (!dragParentTypes) return false;
 
     // 如果 dropPosition 为 0，意味着想要拖入节点内部
@@ -71,24 +134,39 @@ export function Outline() {
   };
 
   return (
-    <div className="w-full custom-scrollbar overflow-y-auto absolute overscroll-y-contain pr-6 h-full pb-20">
-      <Tree
-        fieldNames={{ title: "desc", key: "id" }}
-        treeData={treeData as any}
-        showLine={{
-          showLeafIcon: false,
+    <div className="absolute h-full w-full pr-2">
+      <div
+        ref={treeViewportRef}
+        className="h-full w-full overflow-x-auto overflow-y-hidden custom-scrollbar overscroll-y-contain"
+        style={{
+          height: `calc(100% - ${OUTLINE_TREE_BOTTOM_OFFSET}px)`,
         }}
-        defaultExpandAll
-        defaultExpandParent
-        allowDrop={allowDrop}
-        draggable={{ icon: false }} // 开启拖拽，并隐藏默认的拖拽图标
-        onDrop={onDrop}
-        onSelect={([selectedKey]) => {
-          if (selectedKey != null) {
-            setCurComponentId(selectedKey as number);
-          }
-        }}
-      />
+      >
+        <div className="min-h-full min-w-max">
+          <Tree
+            fieldNames={{ title: "desc", key: "id" }}
+            treeData={treeData as any}
+            showLine={{
+              showLeafIcon: false,
+            }}
+            expandedKeys={expandedKeys}
+            height={treeHeight}
+            virtual
+            allowDrop={allowDrop}
+            draggable={{ icon: false }}
+            onExpand={(nextExpandedKeys) => {
+              setExpandedKeys(nextExpandedKeys);
+            }}
+            onDrop={onDrop}
+            onSelect={([selectedKey]) => {
+              if (selectedKey != null) {
+                setCurComponentId(selectedKey as number);
+              }
+            }}
+            style={{ minWidth: "max-content" }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
