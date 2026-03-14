@@ -31,20 +31,23 @@ import {
   DesktopOutlined,
   TabletOutlined,
   MobileOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 
 const { Text, Title } = Typography;
 import {
   useComponentsStore,
-  buildComponentTree,
 } from "../../stores/components";
 import { useUIStore } from "../../stores/uiStore";
 import { useHistoryStore } from "../../stores/historyStore";
-import { exportSourceCode } from "@lowcode/code-generator";
-import type { IGeneratedFile, ISchema } from "@lowcode/schema";
-import { antdCodeGenPack } from "@lowcode/materials/codegen";
-import { useState } from "react";
+import type { IGeneratedFile } from "@lowcode/schema";
+import { useEffect, useRef, useState } from "react";
 import { CodePreviewDrawer } from "../CodePreviewDrawer";
+import type { CodegenWorkerStats } from "../../workers/codegenWorkerProtocol";
+import {
+  CodegenWorkerClient,
+  isCodegenCancelledError,
+} from "../../utils/codegenWorkerClient";
 
 /**
  * @description 快捷键指南的 Popover 内容
@@ -91,6 +94,10 @@ const shortcutsContent = (
   </div>
 );
 
+interface CodegenTelemetrySnapshot extends CodegenWorkerStats {
+  totalMs: number;
+}
+
 /**
  * @description
  * 页头组件 - 三区布局
@@ -103,6 +110,10 @@ export function Header() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<IGeneratedFile[]>([]);
+  const [lastCodegenStats, setLastCodegenStats] =
+    useState<CodegenTelemetrySnapshot | null>(null);
+  const workerClientRef = useRef<CodegenWorkerClient | null>(null);
+  const latestGenerateRequestRef = useRef(0);
   const { resetComponents } = useComponentsStore();
   const {
     mode,
@@ -120,38 +131,80 @@ export function Header() {
 
   const [currentSolution, setCurrentSolution] = useState("react-vite");
 
+  useEffect(() => {
+    return () => {
+      workerClientRef.current?.dispose();
+      workerClientRef.current = null;
+    };
+  }, []);
+
+  /**
+   * 获取出码 worker client，按需延迟初始化。
+   *
+   * @returns 可复用的出码客户端。
+   */
+  const getWorkerClient = () => {
+    if (!workerClientRef.current) {
+      workerClientRef.current = new CodegenWorkerClient();
+    }
+
+    return workerClientRef.current;
+  };
+
   const generateCode = async (solutionName: string) => {
+    const currentRequestId = ++latestGenerateRequestRef.current;
+    const requestStartedAt = performance.now();
     setIsExporting(true);
     const { components, rootId } = useComponentsStore.getState();
-    const schema = buildComponentTree(components, rootId);
-
-    if (!schema || schema.length === 0) {
+    if (!components[rootId]) {
       console.error("Schema 为空，无法导出");
-      setIsExporting(false);
+      if (currentRequestId === latestGenerateRequestRef.current) {
+        setIsExporting(false);
+      }
       return;
     }
 
     try {
-      const result = await exportSourceCode(schema as ISchema, {
+      const result = await getWorkerClient().generateCode({
+        components,
+        rootId,
         solution: solutionName,
-        materialPack: antdCodeGenPack,
-        skipPublisher: true,
       });
 
-      if (result.success && result.files) {
-        setGeneratedFiles(result.files);
-        // 如果是首次打开（Drawer 不可见），则显示 Drawer
-        // 如果是切换 Solution（Drawer 可见），则只更新 files
-        setIsDrawerVisible(true);
-      } else {
-        console.error("出码失败:", result.message);
-        alert(`出码失败: ${result.message}`);
+      if (currentRequestId !== latestGenerateRequestRef.current) {
+        return;
       }
+
+      const telemetry: CodegenTelemetrySnapshot = {
+        ...result.stats,
+        totalMs: Math.round(performance.now() - requestStartedAt),
+      };
+
+      setGeneratedFiles(result.files);
+      setLastCodegenStats(telemetry);
+      console.info("[CodegenWorker]", {
+        solution: solutionName,
+        ...telemetry,
+      });
+      // 如果是首次打开（Drawer 不可见），则显示 Drawer
+      // 如果是切换 Solution（Drawer 可见），则只更新 files
+      setIsDrawerVisible(true);
     } catch (error) {
+      if (currentRequestId !== latestGenerateRequestRef.current) {
+        return;
+      }
+
+      if (isCodegenCancelledError(error)) {
+        return;
+      }
+
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("执行 exportSourceCode 时发生异常", error);
-      alert(`出码异常: ${error}`);
+      alert(`出码异常: ${errorMessage}`);
     } finally {
-      setIsExporting(false);
+      if (currentRequestId === latestGenerateRequestRef.current) {
+        setIsExporting(false);
+      }
     }
   };
 
@@ -362,14 +415,23 @@ export function Header() {
                 </Popconfirm>
               </div>
               {/* 出码 */}
-              <Button
-                onClick={handleOpenCodePreview}
-                loading={isExporting}
-                icon={<CodeOutlined />}
-                size="middle"
+              <Tooltip
+                title={
+                  lastCodegenStats
+                    ? `上次出码：总耗时 ${lastCodegenStats.totalMs}ms（Worker建树 ${lastCodegenStats.treeBuildMs}ms / Worker总耗时 ${lastCodegenStats.durationMs}ms），${lastCodegenStats.schemaNodeCount} 个节点，${lastCodegenStats.fileCount} 个文件`
+                    : isExporting
+                      ? "生成中，再次点击将取消旧请求并重新生成"
+                      : "生成源码预览"
+                }
               >
-                {isExporting ? "生成中..." : "出码"}
-              </Button>
+                <Button
+                  onClick={handleOpenCodePreview}
+                  icon={isExporting ? <LoadingOutlined spin /> : <CodeOutlined />}
+                  size="middle"
+                >
+                  {isExporting ? "重新生成" : "出码"}
+                </Button>
+              </Tooltip>
               <CodePreviewDrawer
                 visible={isDrawerVisible}
                 loading={isExporting}
