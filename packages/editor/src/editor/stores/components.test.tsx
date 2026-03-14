@@ -264,6 +264,37 @@ describe("useComponentsStore 核心 actions", () => {
     expect(pastedButton.name).toBe("Button");
     expect(pastedButton.props.text).toBe("来自剪切板");
   });
+
+  it("historyStore: 超过最大步数时应丢弃最早的历史记录", () => {
+    for (let i = 0; i < 55; i++) {
+      act(() => {
+        useComponentsStore.getState().addComponent(
+          {
+            id: 10000 + i,
+            name: "Button",
+            desc: `按钮${i}`,
+            props: { text: `按钮${i}` },
+          },
+          1
+        );
+      });
+    }
+
+    const { past, future, canUndo, canRedo } = useHistoryStore.getState();
+
+    expect(past).toHaveLength(50);
+    expect(future).toEqual([]);
+    expect(canUndo()).toBe(true);
+    expect(canRedo()).toBe(false);
+    expect(past[0].patches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          op: "add",
+          path: ["components", 10005],
+        }),
+      ])
+    );
+  });
 });
 
 describe("Preview 事件编排", () => {
