@@ -52,6 +52,7 @@ import {
   entryPlugin as vueEntryPlugin,
   packageJsonPlugin as vuePackageJsonPlugin,
   componentsPlugin as vueComponentsPlugin,
+  customJsRuntimePlugin as vueCustomJsRuntimePlugin,
 } from "../plugins/project/vue";
 
 /**
@@ -72,6 +73,7 @@ const vueSolution: ISolution = {
     { ...vueComponentsPlugin, phase: "post" as const, weight: 20 },
     { ...vueRouterPlugin, phase: "post" as const, weight: 30 },
     { ...vueEntryPlugin, phase: "post" as const, weight: 40 },
+    { ...vueCustomJsRuntimePlugin, phase: "post" as const, weight: 50 },
     { ...vuePackageJsonPlugin, phase: "post" as const, weight: 100 },
   ],
 

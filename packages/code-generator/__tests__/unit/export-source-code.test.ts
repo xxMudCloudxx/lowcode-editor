@@ -94,6 +94,20 @@ describe("exportSourceCode", () => {
                         type: "customJs",
                         code: 'ShowMessage("aaa")\nconsole.log(context.name)\n',
                       },
+                      {
+                        type: "showMessage",
+                        config: {
+                          type: "success",
+                          text: "done",
+                        },
+                      },
+                      {
+                        type: "goToLink",
+                        config: {
+                          url: "https://example.com",
+                          target: "_self",
+                        },
+                      },
                     ],
                   },
                 },
@@ -128,12 +142,98 @@ describe("exportSourceCode", () => {
     expect(indexFile?.content).toContain("onClick={handleOnClick");
     expect(indexFile?.content).not.toContain("onClick={[");
     expect(indexFile?.content).toContain("handleOpen_1773502464194();");
-    expect(indexFile?.content).toContain("const __runCustomJs = new Function(");
-    expect(indexFile?.content).toContain("'ShowMessage',");
-    expect(indexFile?.content).toContain("'context',");
-    expect(indexFile?.content).toContain("'args',");
-    expect(indexFile?.content).toContain("ShowMessage");
+    expect(indexFile?.content).toContain(
+      "import { runAction } from '../../runtime/actions';",
+    );
+    expect(indexFile?.content).toContain("runAction(");
+    expect(indexFile?.content).toContain("'customJs'");
+    expect(indexFile?.content).toContain("'showMessage'");
+    expect(indexFile?.content).toContain("'goToLink'");
     expect(indexFile?.content).toContain("props: { type: 'dashed'");
     expect(indexFile?.content).toContain("args");
+
+    const runtimeFile = result.files?.find(
+      (file) => file.filePath === "src/runtime/actions.ts",
+    );
+    expect(runtimeFile).toBeDefined();
+    expect(runtimeFile?.content).toContain("const actionRegistry");
+    expect(runtimeFile?.content).toContain("export function runAction");
+    expect(runtimeFile?.content).toContain("export function runCustomJs");
+    expect(runtimeFile?.content).toContain("export function runShowMessage");
+    expect(runtimeFile?.content).toContain("export function runGoToLink");
+    expect(runtimeFile?.content).toContain(
+      "new Function('ShowMessage', 'context', 'args', code)",
+    );
+  });
+
+  it("should inject only used runtime actions", async () => {
+    const materialPack = createMaterialPack({
+      descriptors: [
+        createDescriptor({
+          name: "Page",
+          dependency: { package: "", destructuring: false },
+          isContainer: true,
+        }),
+        createDescriptor({
+          name: "Button",
+          dependency: {
+            package: "antd",
+            version: "^5.0.0",
+            destructuring: true,
+            exportName: "Button",
+          },
+          propTransforms: {
+            rename: { text: "children" },
+          },
+        }),
+      ],
+    });
+
+    const schema = [
+      {
+        id: 1,
+        name: "Page",
+        props: {},
+        children: [
+          {
+            id: 2,
+            name: "Button",
+            props: {
+              text: "按钮",
+              onClick: {
+                actions: [
+                  {
+                    type: "showMessage",
+                    config: {
+                      type: "success",
+                      text: "only-message",
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ];
+
+    const result = await exportSourceCode(schema, {
+      solution: "react-vite",
+      materialPack,
+      skipPublisher: true,
+    });
+
+    expect(result.success).toBe(true);
+
+    const runtimeFile = result.files?.find(
+      (file) => file.filePath === "src/runtime/actions.ts",
+    );
+    expect(runtimeFile).toBeDefined();
+    expect(runtimeFile?.content).toContain("export type RuntimeActionName = 'showMessage';");
+    expect(runtimeFile?.content).toContain("export function runShowMessage");
+    expect(runtimeFile?.content).not.toContain("export function runCustomJs");
+    expect(runtimeFile?.content).not.toContain("export function runGoToLink");
+    expect(runtimeFile?.content).not.toContain("customJs:");
+    expect(runtimeFile?.content).not.toContain("goToLink:");
   });
 });

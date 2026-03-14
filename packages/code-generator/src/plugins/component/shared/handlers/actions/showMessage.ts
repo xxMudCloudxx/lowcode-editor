@@ -14,6 +14,15 @@ export function createShowMessageHandler(uiPackage: string): IActionHandler {
   return (action, moduleBuilder) => {
     moduleBuilder.addImport(
       {
+        package: "../../runtime/actions",
+        destructuring: true,
+        exportName: "runAction",
+      },
+      "runAction",
+    );
+
+    moduleBuilder.addImport(
+      {
         package: uiPackage,
         destructuring: true,
         exportName: "message",
@@ -21,8 +30,13 @@ export function createShowMessageHandler(uiPackage: string): IActionHandler {
       "message",
     );
 
-    return `message.${action.config.type || "info"}('${(
-      action.config.text || ""
-    ).replace(/'/g, "\\'")}');`;
+    return `runAction(
+      'showMessage',
+      {
+        type: ${JSON.stringify(action.config.type || "info")},
+        text: ${JSON.stringify(action.config.text || "")},
+      },
+      { message }
+    );`;
   };
 }

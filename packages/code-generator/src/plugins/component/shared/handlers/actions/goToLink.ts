@@ -10,7 +10,24 @@ import type { IActionHandler } from "./type";
  * @param action - 当前 IRAction，其中 `config.url` 为要打开的地址
  * @returns `window.open` 调用代码字符串
  */
-export const goToLinkHandler: IActionHandler = (action) => {
-  const url = JSON.stringify(action.config.url);
-  return `window.open(${url}, "_blank", "noopener,noreferrer");`;
+export const goToLinkHandler: IActionHandler = (action, moduleBuilder) => {
+  moduleBuilder.addImport(
+    {
+      package: "../../runtime/actions",
+      destructuring: true,
+      exportName: "runAction",
+    },
+    "runAction",
+  );
+
+  const url = JSON.stringify(action.config.url || "");
+  const target = JSON.stringify(action.config.target || "_blank");
+  return `runAction(
+    'goToLink',
+    {
+      url: ${url},
+      target: ${target},
+    },
+    { message }
+  );`;
 };

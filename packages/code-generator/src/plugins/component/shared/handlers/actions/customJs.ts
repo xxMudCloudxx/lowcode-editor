@@ -13,6 +13,15 @@ export function createCustomJsHandler(uiPackage: string): IActionHandler {
   return (action, moduleBuilder, context) => {
     moduleBuilder.addImport(
       {
+        package: "../../runtime/actions",
+        destructuring: true,
+        exportName: "runAction",
+      },
+      "runAction",
+    );
+
+    moduleBuilder.addImport(
+      {
         package: uiPackage,
         destructuring: true,
         exportName: "message",
@@ -24,27 +33,14 @@ export function createCustomJsHandler(uiPackage: string): IActionHandler {
     const componentName = JSON.stringify(context?.componentName || "");
     const componentPropsCode = context?.componentPropsCode || "{}";
 
-    return `(() => {
-      try {
-        const __runCustomJs = new Function('ShowMessage', 'context', 'args', ${code});
-        return __runCustomJs(
-          (content, type = 'success') => {
-            const __messageType =
-              typeof type === 'string' && typeof message[type] === 'function'
-                ? type
-                : 'info';
-            const __content = typeof content === 'string' ? content : String(content ?? '');
-            return message[__messageType](__content);
-          },
-          { name: ${componentName}, props: ${componentPropsCode} },
-          args
-        );
-      } catch (error) {
-        const __errorMessage =
-          error instanceof Error ? error.message : String(error ?? 'Unknown error');
-        console.error('[customJs] execute failed:', error);
-        message.error(__errorMessage);
-      }
-    })();`;
+    return `runAction(
+      'customJs',
+      {
+        code: ${code},
+        context: { name: ${componentName}, props: ${componentPropsCode} },
+        args,
+      },
+      { message }
+    );`;
   };
 }

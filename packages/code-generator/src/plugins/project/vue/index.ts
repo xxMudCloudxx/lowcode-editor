@@ -8,6 +8,7 @@ import routerPlugin from "./router";
 import entryPlugin from "./entry";
 import packageJsonPlugin from "./package-json";
 import componentsPlugin from "./components";
+import customJsRuntimePlugin from "./custom-js-runtime";
 
 export const projectPlugins = [
   globalStylePlugin,
@@ -15,6 +16,7 @@ export const projectPlugins = [
   entryPlugin,
   packageJsonPlugin,
   componentsPlugin,
+  customJsRuntimePlugin,
 ];
 
 export {
@@ -23,4 +25,5 @@ export {
   entryPlugin,
   packageJsonPlugin,
   componentsPlugin,
+  customJsRuntimePlugin,
 };

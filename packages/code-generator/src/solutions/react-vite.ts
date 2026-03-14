@@ -20,6 +20,7 @@ import {
   entryPlugin,
   packageJsonPlugin,
   componentsPlugin,
+  customJsRuntimePlugin,
 } from "../plugins/project/react";
 
 /**
@@ -47,6 +48,7 @@ const reactViteSolution: ISolution = {
     { ...componentsPlugin, phase: "post" as const, weight: 20 },
     { ...routerPlugin, phase: "post" as const, weight: 30 },
     { ...entryPlugin, phase: "post" as const, weight: 40 },
+    { ...customJsRuntimePlugin, phase: "post" as const, weight: 50 },
     { ...packageJsonPlugin, phase: "post" as const, weight: 100 }, // package.json 最后生成，以收集所有依赖
   ],
 
