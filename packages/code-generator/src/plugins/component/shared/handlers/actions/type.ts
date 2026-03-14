@@ -5,6 +5,11 @@
 
 import type { IModuleBuilder, IRAction } from "@lowcode/schema";
 
+export interface IActionHandlerContext {
+  componentName?: string;
+  componentPropsCode?: string;
+}
+
 /**
  * Action 处理器接口
  * @param action - 当前处理的 IRAction
@@ -12,5 +17,9 @@ import type { IModuleBuilder, IRAction } from "@lowcode/schema";
  * @returns 返回生成的单行可执行代码, e.g., "message.info('hello')"
  */
 export interface IActionHandler {
-  (action: IRAction, moduleBuilder: IModuleBuilder): string;
+  (
+    action: IRAction,
+    moduleBuilder: IModuleBuilder,
+    context?: IActionHandlerContext,
+  ): string;
 }

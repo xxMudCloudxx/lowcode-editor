@@ -13,8 +13,9 @@ import { createShowMessageHandler } from "./showMessage";
 import { defaultActionHandler } from "./default";
 import { goToLinkHandler } from "./goToLink";
 import { callMethodHandler } from "./callMethod";
+import { createCustomJsHandler } from "./customJs";
 
-export type { IActionHandler } from "./type";
+export type { IActionHandler, IActionHandlerContext } from "./type";
 
 /**
  * 创建 Action 处理器注册表
@@ -24,6 +25,7 @@ export type { IActionHandler } from "./type";
 export function createActionHandlerRegistry(uiPackage: string) {
   const actionHandlers: Record<string, IActionHandler> = {
     showMessage: createShowMessageHandler(uiPackage),
+    customJs: createCustomJsHandler(uiPackage),
     goToLink: goToLinkHandler,
     callMethod: callMethodHandler,
     // --- 扩展点 ---

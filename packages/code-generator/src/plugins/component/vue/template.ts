@@ -23,6 +23,8 @@ import { camelCase, upperFirst, uniqueId } from "lodash-es";
 import { createActionHandlerRegistry } from "../shared/handlers/actions";
 import type { CodeGenRegistry } from "../../../registry/codegen-registry";
 import type { VueModuleBuilder } from "../../../utils/vue-module-builder";
+import type { IActionHandlerContext } from "../shared/handlers/actions";
+import { buildActionHandlerContext } from "../shared/action-handler-context";
 
 const getVueActionHandler = createActionHandlerRegistry("ant-design-vue");
 
@@ -33,9 +35,10 @@ const getVueActionHandler = createActionHandlerRegistry("ant-design-vue");
 function generateActionCallString(
   action: IRAction,
   moduleBuilder: VueModuleBuilder,
+  actionContext?: IActionHandlerContext,
 ): string {
   const handler = getVueActionHandler(action.actionType);
-  return handler(action, moduleBuilder);
+  return handler(action, moduleBuilder, actionContext);
 }
 
 function isIRActionArray(propValue: any): propValue is IRAction[] {
@@ -52,14 +55,19 @@ function isIRActionArray(propValue: any): propValue is IRAction[] {
 function generateSingleActionMethod(
   action: IRAction,
   moduleBuilder: VueModuleBuilder,
+  actionContext?: IActionHandlerContext,
 ): { handlerName: string; methodBody: string } {
   const handlerName = `handle${upperFirst(
     camelCase(action.actionType || "action"),
   )}${action.config.componentId || uniqueId("Action")}`;
 
-  const actionCall = generateActionCallString(action, moduleBuilder);
+  const actionCall = generateActionCallString(
+    action,
+    moduleBuilder,
+    actionContext,
+  );
 
-  const methodBody = `const ${handlerName} = () => {
+  const methodBody = `const ${handlerName} = (...args: any[]) => {
   ${actionCall}
 };`;
 
@@ -69,17 +77,22 @@ function generateSingleActionMethod(
 function generateMultiActionMethod(
   actions: IRAction[],
   moduleBuilder: VueModuleBuilder,
+  actionContext?: IActionHandlerContext,
 ): { handlerName: string; methodBody: string } {
   const handlerName = `handleOnClick${uniqueId("Actions")}`;
 
   const actionCalls = actions
     .map((action) => {
-      const callString = generateActionCallString(action, moduleBuilder);
+      const callString = generateActionCallString(
+        action,
+        moduleBuilder,
+        actionContext,
+      );
       return `  // Action: ${action.actionType}\n  ${callString}`;
     })
     .join("\n");
 
-  const methodBody = `const ${handlerName} = () => {
+  const methodBody = `const ${handlerName} = (...args: any[]) => {
 ${actionCalls}
 };`;
 
@@ -139,6 +152,9 @@ function generateVueTemplate(
     className: classNamePropValue,
     ...restOfProps
   } = jsxProps;
+  const actionContext = buildActionHandlerContext(irNode, {
+    serializeStateRef: (stateName) => `${stateName}.value`,
+  });
 
   // 4. 处理 CSS 类名
   const cssClassName = irNode.css ? irNode.css : null;
@@ -149,6 +165,7 @@ function generateVueTemplate(
     moduleBuilder,
     indentLevel + 1,
     page,
+    actionContext,
   );
 
   // 6. 处理 class 属性
@@ -272,6 +289,7 @@ function generateVueAttrsString(
   moduleBuilder: VueModuleBuilder,
   indentLevel: number,
   page: IRPage,
+  actionContext?: IActionHandlerContext,
 ): string {
   const attrStrings: string[] = [];
 
@@ -285,6 +303,7 @@ function generateVueAttrsString(
       const { handlerName, methodBody } = generateMultiActionMethod(
         propValue,
         moduleBuilder,
+        actionContext,
       );
       moduleBuilder.addMethod(methodBody);
       // 将 onClick → @click，onMouseEnter → @mouseenter 等
@@ -303,6 +322,7 @@ function generateVueAttrsString(
       const { handlerName, methodBody } = generateSingleActionMethod(
         propValue as IRAction,
         moduleBuilder,
+        actionContext,
       );
       moduleBuilder.addMethod(methodBody);
       const eventName = convertEventName(key);

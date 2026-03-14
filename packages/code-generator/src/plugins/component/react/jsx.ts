@@ -17,6 +17,8 @@ import type {
 import { camelCase, upperFirst, uniqueId } from "lodash-es";
 import { createActionHandlerRegistry } from "../shared/handlers/actions";
 import type { CodeGenRegistry } from "../../../registry/codegen-registry";
+import type { IActionHandlerContext } from "../shared/handlers/actions";
+import { buildActionHandlerContext } from "../shared/action-handler-context";
 
 const getActionHandler = createActionHandlerRegistry("antd");
 
@@ -29,12 +31,13 @@ const getActionHandler = createActionHandlerRegistry("antd");
 function generateActionCallString(
   action: IRAction,
   moduleBuilder: IModuleBuilder,
+  actionContext?: IActionHandlerContext,
 ): string {
   // 1. 获取处理器
   const handler = getActionHandler(action.actionType);
 
   // 2. 执行处理器
-  return handler(action, moduleBuilder);
+  return handler(action, moduleBuilder, actionContext);
 }
 
 /**
@@ -122,20 +125,25 @@ function transformExpression(value: string): string {
 function generateSingleActionMethod(
   action: IRAction,
   moduleBuilder: IModuleBuilder,
+  actionContext?: IActionHandlerContext,
 ): { handlerName: string; methodBody: string } {
   const handlerName = `handle${upperFirst(
     camelCase(action.actionType || "action"),
   )}${action.config.componentId || uniqueId("Action")}`;
 
   // 步骤 2：调用新函数
-  const actionCall = generateActionCallString(action, moduleBuilder);
+  const actionCall = generateActionCallString(
+    action,
+    moduleBuilder,
+    actionContext,
+  );
 
   const methodBody = `
   /**
    * 动作: ${action.actionType}
    * Config: ${JSON.stringify(action.config)}
    */
-  const ${handlerName} = () => {
+  const ${handlerName} = (...args: any[]) => {
     ${actionCall}
   };`;
 
@@ -151,6 +159,7 @@ function generateSingleActionMethod(
 function generateMultiActionMethod(
   actions: IRAction[],
   moduleBuilder: IModuleBuilder,
+  actionContext?: IActionHandlerContext,
 ): { handlerName: string; methodBody: string } {
   // 步骤 3：实现多事件处理
   const handlerName = `handleOnClick${uniqueId("Actions")}`;
@@ -159,7 +168,11 @@ function generateMultiActionMethod(
   const actionCalls = actions
     .map((action) => {
       // 复用 generateActionCallString
-      const callString = generateActionCallString(action, moduleBuilder);
+      const callString = generateActionCallString(
+        action,
+        moduleBuilder,
+        actionContext,
+      );
       // 添加注释
       return `
     // Action: ${action.actionType}
@@ -171,7 +184,7 @@ function generateMultiActionMethod(
   /**
    * 处理多个动作
    */
-  const ${handlerName} = () => {
+  const ${handlerName} = (...args: any[]) => {
     ${actionCalls}
   };`;
 
@@ -236,6 +249,9 @@ function generateJSX(
     className: classNamePropValue,
     ...restOfProps // <--- 这是已清理过的 props (e.g., 不含 'spin' 或 'type')
   } = jsxProps;
+  const actionContext = buildActionHandlerContext(irNode, {
+    serializeStateRef: (stateName) => stateName,
+  });
 
   const cssClassName = irNode.css ? `\${styles.${irNode.css}}` : null;
 
@@ -246,6 +262,7 @@ function generateJSX(
     indentLevel + 1,
     page,
     registry,
+    actionContext,
   );
 
   // 6. 处理 Children
@@ -272,6 +289,7 @@ function generateJSX(
           moduleBuilder,
           page,
           registry,
+          actionContext,
         );
         if (childValueString !== undefined) {
           childrenString = `${indent}  {${childValueString}}`;
@@ -292,6 +310,7 @@ function generateJSX(
           moduleBuilder,
           page,
           registry,
+          actionContext,
         );
         if (childValueString !== undefined) {
           childrenString = `${indent}  {${childValueString}}`;
@@ -340,6 +359,7 @@ function generateJSX(
             moduleBuilder,
             page,
             registry,
+            actionContext,
           );
           if (classNameValue !== undefined) {
             classList.push(`\${${classNameValue}}`); // 动态变量
@@ -392,6 +412,7 @@ function generatePropsString(
   indentLevel: number,
   page: IRPage,
   registry: CodeGenRegistry,
+  actionContext?: IActionHandlerContext,
 ): string {
   const propStrings: string[] = [];
   const multiLineIndent = "  ".repeat(indentLevel + 1);
@@ -409,6 +430,7 @@ function generatePropsString(
       moduleBuilder,
       page,
       registry,
+      actionContext,
     );
 
     if (propStringValue !== undefined) {
@@ -460,12 +482,14 @@ function generatePropValueString(
   moduleBuilder: IModuleBuilder,
   page: IRPage,
   registry: CodeGenRegistry,
+  actionContext?: IActionHandlerContext,
 ): string | undefined {
   // 1. IRAction[]
   if (isIRActionArray(propValue)) {
     const { handlerName, methodBody } = generateMultiActionMethod(
       propValue,
       moduleBuilder,
+      actionContext,
     );
     moduleBuilder.addMethod(methodBody);
     return handlerName;
@@ -502,6 +526,7 @@ function generatePropValueString(
     const { handlerName, methodBody } = generateSingleActionMethod(
       propValue,
       moduleBuilder,
+      actionContext,
     );
     moduleBuilder.addMethod(methodBody);
     return handlerName;

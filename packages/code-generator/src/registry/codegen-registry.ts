@@ -280,7 +280,7 @@ export class CodeGenRegistry {
 
     for (const key in props) {
       const value = props[key];
-      if (typeof value === "object" && value !== null && "type" in value) {
+      if (this.isIRPropValue(value)) {
         // 已经是 IRPropValue
         irProps[key] = value;
       } else {
@@ -290,6 +290,24 @@ export class CodeGenRegistry {
     }
 
     return irProps;
+  }
+
+  private isIRPropValue(value: unknown): value is IRPropValue {
+    if (Array.isArray(value)) {
+      if (value.length === 0) return false;
+      const first = value[0];
+      return (
+        typeof first === "object" &&
+        first !== null &&
+        ("type" in first || "componentName" in first)
+      );
+    }
+
+    return (
+      typeof value === "object" &&
+      value !== null &&
+      ("type" in value || "componentName" in value)
+    );
   }
 
   /**
