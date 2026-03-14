@@ -148,20 +148,48 @@ describe("CodegenWorkerClient", () => {
     client.dispose();
   });
 
-  it("应在 worker 运行时错误时拒绝挂起请求", async () => {
-    const worker = new MockCodegenWorker();
-    const client = new CodegenWorkerClient(() => worker);
+  it("应在 worker 运行时错误后等待下一次请求再重建 worker", async () => {
+    const firstWorker = new MockCodegenWorker();
+    const secondWorker = new MockCodegenWorker();
+    let createCount = 0;
+    const client = new CodegenWorkerClient(() => {
+      createCount += 1;
+      return createCount === 1 ? firstWorker : secondWorker;
+    });
 
-    const promise = client.generateCode({
+    const firstPromise = client.generateCode({
       components: defaultComponents,
       rootId: 1,
       solution: "react-vite",
     });
 
-    worker.emitError("worker 崩溃");
+    firstWorker.emitError("worker 崩溃");
 
-    await expect(promise).rejects.toThrow("worker 崩溃");
-    expect(worker.terminated).toBe(true);
+    await expect(firstPromise).rejects.toThrow("worker 崩溃");
+    expect(firstWorker.terminated).toBe(true);
+    expect(createCount).toBe(1);
+
+    const secondPromise = client.generateCode({
+      components: defaultComponents,
+      rootId: 1,
+      solution: "react-vite",
+    });
+
+    expect(createCount).toBe(2);
+    expect(secondWorker.lastMessage?.type).toBe("generate");
+
+    secondWorker.emitMessage({
+      type: "result",
+      requestId: secondWorker.lastMessage!.requestId,
+      success: true,
+      files: [],
+      stats: { ...defaultStats, fileCount: 0 },
+    });
+
+    await expect(secondPromise).resolves.toEqual({
+      files: [],
+      stats: { ...defaultStats, fileCount: 0 },
+    });
     client.dispose();
   });
 });

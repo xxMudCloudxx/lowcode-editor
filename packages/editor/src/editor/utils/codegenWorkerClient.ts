@@ -86,7 +86,7 @@ function toError(error: unknown): Error {
  * 主线程的出码 worker 客户端。
  */
 export class CodegenWorkerClient {
-  private worker: CodegenWorkerLike;
+  private worker: CodegenWorkerLike | null;
   private readonly pendingRequests = new Map<number, PendingRequest>();
   private requestId = 0;
 
@@ -109,12 +109,14 @@ export class CodegenWorkerClient {
     const requestId = ++this.requestId;
 
     if (this.pendingRequests.size > 0) {
-      this.replaceWorker(new CodegenCancelledError());
+      this.restartWorker(new CodegenCancelledError());
     }
+
+    const worker = this.ensureWorker();
 
     return new Promise<GenerateCodeWithWorkerResult>((resolve, reject) => {
       this.pendingRequests.set(requestId, { resolve, reject });
-      this.worker.postMessage({
+      worker.postMessage({
         type: "generate",
         requestId,
         payload,
@@ -126,9 +128,7 @@ export class CodegenWorkerClient {
    * 销毁 worker，并拒绝所有未完成请求。
    */
   dispose() {
-    this.worker.onmessage = null;
-    this.worker.onerror = null;
-    this.worker.terminate();
+    this.disposeWorker();
     this.rejectAll(new CodegenCancelledError("出码 worker 已销毁"));
   }
 
@@ -165,7 +165,8 @@ export class CodegenWorkerClient {
    */
   private handleError = (event: ErrorEvent) => {
     const error = new Error(event.message || "出码 worker 执行失败");
-    this.replaceWorker(error);
+    this.disposeWorker();
+    this.rejectAll(error);
   };
 
   /**
@@ -181,20 +182,41 @@ export class CodegenWorkerClient {
   }
 
   /**
-   * 替换当前 worker，并按需拒绝挂起请求。
+   * 确保当前存在可用 worker。
+   *
+   * @returns 可用 worker 实例。
+   */
+  private ensureWorker(): CodegenWorkerLike {
+    if (!this.worker) {
+      this.worker = this.createAndBindWorker();
+    }
+
+    return this.worker;
+  }
+
+  /**
+   * 取消挂起请求并为后续请求重启 worker。
    *
    * @param error 需要通知给挂起请求的错误。
    */
-  private replaceWorker(error?: Error) {
+  private restartWorker(error: Error) {
+    this.disposeWorker();
+    this.rejectAll(error);
+    this.worker = this.createAndBindWorker();
+  }
+
+  /**
+   * 销毁当前 worker，但不自动重建。
+   */
+  private disposeWorker() {
+    if (!this.worker) {
+      return;
+    }
+
     this.worker.onmessage = null;
     this.worker.onerror = null;
     this.worker.terminate();
-
-    if (error) {
-      this.rejectAll(error);
-    }
-
-    this.worker = this.createAndBindWorker();
+    this.worker = null;
   }
 
   /**
