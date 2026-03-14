@@ -82,7 +82,7 @@ describe("CodegenWorkerClient", () => {
       stats: defaultStats,
     });
 
-    await expect(promise).resolves.toEqual<GenerateCodeWithWorkerResult>({
+    await expect(promise).resolves.toEqual({
       files,
       stats: defaultStats,
     });
@@ -141,7 +141,7 @@ describe("CodegenWorkerClient", () => {
       stats: { ...defaultStats, fileCount: 0 },
     });
 
-    await expect(secondPromise).resolves.toEqual<GenerateCodeWithWorkerResult>({
+    await expect(secondPromise).resolves.toEqual({
       files: [],
       stats: { ...defaultStats, fileCount: 0 },
     });
