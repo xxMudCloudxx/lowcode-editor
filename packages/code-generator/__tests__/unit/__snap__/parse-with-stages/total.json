@@ -17,7 +17,7 @@
   ],
   "overview": {
     "totalStages": 13,
-    "finalFileCount": 17,
+    "finalFileCount": 16,
     "pageNames": [
       "index"
     ]
@@ -63,14 +63,8 @@
       {
         "fileName": "Index.tsx",
         "filePath": "src/pages/Index/Index.tsx",
-        "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
+        "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
         "fileType": "tsx"
-      },
-      {
-        "fileName": "Index.module.scss",
-        "filePath": "src/pages/Index/Index.module.scss",
-        "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-        "fileType": "scss"
       },
       {
         "fileName": "global.scss",
@@ -118,7 +112,7 @@
         "fileName": "actions.ts",
         "filePath": "src/runtime/actions.ts",
         "fileType": "ts",
-        "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
+        "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport interface RunGoToLinkOptions {\n  url?: string;\n  target?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'goToLink' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  goToLink: RunGoToLinkOptions;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runGoToLink({\n  url,\n  target = '_blank',\n}: RunGoToLinkOptions) {\n  if (!url) {\n    return undefined;\n  }\n\n  return window.open(url, target, 'noopener,noreferrer');\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  goToLink: (payload) => runGoToLink(payload),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
       },
       {
         "fileName": "package.json",
@@ -135,7 +129,7 @@
       "kind": "schema",
       "summary": {
         "pageCount": 1,
-        "nodeCount": 4,
+        "nodeCount": 3,
         "pageNames": [
           "Page"
         ]
@@ -149,49 +143,44 @@
           "parentId": null,
           "children": [
             {
-              "id": 1773502461285,
-              "name": "Container",
-              "props": {},
-              "desc": "容器",
-              "parentId": 1,
-              "children": [
-                {
-                  "id": 1773502462021,
-                  "name": "Button",
-                  "props": {
-                    "type": "dashed",
-                    "size": "large",
-                    "ghost": false,
-                    "loading": false,
-                    "text": "按钮",
-                    "onClick": {
-                      "actions": [
-                        {
-                          "type": "customJs",
-                          "code": "console.log(\"aaa\")"
-                        },
-                        {
-                          "type": "showMessage",
-                          "config": {
-                            "type": "error",
-                            "text": "asdasd"
-                          }
-                        }
-                      ]
+              "id": 1773557376043,
+              "name": "Button",
+              "props": {
+                "type": "primary",
+                "text": "按钮",
+                "onClick": {
+                  "actions": [
+                    {
+                      "type": "goToLink",
+                      "url": "aaa"
+                    },
+                    {
+                      "type": "showMessage",
+                      "config": {
+                        "type": "success",
+                        "text": "222"
+                      }
+                    },
+                    {
+                      "type": "customJs",
+                      "code": "// 可用 API:\n// - ShowMessage(\"消息内容\")  显示成功提示\n// - context.name           当前组件名称\n// - context.props          当前组件属性\n// - args                   事件触发时的参数\n\nconsole.log(\"aaa\")"
+                    },
+                    {
+                      "type": "componentMethod",
+                      "config": {
+                        "componentId": 1773557399425,
+                        "method": "open",
+                        "args": {}
+                      }
                     }
-                  },
-                  "desc": "按钮",
-                  "parentId": 1773502461285
+                  ]
                 }
-              ],
-              "styles": {
-                "display": "flex",
-                "justifyContent": "center",
-                "alignItems": "center"
-              }
+              },
+              "desc": "按钮",
+              "parentId": 1
             },
             {
-              "id": 1773502464194,
+              "id": 1773557399425,
               "name": "Modal",
               "props": {
                 "title": "弹窗",
@@ -210,14 +199,13 @@
       "kind": "ir",
       "summary": {
         "pageCount": 1,
-        "nodeCount": 4,
-        "actionCount": 2,
+        "nodeCount": 3,
+        "actionCount": 4,
         "stateCount": 0,
         "methodCount": 0,
         "dependencyCount": 2,
         "components": [
           "Page",
-          "div",
           "Button",
           "Modal"
         ],
@@ -225,13 +213,12 @@
           {
             "id": "1",
             "fileName": "index",
-            "nodeCount": 4,
-            "actionCount": 2,
+            "nodeCount": 3,
+            "actionCount": 4,
             "stateKeys": [],
             "methodKeys": [],
             "components": [
               "Page",
-              "div",
               "Button",
               "Modal"
             ]
@@ -241,7 +228,7 @@
       "focus": {
         "stateDelta": 0,
         "methodDelta": 0,
-        "actionDelta": 2,
+        "actionDelta": 4,
         "pages": [
           {
             "fileName": "index",
@@ -265,71 +252,59 @@
               },
               "children": [
                 {
-                  "id": 1773502461285,
-                  "componentName": "div",
-                  "props": {},
-                  "dependency": {
-                    "package": "",
-                    "destructuring": false
-                  },
-                  "styles": {
-                    "display": "flex",
-                    "justifyContent": "center",
-                    "alignItems": "center"
-                  },
-                  "children": [
-                    {
-                      "id": 1773502462021,
-                      "componentName": "Button",
-                      "props": {
-                        "type": {
-                          "type": "Literal",
-                          "value": "dashed"
-                        },
-                        "size": {
-                          "type": "Literal",
-                          "value": "large"
-                        },
-                        "ghost": {
-                          "type": "Literal",
-                          "value": false
-                        },
-                        "loading": {
-                          "type": "Literal",
-                          "value": false
-                        },
-                        "text": {
-                          "type": "Literal",
-                          "value": "按钮"
-                        },
-                        "onClick": [
-                          {
-                            "type": "Action",
-                            "actionType": "customJs",
-                            "config": {
-                              "code": "console.log(\"aaa\")"
-                            }
-                          },
-                          {
-                            "type": "Action",
-                            "actionType": "showMessage",
-                            "config": {
-                              "type": "error",
-                              "text": "asdasd"
-                            }
-                          }
-                        ]
+                  "id": 1773557376043,
+                  "componentName": "Button",
+                  "props": {
+                    "type": {
+                      "type": "Literal",
+                      "value": "primary"
+                    },
+                    "text": {
+                      "type": "Literal",
+                      "value": "按钮"
+                    },
+                    "onClick": [
+                      {
+                        "type": "Action",
+                        "actionType": "goToLink",
+                        "config": {
+                          "url": "aaa"
+                        }
                       },
-                      "dependency": {
-                        "package": "antd",
-                        "version": "^5.0.0",
-                        "destructuring": true
+                      {
+                        "type": "Action",
+                        "actionType": "showMessage",
+                        "config": {
+                          "type": "success",
+                          "text": "222"
+                        }
+                      },
+                      {
+                        "type": "Action",
+                        "actionType": "customJs",
+                        "config": {
+                          "code": "// 可用 API:\n// - ShowMessage(\"消息内容\")  显示成功提示\n// - context.name           当前组件名称\n// - context.props          当前组件属性\n// - args                   事件触发时的参数\n\nconsole.log(\"aaa\")"
+                        }
+                      },
+                      {
+                        "type": "Action",
+                        "actionType": "componentMethod",
+                        "config": {
+                          "componentId": 1773557399425,
+                          "method": "open",
+                          "args": {}
+                        }
                       }
-                    }
-                  ]
+                    ]
+                  },
+                  "dependency": {
+                    "package": "antd",
+                    "version": "^5.0.0",
+                    "destructuring": true
+                  }
                 },
                 {
-                  "id": 1773502464194,
+                  "id": 1773557399425,
                   "componentName": "Modal",
                   "props": {
                     "title": {
@@ -352,10 +327,6 @@
             "dependencies": [
               {
                 "package": "./components/Page",
-                "destructuring": false
-              },
-              {
-                "package": "",
                 "destructuring": false
               },
               {
@@ -383,14 +354,13 @@
       "kind": "ir",
       "summary": {
         "pageCount": 1,
-        "nodeCount": 4,
-        "actionCount": 2,
-        "stateCount": 0,
-        "methodCount": 0,
+        "nodeCount": 3,
+        "actionCount": 4,
+        "stateCount": 1,
+        "methodCount": 3,
         "dependencyCount": 2,
         "components": [
           "Page",
-          "div",
           "Button",
           "Modal"
         ],
@@ -398,13 +368,18 @@
           {
             "id": "1",
             "fileName": "index",
-            "nodeCount": 4,
-            "actionCount": 2,
-            "stateKeys": [],
-            "methodKeys": [],
+            "nodeCount": 3,
+            "actionCount": 4,
+            "stateKeys": [
+              "open_1773557399425"
+            ],
+            "methodKeys": [
+              "handleOpen_1773557399425",
+              "handleClose_1773557399425",
+              "handleHandleOk_1773557399425"
+            ],
             "components": [
               "Page",
-              "div",
               "Button",
               "Modal"
             ]
@@ -412,14 +387,20 @@
         ]
       },
       "focus": {
-        "stateDelta": 0,
-        "methodDelta": 0,
+        "stateDelta": 1,
+        "methodDelta": 3,
         "actionDelta": 0,
         "pages": [
           {
             "fileName": "index",
-            "stateKeys": [],
-            "methodKeys": []
+            "stateKeys": [
+              "open_1773557399425"
+            ],
+            "methodKeys": [
+              "handleOpen_1773557399425",
+              "handleClose_1773557399425",
+              "handleHandleOk_1773557399425"
+            ]
           }
         ]
       },
@@ -438,71 +419,57 @@
               },
               "children": [
                 {
-                  "id": 1773502461285,
-                  "componentName": "div",
-                  "props": {},
-                  "dependency": {
-                    "package": "",
-                    "destructuring": false
-                  },
-                  "styles": {
-                    "display": "flex",
-                    "justifyContent": "center",
-                    "alignItems": "center"
-                  },
-                  "children": [
-                    {
-                      "id": 1773502462021,
-                      "componentName": "Button",
-                      "props": {
-                        "type": {
-                          "type": "Literal",
-                          "value": "dashed"
-                        },
-                        "size": {
-                          "type": "Literal",
-                          "value": "large"
-                        },
-                        "ghost": {
-                          "type": "Literal",
-                          "value": false
-                        },
-                        "loading": {
-                          "type": "Literal",
-                          "value": false
-                        },
-                        "text": {
-                          "type": "Literal",
-                          "value": "按钮"
-                        },
-                        "onClick": [
-                          {
-                            "type": "Action",
-                            "actionType": "customJs",
-                            "config": {
-                              "code": "console.log(\"aaa\")"
-                            }
-                          },
-                          {
-                            "type": "Action",
-                            "actionType": "showMessage",
-                            "config": {
-                              "type": "error",
-                              "text": "asdasd"
-                            }
-                          }
-                        ]
+                  "id": 1773557376043,
+                  "componentName": "Button",
+                  "props": {
+                    "type": {
+                      "type": "Literal",
+                      "value": "primary"
+                    },
+                    "text": {
+                      "type": "Literal",
+                      "value": "按钮"
+                    },
+                    "onClick": [
+                      {
+                        "type": "Action",
+                        "actionType": "goToLink",
+                        "config": {
+                          "url": "aaa"
+                        }
                       },
-                      "dependency": {
-                        "package": "antd",
-                        "version": "^5.0.0",
-                        "destructuring": true
+                      {
+                        "type": "Action",
+                        "actionType": "showMessage",
+                        "config": {
+                          "type": "success",
+                          "text": "222"
+                        }
+                      },
+                      {
+                        "type": "Action",
+                        "actionType": "customJs",
+                        "config": {
+                          "code": "// 可用 API:\n// - ShowMessage(\"消息内容\")  显示成功提示\n// - context.name           当前组件名称\n// - context.props          当前组件属性\n// - args                   事件触发时的参数\n\nconsole.log(\"aaa\")"
+                        }
+                      },
+                      {
+                        "type": "Action",
+                        "actionType": "callMethod",
+                        "config": {
+                          "methodName": "handleOpen_1773557399425"
+                        }
                       }
-                    }
-                  ]
+                    ]
+                  },
+                  "dependency": {
+                    "package": "antd",
+                    "version": "^5.0.0",
+                    "destructuring": true
+                  }
                 },
                 {
-                  "id": 1773502464194,
+                  "id": 1773557399425,
                   "componentName": "Modal",
                   "props": {
                     "title": {
@@ -512,6 +479,18 @@
                     "visibleInEditor": {
                       "type": "Literal",
                       "value": true
+                    },
+                    "open": {
+                      "type": "StateRef",
+                      "stateName": "open_1773557399425"
+                    },
+                    "onCancel": {
+                      "type": "MethodRef",
+                      "methodName": "handleClose_1773557399425"
+                    },
+                    "onOk": {
+                      "type": "MethodRef",
+                      "methodName": "handleHandleOk_1773557399425"
                     }
                   },
                   "dependency": {
@@ -528,10 +507,6 @@
                 "destructuring": false
               },
               {
-                "package": "",
-                "destructuring": false
-              },
-              {
                 "package": "antd",
                 "version": "^5.0.0",
                 "destructuring": true
@@ -541,7 +516,30 @@
                 "version": "^5.0.0",
                 "destructuring": true
               }
-            ]
+            ],
+            "states": {
+              "open_1773557399425": {
+                "type": "Literal",
+                "value": false
+              }
+            },
+            "methods": {
+              "handleOpen_1773557399425": {
+                "type": "StateUpdater",
+                "stateName": "open_1773557399425",
+                "value": true
+              },
+              "handleClose_1773557399425": {
+                "type": "StateUpdater",
+                "stateName": "open_1773557399425",
+                "value": false
+              },
+              "handleHandleOk_1773557399425": {
+                "type": "StateUpdater",
+                "stateName": "open_1773557399425",
+                "value": false
+              }
+            }
           }
         ],
         "dependencies": {
@@ -626,6 +624,80 @@
       "label": "页面 index 发射文件",
       "kind": "files",
       "summary": {
+        "fileCount": 7,
+        "filePaths": [
+          "tsconfig.json",
+          "tsconfig.node.json",
+          "vite.config.ts",
+          "index.html",
+          ".gitignore",
+          "src/vite-env.d.ts",
+          "src/pages/Index/Index.tsx"
+        ],
+        "byType": {
+          "json": 2,
+          "ts": 2,
+          "html": 1,
+          "other": 1,
+          "tsx": 1
+        }
+      },
+      "focus": {
+        "added": [
+          "src/pages/Index/Index.tsx"
+        ],
+        "changed": []
+      },
+      "snapshot": [
+        {
+          "fileName": "tsconfig.json",
+          "filePath": "tsconfig.json",
+          "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2020\",\n    \"useDefineForClassFields\": true,\n    \"lib\": [\n      \"ES2020\",\n      \"DOM\",\n      \"DOM.Iterable\"\n    ],\n    \"module\": \"ESNext\",\n    \"skipLibCheck\": true,\n    \"moduleResolution\": \"bundler\",\n    \"allowImportingTsExtensions\": true,\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"noEmit\": true,\n    \"jsx\": \"react-jsx\",\n    \"strict\": true,\n    \"noUnusedLocals\": true,\n    \"noUnusedParameters\": false,\n    \"noFallthroughCasesInSwitch\": true,\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\n        \"./src/*\"\n      ]\n    }\n  },\n  \"include\": [\n    \"src\"\n  ],\n  \"references\": [\n    {\n      \"path\": \"./tsconfig.node.json\"\n    }\n  ]\n}",
+          "fileType": "json"
+        },
+        {
+          "fileName": "tsconfig.node.json",
+          "filePath": "tsconfig.node.json",
+          "content": "{\n  \"compilerOptions\": {\n    \"composite\": true,\n    \"skipLibCheck\": true,\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\",\n    \"allowSyntheticDefaultImports\": true\n  },\n  \"include\": [\n    \"vite.config.ts\"\n  ]\n}",
+          "fileType": "json"
+        },
+        {
+          "fileName": "vite.config.ts",
+          "filePath": "vite.config.ts",
+          "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\n// https://vitejs.dev/config/\nexport default defineConfig({\n  plugins: [react()],\n  resolve: {\n    alias: {\n      '@': '/src',\n    },\n  },\n  server: {\n    port: 3000,\n    open: true,\n  },\n  build: {\n    outDir: 'dist',\n  },\n})",
+          "fileType": "ts"
+        },
+        {
+          "fileName": "index.html",
+          "filePath": "index.html",
+          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Lowcode Generated Project</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>",
+          "fileType": "html"
+        },
+        {
+          "fileName": ".gitignore",
+          "filePath": ".gitignore",
+          "content": "# Logs\nlogs\n*.log\nnpm-debug.log*\nyarn-debug.log*\npnpm-debug.log*\n\nnode_modules/\ndist/\n*.local\n\n# Editor directories and files\n.vscode/*\n!.vscode/extensions.json\n.idea\n.DS_Store\n*.suo\n*.ntvs*\n*.njsproj\n*.sln\n*.sw?\n\n# TypeScript cache\n*.tsbuildinfo\n",
+          "fileType": "other"
+        },
+        {
+          "fileName": "vite-env.d.ts",
+          "filePath": "src/vite-env.d.ts",
+          "content": "/// <reference types=\"vite/client\" />\n\n/**\n * 声明对 .scss 模块的类型支持\n * 这将允许 TypeScript 正确处理 import styles from './xxx.module.scss';\n */\ndeclare module '*.module.scss' {\n  const classes: { [key: string]: string };\n  export default classes;\n}\n\n/**\n * 声明对 .css 模块的类型支持\n */\ndeclare module '*.module.css' {\n  const classes: { [key: string]: string };\n  export default classes;\n}",
+          "fileType": "ts"
+        },
+        {
+          "fileName": "Index.tsx",
+          "filePath": "src/pages/Index/Index.tsx",
+          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
+          "fileType": "tsx"
+        }
+      ]
+    },
+    {
+      "id": "project-plugin:post:react-global-style",
+      "label": "项目插件 post:react-global-style",
+      "kind": "files",
+      "summary": {
         "fileCount": 8,
         "filePaths": [
           "tsconfig.json",
@@ -635,7 +707,7 @@
           ".gitignore",
           "src/vite-env.d.ts",
           "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss"
+          "src/global.scss"
         ],
         "byType": {
           "json": 2,
@@ -648,90 +720,6 @@
       },
       "focus": {
         "added": [
-          "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss"
-        ],
-        "changed": []
-      },
-      "snapshot": [
-        {
-          "fileName": "tsconfig.json",
-          "filePath": "tsconfig.json",
-          "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2020\",\n    \"useDefineForClassFields\": true,\n    \"lib\": [\n      \"ES2020\",\n      \"DOM\",\n      \"DOM.Iterable\"\n    ],\n    \"module\": \"ESNext\",\n    \"skipLibCheck\": true,\n    \"moduleResolution\": \"bundler\",\n    \"allowImportingTsExtensions\": true,\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"noEmit\": true,\n    \"jsx\": \"react-jsx\",\n    \"strict\": true,\n    \"noUnusedLocals\": true,\n    \"noUnusedParameters\": false,\n    \"noFallthroughCasesInSwitch\": true,\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\n        \"./src/*\"\n      ]\n    }\n  },\n  \"include\": [\n    \"src\"\n  ],\n  \"references\": [\n    {\n      \"path\": \"./tsconfig.node.json\"\n    }\n  ]\n}",
-          "fileType": "json"
-        },
-        {
-          "fileName": "tsconfig.node.json",
-          "filePath": "tsconfig.node.json",
-          "content": "{\n  \"compilerOptions\": {\n    \"composite\": true,\n    \"skipLibCheck\": true,\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\",\n    \"allowSyntheticDefaultImports\": true\n  },\n  \"include\": [\n    \"vite.config.ts\"\n  ]\n}",
-          "fileType": "json"
-        },
-        {
-          "fileName": "vite.config.ts",
-          "filePath": "vite.config.ts",
-          "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\n// https://vitejs.dev/config/\nexport default defineConfig({\n  plugins: [react()],\n  resolve: {\n    alias: {\n      '@': '/src',\n    },\n  },\n  server: {\n    port: 3000,\n    open: true,\n  },\n  build: {\n    outDir: 'dist',\n  },\n})",
-          "fileType": "ts"
-        },
-        {
-          "fileName": "index.html",
-          "filePath": "index.html",
-          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Lowcode Generated Project</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>",
-          "fileType": "html"
-        },
-        {
-          "fileName": ".gitignore",
-          "filePath": ".gitignore",
-          "content": "# Logs\nlogs\n*.log\nnpm-debug.log*\nyarn-debug.log*\npnpm-debug.log*\n\nnode_modules/\ndist/\n*.local\n\n# Editor directories and files\n.vscode/*\n!.vscode/extensions.json\n.idea\n.DS_Store\n*.suo\n*.ntvs*\n*.njsproj\n*.sln\n*.sw?\n\n# TypeScript cache\n*.tsbuildinfo\n",
-          "fileType": "other"
-        },
-        {
-          "fileName": "vite-env.d.ts",
-          "filePath": "src/vite-env.d.ts",
-          "content": "/// <reference types=\"vite/client\" />\n\n/**\n * 声明对 .scss 模块的类型支持\n * 这将允许 TypeScript 正确处理 import styles from './xxx.module.scss';\n */\ndeclare module '*.module.scss' {\n  const classes: { [key: string]: string };\n  export default classes;\n}\n\n/**\n * 声明对 .css 模块的类型支持\n */\ndeclare module '*.module.css' {\n  const classes: { [key: string]: string };\n  export default classes;\n}",
-          "fileType": "ts"
-        },
-        {
-          "fileName": "Index.tsx",
-          "filePath": "src/pages/Index/Index.tsx",
-          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
-          "fileType": "tsx"
-        },
-        {
-          "fileName": "Index.module.scss",
-          "filePath": "src/pages/Index/Index.module.scss",
-          "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-          "fileType": "scss"
-        }
-      ]
-    },
-    {
-      "id": "project-plugin:post:react-global-style",
-      "label": "项目插件 post:react-global-style",
-      "kind": "files",
-      "summary": {
-        "fileCount": 9,
-        "filePaths": [
-          "tsconfig.json",
-          "tsconfig.node.json",
-          "vite.config.ts",
-          "index.html",
-          ".gitignore",
-          "src/vite-env.d.ts",
-          "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss",
-          "src/global.scss"
-        ],
-        "byType": {
-          "json": 2,
-          "ts": 2,
-          "html": 1,
-          "other": 1,
-          "tsx": 1,
-          "scss": 2
-        }
-      },
-      "focus": {
-        "added": [
           "src/global.scss"
         ],
         "changed": []
@@ -776,14 +764,8 @@
         {
           "fileName": "Index.tsx",
           "filePath": "src/pages/Index/Index.tsx",
-          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
+          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
           "fileType": "tsx"
-        },
-        {
-          "fileName": "Index.module.scss",
-          "filePath": "src/pages/Index/Index.module.scss",
-          "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-          "fileType": "scss"
         },
         {
           "fileName": "global.scss",
@@ -798,7 +780,7 @@
       "label": "项目插件 post:project-components",
       "kind": "files",
       "summary": {
-        "fileCount": 12,
+        "fileCount": 11,
         "filePaths": [
           "tsconfig.json",
           "tsconfig.node.json",
@@ -807,7 +789,6 @@
           ".gitignore",
           "src/vite-env.d.ts",
           "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss",
           "src/global.scss",
           "src/components/PageHeader.tsx",
           "src/components/Page.tsx",
@@ -819,7 +800,7 @@
           "html": 1,
           "other": 1,
           "tsx": 3,
-          "scss": 2
+          "scss": 1
         }
       },
       "focus": {
@@ -870,14 +851,8 @@
         {
           "fileName": "Index.tsx",
           "filePath": "src/pages/Index/Index.tsx",
-          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
+          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
           "fileType": "tsx"
-        },
-        {
-          "fileName": "Index.module.scss",
-          "filePath": "src/pages/Index/Index.module.scss",
-          "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-          "fileType": "scss"
         },
         {
           "fileName": "global.scss",
@@ -910,7 +885,7 @@
       "label": "项目插件 post:react-router",
       "kind": "files",
       "summary": {
-        "fileCount": 13,
+        "fileCount": 12,
         "filePaths": [
           "tsconfig.json",
           "tsconfig.node.json",
@@ -919,7 +894,6 @@
           ".gitignore",
           "src/vite-env.d.ts",
           "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss",
           "src/global.scss",
           "src/components/PageHeader.tsx",
           "src/components/Page.tsx",
@@ -932,7 +906,7 @@
           "html": 1,
           "other": 1,
           "tsx": 4,
-          "scss": 2
+          "scss": 1
         }
       },
       "focus": {
@@ -981,14 +955,8 @@
         {
           "fileName": "Index.tsx",
           "filePath": "src/pages/Index/Index.tsx",
-          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
+          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
           "fileType": "tsx"
-        },
-        {
-          "fileName": "Index.module.scss",
-          "filePath": "src/pages/Index/Index.module.scss",
-          "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-          "fileType": "scss"
         },
         {
           "fileName": "global.scss",
@@ -1027,7 +995,7 @@
       "label": "项目插件 post:react-entry",
       "kind": "files",
       "summary": {
-        "fileCount": 15,
+        "fileCount": 14,
         "filePaths": [
           "tsconfig.json",
           "tsconfig.node.json",
@@ -1036,7 +1004,6 @@
           ".gitignore",
           "src/vite-env.d.ts",
           "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss",
           "src/global.scss",
           "src/components/PageHeader.tsx",
           "src/components/Page.tsx",
@@ -1051,7 +1018,7 @@
           "html": 1,
           "other": 1,
           "tsx": 6,
-          "scss": 2
+          "scss": 1
         }
       },
       "focus": {
@@ -1101,14 +1068,8 @@
         {
           "fileName": "Index.tsx",
           "filePath": "src/pages/Index/Index.tsx",
-          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
+          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
           "fileType": "tsx"
-        },
-        {
-          "fileName": "Index.module.scss",
-          "filePath": "src/pages/Index/Index.module.scss",
-          "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-          "fileType": "scss"
         },
         {
           "fileName": "global.scss",
@@ -1159,7 +1120,7 @@
       "label": "项目插件 post:react-custom-js-runtime",
       "kind": "files",
       "summary": {
-        "fileCount": 16,
+        "fileCount": 15,
         "filePaths": [
           "tsconfig.json",
           "tsconfig.node.json",
@@ -1168,7 +1129,6 @@
           ".gitignore",
           "src/vite-env.d.ts",
           "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss",
           "src/global.scss",
           "src/components/PageHeader.tsx",
           "src/components/Page.tsx",
@@ -1184,7 +1144,7 @@
           "html": 1,
           "other": 1,
           "tsx": 6,
-          "scss": 2
+          "scss": 1
         }
       },
       "focus": {
@@ -1233,14 +1193,8 @@
         {
           "fileName": "Index.tsx",
           "filePath": "src/pages/Index/Index.tsx",
-          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
+          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
           "fileType": "tsx"
-        },
-        {
-          "fileName": "Index.module.scss",
-          "filePath": "src/pages/Index/Index.module.scss",
-          "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-          "fileType": "scss"
         },
         {
           "fileName": "global.scss",
@@ -1288,7 +1242,7 @@
           "fileName": "actions.ts",
           "filePath": "src/runtime/actions.ts",
           "fileType": "ts",
-          "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
+          "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport interface RunGoToLinkOptions {\n  url?: string;\n  target?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'goToLink' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  goToLink: RunGoToLinkOptions;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runGoToLink({\n  url,\n  target = '_blank',\n}: RunGoToLinkOptions) {\n  if (!url) {\n    return undefined;\n  }\n\n  return window.open(url, target, 'noopener,noreferrer');\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  goToLink: (payload) => runGoToLink(payload),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
         }
       ]
     },
@@ -1297,7 +1251,7 @@
       "label": "项目插件 post:package-json",
       "kind": "files",
       "summary": {
-        "fileCount": 17,
+        "fileCount": 16,
         "filePaths": [
           "tsconfig.json",
           "tsconfig.node.json",
@@ -1306,7 +1260,6 @@
           ".gitignore",
           "src/vite-env.d.ts",
           "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss",
           "src/global.scss",
           "src/components/PageHeader.tsx",
           "src/components/Page.tsx",
@@ -1323,7 +1276,7 @@
           "html": 1,
           "other": 1,
           "tsx": 6,
-          "scss": 2
+          "scss": 1
         }
       },
       "focus": {
@@ -1372,14 +1325,8 @@
         {
           "fileName": "Index.tsx",
           "filePath": "src/pages/Index/Index.tsx",
-          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
+          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
           "fileType": "tsx"
-        },
-        {
-          "fileName": "Index.module.scss",
-          "filePath": "src/pages/Index/Index.module.scss",
-          "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-          "fileType": "scss"
         },
         {
           "fileName": "global.scss",
@@ -1427,7 +1374,7 @@
           "fileName": "actions.ts",
           "filePath": "src/runtime/actions.ts",
           "fileType": "ts",
-          "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
+          "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport interface RunGoToLinkOptions {\n  url?: string;\n  target?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'goToLink' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  goToLink: RunGoToLinkOptions;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runGoToLink({\n  url,\n  target = '_blank',\n}: RunGoToLinkOptions) {\n  if (!url) {\n    return undefined;\n  }\n\n  return window.open(url, target, 'noopener,noreferrer');\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  goToLink: (payload) => runGoToLink(payload),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
         },
         {
           "fileName": "package.json",
@@ -1442,7 +1389,7 @@
       "label": "后处理器格式化",
       "kind": "files",
       "summary": {
-        "fileCount": 17,
+        "fileCount": 16,
         "filePaths": [
           "tsconfig.json",
           "tsconfig.node.json",
@@ -1451,7 +1398,6 @@
           ".gitignore",
           "src/vite-env.d.ts",
           "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss",
           "src/global.scss",
           "src/components/PageHeader.tsx",
           "src/components/Page.tsx",
@@ -1468,7 +1414,7 @@
           "html": 1,
           "other": 1,
           "tsx": 6,
-          "scss": 2
+          "scss": 1
         }
       },
       "focus": {
@@ -1515,14 +1461,8 @@
         {
           "fileName": "Index.tsx",
           "filePath": "src/pages/Index/Index.tsx",
-          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
+          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
           "fileType": "tsx"
-        },
-        {
-          "fileName": "Index.module.scss",
-          "filePath": "src/pages/Index/Index.module.scss",
-          "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-          "fileType": "scss"
         },
         {
           "fileName": "global.scss",
@@ -1570,7 +1510,7 @@
           "fileName": "actions.ts",
           "filePath": "src/runtime/actions.ts",
           "fileType": "ts",
-          "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
+          "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport interface RunGoToLinkOptions {\n  url?: string;\n  target?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'goToLink' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  goToLink: RunGoToLinkOptions;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runGoToLink({\n  url,\n  target = '_blank',\n}: RunGoToLinkOptions) {\n  if (!url) {\n    return undefined;\n  }\n\n  return window.open(url, target, 'noopener,noreferrer');\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  goToLink: (payload) => runGoToLink(payload),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
         },
         {
           "fileName": "package.json",
@@ -1585,7 +1525,7 @@
       "label": "最终输出文件",
       "kind": "files",
       "summary": {
-        "fileCount": 17,
+        "fileCount": 16,
         "filePaths": [
           "tsconfig.json",
           "tsconfig.node.json",
@@ -1594,7 +1534,6 @@
           ".gitignore",
           "src/vite-env.d.ts",
           "src/pages/Index/Index.tsx",
-          "src/pages/Index/Index.module.scss",
           "src/global.scss",
           "src/components/PageHeader.tsx",
           "src/components/Page.tsx",
@@ -1611,7 +1550,7 @@
           "html": 1,
           "other": 1,
           "tsx": 6,
-          "scss": 2
+          "scss": 1
         }
       },
       "focus": {
@@ -1658,14 +1597,8 @@
         {
           "fileName": "Index.tsx",
           "filePath": "src/pages/Index/Index.tsx",
-          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport styles from './Index.module.scss';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n\n\n  // --- Methods --- \n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"console.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"dashed\", \"size\": \"large\", \"ghost\": false, \"loading\": false, \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"error\",\n        text: \"asdasd\",\n      },\n      { message }\n    );\n  };\n\n  return (\n<>\n    <div className={`${styles.node_1773502461285}`}>\n      <Button\n      type={\"dashed\"}\n      size={\"large\"}\n      ghost={false}\n      loading={false}\n      onClick={handleOnClickActions1}\n    >\n        {\"按钮\"}\n      </Button>\n    </div>\n    <Modal title={\"弹窗\"} />\n</>\n  );\n};\n\nexport default Index;\n",
+          "content": "/* eslint-disable */\n// 此文件由低代码平台自动生成，请勿直接修改\nimport Page from '../../components/Page';\nimport { Button, Modal, message } from 'antd';\nimport { runAction } from '../../runtime/actions';\nimport { useState } from 'react';\n\n// 可以在这里引入全局 CSS 或组件自身的 CSS Module (如果需要)\n// import './Index.module.css';\n\n/**\n * 组件 Props 类型定义 (可根据需要修改)\n */\ninterface IndexProps {\n  // TODO: Add component props definition if needed\n}\n\n/**\n * Index 组件\n * @description 由低代码平台生成的 React 函数式组件。\n * @param props - 组件 Props。\n * @returns React 组件实例。\n */\nconst Index: React.FC<IndexProps> = (props) => {\n  // --- State --- \n  const [open_1773557399425, set_open_1773557399425] = useState(false);\n\n\n  // --- Methods --- \n  const handleOpen_1773557399425 = () => {\n  set_open_1773557399425(true);\n};\n\n  const handleClose_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  const handleHandleOk_1773557399425 = () => {\n  set_open_1773557399425(false);\n};\n\n  \n  /**\n   * 处理多个动作\n   */\n  const handleOnClickActions1 = (...args: any[]) => {\n    \n    // Action: goToLink\n    runAction(\n    'goToLink',\n    {\n      url: \"aaa\",\n      target: \"_blank\",\n    },\n    { message }\n  );\n\n    // Action: showMessage\n    runAction(\n      'showMessage',\n      {\n        type: \"success\",\n        text: \"222\",\n      },\n      { message }\n    );\n\n    // Action: customJs\n    runAction(\n      'customJs',\n      {\n        code: \"// 可用 API:\\n// - ShowMessage(\\\"消息内容\\\")  显示成功提示\\n// - context.name           当前组件名称\\n// - context.props          当前组件属性\\n// - args                   事件触发时的参数\\n\\nconsole.log(\\\"aaa\\\")\",\n        context: { name: \"Button\", props: { \"type\": \"primary\", \"text\": \"按钮\" } },\n        args,\n      },\n      { message }\n    );\n\n    // Action: callMethod\n    handleOpen_1773557399425();\n  };\n\n  return (\n    <Page>\n      <Button type={\"primary\"} onClick={handleOnClickActions1}>\n        {\"按钮\"}\n      </Button>\n      <Modal\n      title={\"弹窗\"}\n      open={open_1773557399425}\n      onCancel={handleClose_1773557399425}\n      onOk={handleHandleOk_1773557399425}\n     />\n    </Page>\n  );\n};\n\nexport default Index;\n",
           "fileType": "tsx"
-        },
-        {
-          "fileName": "Index.module.scss",
-          "filePath": "src/pages/Index/Index.module.scss",
-          "content": "/**\n * @file Index CSS Modules\n * @description 由 lowcode-editor 自动生成\n */\n\n.node_1773502461285 {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}",
-          "fileType": "scss"
         },
         {
           "fileName": "global.scss",
@@ -1713,7 +1646,7 @@
           "fileName": "actions.ts",
           "filePath": "src/runtime/actions.ts",
           "fileType": "ts",
-          "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
+          "content": "export interface CustomJsContext {\n  name: string;\n  props: Record<string, unknown>;\n}\n\nexport interface CustomJsMessageApi {\n  [key: string]: ((content: string) => void) | unknown;\n}\n\nexport interface RunCustomJsOptions {\n  code: string;\n  context: CustomJsContext;\n  args: unknown[];\n  message: CustomJsMessageApi;\n}\n\nexport interface RunShowMessageOptions {\n  message: CustomJsMessageApi;\n  type?: string;\n  text?: string;\n}\n\nexport interface RunGoToLinkOptions {\n  url?: string;\n  target?: string;\n}\n\nexport type RuntimeActionName = 'customJs' | 'goToLink' | 'showMessage';\n\nexport interface RuntimeActionPayloadMap {\n  customJs: Omit<RunCustomJsOptions, 'message'>;\n  goToLink: RunGoToLinkOptions;\n  showMessage: Omit<RunShowMessageOptions, 'message'>;\n}\n\nexport interface RuntimeActionContext {\n  message: CustomJsMessageApi;\n}\n\nexport function runShowMessage({\n  message,\n  type = 'info',\n  text = '',\n}: RunShowMessageOptions) {\n  const messageType =\n    typeof type === 'string' && typeof message[type] === 'function'\n      ? type\n      : 'info';\n  const normalizedText = typeof text === 'string' ? text : String(text ?? '');\n  const showMessage = message[messageType];\n\n  if (typeof showMessage === 'function') {\n    return showMessage(normalizedText);\n  }\n\n  return undefined;\n}\n\nexport function runGoToLink({\n  url,\n  target = '_blank',\n}: RunGoToLinkOptions) {\n  if (!url) {\n    return undefined;\n  }\n\n  return window.open(url, target, 'noopener,noreferrer');\n}\n\nexport function runCustomJs({\n  code,\n  context,\n  args,\n  message,\n}: RunCustomJsOptions) {\n  try {\n    const runner = new Function('ShowMessage', 'context', 'args', code);\n    return runner(\n      (content: unknown, type = 'success') =>\n        runShowMessage({\n          message,\n          type,\n          text: typeof content === 'string' ? content : String(content ?? ''),\n        }),\n      context,\n      args\n    );\n  } catch (error) {\n    const errorMessage =\n      error instanceof Error ? error.message : String(error ?? 'Unknown error');\n    console.error('[customJs] execute failed:', error);\n\n    const showError = message.error;\n    if (typeof showError === 'function') {\n      showError(errorMessage);\n    }\n\n    return undefined;\n  }\n}\n\nconst actionRegistry: {\n  [K in RuntimeActionName]: (\n    payload: RuntimeActionPayloadMap[K],\n    context: RuntimeActionContext\n  ) => unknown;\n} = {\n  customJs: (payload, context) =>\n    runCustomJs({\n      ...payload,\n      message: context.message,\n    }),\n  goToLink: (payload) => runGoToLink(payload),\n  showMessage: (payload, context) =>\n    runShowMessage({\n      ...payload,\n      message: context.message,\n    }),\n};\n\nexport function runAction<K extends RuntimeActionName>(\n  actionName: K,\n  payload: RuntimeActionPayloadMap[K],\n  context: RuntimeActionContext\n) {\n  const executor = actionRegistry[actionName];\n\n  if (!executor) {\n    console.warn('[runtime] unknown action:', actionName);\n    return undefined;\n  }\n\n  return executor(payload, context);\n}\n"
         },
         {
           "fileName": "package.json",

@@ -13,71 +13,59 @@
         },
         "children": [
           {
-            "id": 1773502461285,
-            "componentName": "div",
-            "props": {},
-            "dependency": {
-              "package": "",
-              "destructuring": false
-            },
-            "styles": {
-              "display": "flex",
-              "justifyContent": "center",
-              "alignItems": "center"
-            },
-            "children": [
-              {
-                "id": 1773502462021,
-                "componentName": "Button",
-                "props": {
-                  "type": {
-                    "type": "Literal",
-                    "value": "dashed"
-                  },
-                  "size": {
-                    "type": "Literal",
-                    "value": "large"
-                  },
-                  "ghost": {
-                    "type": "Literal",
-                    "value": false
-                  },
-                  "loading": {
-                    "type": "Literal",
-                    "value": false
-                  },
-                  "text": {
-                    "type": "Literal",
-                    "value": "按钮"
-                  },
-                  "onClick": [
-                    {
-                      "type": "Action",
-                      "actionType": "customJs",
-                      "config": {
-                        "code": "console.log(\"aaa\")"
-                      }
-                    },
-                    {
-                      "type": "Action",
-                      "actionType": "showMessage",
-                      "config": {
-                        "type": "error",
-                        "text": "asdasd"
-                      }
-                    }
-                  ]
+            "id": 1773557376043,
+            "componentName": "Button",
+            "props": {
+              "type": {
+                "type": "Literal",
+                "value": "primary"
+              },
+              "text": {
+                "type": "Literal",
+                "value": "按钮"
+              },
+              "onClick": [
+                {
+                  "type": "Action",
+                  "actionType": "goToLink",
+                  "config": {
+                    "url": "aaa"
+                  }
                 },
-                "dependency": {
-                  "package": "antd",
-                  "version": "^5.0.0",
-                  "destructuring": true
+                {
+                  "type": "Action",
+                  "actionType": "showMessage",
+                  "config": {
+                    "type": "success",
+                    "text": "222"
+                  }
+                },
+                {
+                  "type": "Action",
+                  "actionType": "customJs",
+                  "config": {
+                    "code": "// 可用 API:\n// - ShowMessage(\"消息内容\")  显示成功提示\n// - context.name           当前组件名称\n// - context.props          当前组件属性\n// - args                   事件触发时的参数\n\nconsole.log(\"aaa\")"
+                  }
+                },
+                {
+                  "type": "Action",
+                  "actionType": "componentMethod",
+                  "config": {
+                    "componentId": 1773557399425,
+                    "method": "open",
+                    "args": {}
+                  }
                 }
-              }
-            ]
+              ]
+            },
+            "dependency": {
+              "package": "antd",
+              "version": "^5.0.0",
+              "destructuring": true
+            }
           },
           {
-            "id": 1773502464194,
+            "id": 1773557399425,
             "componentName": "Modal",
             "props": {
               "title": {
@@ -100,10 +88,6 @@
       "dependencies": [
         {
           "package": "./components/Page",
-          "destructuring": false
-        },
-        {
-          "package": "",
           "destructuring": false
         },
         {

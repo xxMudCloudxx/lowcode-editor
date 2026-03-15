@@ -7,49 +7,44 @@
     "parentId": null,
     "children": [
       {
-        "id": 1773502461285,
-        "name": "Container",
-        "props": {},
-        "desc": "容器",
-        "parentId": 1,
-        "children": [
-          {
-            "id": 1773502462021,
-            "name": "Button",
-            "props": {
-              "type": "dashed",
-              "size": "large",
-              "ghost": false,
-              "loading": false,
-              "text": "按钮",
-              "onClick": {
-                "actions": [
-                  {
-                    "type": "customJs",
-                    "code": "console.log(\"aaa\")"
-                  },
-                  {
-                    "type": "showMessage",
-                    "config": {
-                      "type": "error",
-                      "text": "asdasd"
-                    }
-                  }
-                ]
+        "id": 1773557376043,
+        "name": "Button",
+        "props": {
+          "type": "primary",
+          "text": "按钮",
+          "onClick": {
+            "actions": [
+              {
+                "type": "goToLink",
+                "url": "aaa"
+              },
+              {
+                "type": "showMessage",
+                "config": {
+                  "type": "success",
+                  "text": "222"
+                }
+              },
+              {
+                "type": "customJs",
+                "code": "// 可用 API:\n// - ShowMessage(\"消息内容\")  显示成功提示\n// - context.name           当前组件名称\n// - context.props          当前组件属性\n// - args                   事件触发时的参数\n\nconsole.log(\"aaa\")"
+              },
+              {
+                "type": "componentMethod",
+                "config": {
+                  "componentId": 1773557399425,
+                  "method": "open",
+                  "args": {}
+                }
               }
-            },
-            "desc": "按钮",
-            "parentId": 1773502461285
+            ]
           }
-        ],
-        "styles": {
-          "display": "flex",
-          "justifyContent": "center",
-          "alignItems": "center"
-        }
+        },
+        "desc": "按钮",
+        "parentId": 1
       },
       {
-        "id": 1773502464194,
+        "id": 1773557399425,
         "name": "Modal",
         "props": {
           "title": "弹窗",
