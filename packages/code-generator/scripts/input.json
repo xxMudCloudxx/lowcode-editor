@@ -1,0 +1,63 @@
+[
+  {
+    "id": 1,
+    "name": "Page",
+    "props": {},
+    "desc": "页面",
+    "parentId": null,
+    "children": [
+      {
+        "id": 1773502461285,
+        "name": "Container",
+        "props": {},
+        "desc": "容器",
+        "parentId": 1,
+        "children": [
+          {
+            "id": 1773502462021,
+            "name": "Button",
+            "props": {
+              "type": "dashed",
+              "size": "large",
+              "ghost": false,
+              "loading": false,
+              "text": "按钮",
+              "onClick": {
+                "actions": [
+                  {
+                    "type": "customJs",
+                    "code": "console.log(\"aaa\")"
+                  },
+                  {
+                    "type": "showMessage",
+                    "config": {
+                      "type": "error",
+                      "text": "asdasd"
+                    }
+                  }
+                ]
+              }
+            },
+            "desc": "按钮",
+            "parentId": 1773502461285
+          }
+        ],
+        "styles": {
+          "display": "flex",
+          "justifyContent": "center",
+          "alignItems": "center"
+        }
+      },
+      {
+        "id": 1773502464194,
+        "name": "Modal",
+        "props": {
+          "title": "弹窗",
+          "visibleInEditor": true
+        },
+        "desc": "弹窗",
+        "parentId": 1
+      }
+    ]
+  }
+]

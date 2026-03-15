@@ -12,6 +12,18 @@ import parserEstree from "prettier/plugins/estree"; // 导入 Estree 打印机
 
 import type { IGeneratedFile, IPostProcessor } from "@lowcode/schema";
 
+function normalizePrettierPlugin<T>(plugin: T): T {
+  if (
+    plugin &&
+    typeof plugin === "object" &&
+    "default" in (plugin as Record<string, unknown>)
+  ) {
+    return (plugin as Record<string, T>).default;
+  }
+
+  return plugin;
+}
+
 /**
  * Prettier 后处理器工厂函数 (适配 Prettier v3 Standalone)
  */
@@ -26,10 +38,10 @@ export function prettierPostProcessor(): IPostProcessor {
 
   //  将 'parserEstree' 添加到插件列表
   const prettierPlugins = [
-    parserBabel,
-    parserPostCss,
-    parserHtml,
-    parserEstree,
+    normalizePrettierPlugin(parserBabel),
+    normalizePrettierPlugin(parserPostCss),
+    normalizePrettierPlugin(parserHtml),
+    normalizePrettierPlugin(parserEstree),
   ];
 
   return async (file: IGeneratedFile): Promise<IGeneratedFile> => {

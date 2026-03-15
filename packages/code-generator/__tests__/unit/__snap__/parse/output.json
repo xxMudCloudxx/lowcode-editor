@@ -1,0 +1,126 @@
+{
+  "pages": [
+    {
+      "id": 1,
+      "fileName": "index",
+      "node": {
+        "id": 1,
+        "componentName": "Page",
+        "props": {},
+        "dependency": {
+          "package": "./components/Page",
+          "destructuring": false
+        },
+        "children": [
+          {
+            "id": 1773502461285,
+            "componentName": "div",
+            "props": {},
+            "dependency": {
+              "package": "",
+              "destructuring": false
+            },
+            "styles": {
+              "display": "flex",
+              "justifyContent": "center",
+              "alignItems": "center"
+            },
+            "children": [
+              {
+                "id": 1773502462021,
+                "componentName": "Button",
+                "props": {
+                  "type": {
+                    "type": "Literal",
+                    "value": "dashed"
+                  },
+                  "size": {
+                    "type": "Literal",
+                    "value": "large"
+                  },
+                  "ghost": {
+                    "type": "Literal",
+                    "value": false
+                  },
+                  "loading": {
+                    "type": "Literal",
+                    "value": false
+                  },
+                  "text": {
+                    "type": "Literal",
+                    "value": "按钮"
+                  },
+                  "onClick": [
+                    {
+                      "type": "Action",
+                      "actionType": "customJs",
+                      "config": {
+                        "code": "console.log(\"aaa\")"
+                      }
+                    },
+                    {
+                      "type": "Action",
+                      "actionType": "showMessage",
+                      "config": {
+                        "type": "error",
+                        "text": "asdasd"
+                      }
+                    }
+                  ]
+                },
+                "dependency": {
+                  "package": "antd",
+                  "version": "^5.0.0",
+                  "destructuring": true
+                }
+              }
+            ]
+          },
+          {
+            "id": 1773502464194,
+            "componentName": "Modal",
+            "props": {
+              "title": {
+                "type": "Literal",
+                "value": "弹窗"
+              },
+              "visibleInEditor": {
+                "type": "Literal",
+                "value": true
+              }
+            },
+            "dependency": {
+              "package": "antd",
+              "version": "^5.0.0",
+              "destructuring": true
+            }
+          }
+        ]
+      },
+      "dependencies": [
+        {
+          "package": "./components/Page",
+          "destructuring": false
+        },
+        {
+          "package": "",
+          "destructuring": false
+        },
+        {
+          "package": "antd",
+          "version": "^5.0.0",
+          "destructuring": true
+        },
+        {
+          "package": "antd",
+          "version": "^5.0.0",
+          "destructuring": true
+        }
+      ]
+    }
+  ],
+  "dependencies": {
+    "antd": "^5.0.0",
+    "@ant-design/icons": "^5.0.0"
+  }
+}
