@@ -38,7 +38,7 @@ import {
 } from "./protocol";
 
 import { useComponentsStore } from "../stores/components";
-import { useUIStore } from "../stores/uiStore";
+import { useUIStore, type ClipboardData } from "../stores/uiStore";
 import { patchEventBus, type PatchEvent } from "../utils/patchEventBus";
 
 export class SimulatorHost {
@@ -354,8 +354,8 @@ export class SimulatorHost {
     // 特殊 Action：从 iframe 触发的复制操作
     if (actionName === "__copyToClipboard") {
       const componentId = args[0] as number;
-      const { components } = useComponentsStore.getState();
-      const tree = this.buildClipboardTree(componentId, components);
+      const { components, rootId } = useComponentsStore.getState();
+      const tree = this.buildClipboardTree(componentId, components, rootId);
       if (tree) {
         useUIStore.getState().setClipboard(tree);
       }
@@ -378,7 +378,8 @@ export class SimulatorHost {
   private buildClipboardTree(
     id: number,
     components: Record<number, any>,
-  ): any | null {
+    rootId?: number,
+  ): ClipboardData | null {
     const node = components[id];
     if (!node) return null;
 
@@ -386,10 +387,12 @@ export class SimulatorHost {
       node.children && node.children.length > 0
         ? node.children
             .map((childId: number) =>
-              this.buildClipboardTree(childId, components),
+              this.buildClipboardTree(childId, components, rootId),
             )
             .filter(Boolean)
         : undefined;
+
+    if (id === rootId) return children ?? null;
 
     return {
       id: node.id,

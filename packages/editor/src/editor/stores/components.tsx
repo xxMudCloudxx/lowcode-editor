@@ -15,7 +15,7 @@ import { create, type StateCreator } from "zustand";
 import { persist } from "zustand/middleware";
 
 import type { Component, ComponentTree } from "@lowcode/schema";
-import { useUIStore } from "./uiStore";
+import { useUIStore, type ClipboardData } from "./uiStore";
 import { undoMiddleware } from "./middleware/undoMiddleware";
 import { buildComponentTree } from "../utils/componentTree";
 
@@ -279,7 +279,7 @@ const creator: StateCreator<ComponentsStore, [["zustand/immer", never]]> = (
     const clipboard = useUIStore.getState().clipboard;
     if (!parentId || !clipboard) return;
 
-    const { map: newComponentsMap, rootId } = regenerateIds(clipboard);
+    const { map: newComponentsMap, rootIds } = regenerateIds(clipboard);
 
     set((state) => {
       const parent = state.components[parentId];
@@ -287,14 +287,16 @@ const creator: StateCreator<ComponentsStore, [["zustand/immer", never]]> = (
 
       // 合并新的组件 Map
       Object.assign(state.components, newComponentsMap);
-
-      const newRoot = state.components[rootId];
-      if (!newRoot) return;
-
-      // 将新 root 挂载到目标父组件下
-      newRoot.parentId = parentId;
       if (!parent.children) parent.children = [];
-      parent.children.push(newRoot.id);
+
+      for (const rootId of rootIds) {
+        const newRoot = state.components[rootId];
+        if (!newRoot) continue;
+
+        // 将新 root 挂载到目标父组件下
+        newRoot.parentId = parentId;
+        parent.children.push(newRoot.id);
+      }
     });
   },
 
@@ -384,27 +386,33 @@ const creator: StateCreator<ComponentsStore, [["zustand/immer", never]]> = (
  * - map: 新的 (id -> Component) 映射
  * - rootId: 新根节点的 id
  */
-function regenerateIds(tree: ComponentTree): {
+function regenerateIds(tree: ClipboardData): {
   map: Record<number, Component>;
-  rootId: number;
+  rootIds: number[];
 } {
   const map: Record<number, Component> = {};
-
-  const rootId = generateUniqueId();
-  map[rootId] = {
-    id: rootId,
-    name: tree.name,
-    props: structuredClone(tree.props ?? {}),
-    desc: tree.desc ?? "",
-    parentId: null,
-    children: [],
-    styles: tree.styles ? { ...tree.styles } : undefined,
-  };
+  const treeList = Array.isArray(tree) ? tree : [tree];
+  const rootIds: number[] = [];
 
   const stack: { node: ComponentTree; parentNewId: number }[] = [];
-  if (tree.children && tree.children.length > 0) {
-    for (let i = tree.children.length - 1; i >= 0; i--) {
-      stack.push({ node: tree.children[i], parentNewId: rootId });
+  for (const root of treeList) {
+    const rootId = generateUniqueId();
+    rootIds.push(rootId);
+
+    map[rootId] = {
+      id: rootId,
+      name: root.name,
+      props: structuredClone(root.props ?? {}),
+      desc: root.desc ?? "",
+      parentId: null,
+      children: [],
+      styles: root.styles ? { ...root.styles } : undefined,
+    };
+
+    if (root.children && root.children.length > 0) {
+      for (let i = root.children.length - 1; i >= 0; i--) {
+        stack.push({ node: root.children[i], parentNewId: rootId });
+      }
     }
   }
 
@@ -430,7 +438,7 @@ function regenerateIds(tree: ComponentTree): {
     }
   }
 
-  return { map, rootId };
+  return { map, rootIds };
 }
 
 /**

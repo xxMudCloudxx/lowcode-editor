@@ -10,7 +10,7 @@
 import { useEffect, useMemo } from "react";
 import { message } from "antd";
 import { useComponentsStore, getComponentById } from "../stores/components";
-import { useUIStore } from "../stores/uiStore";
+import { useUIStore, type ClipboardData } from "../stores/uiStore";
 import { useHistoryStore } from "../stores/historyStore";
 import type { Component, ComponentTree } from "@lowcode/schema";
 import { debounce } from "lodash-es";
@@ -28,7 +28,8 @@ const ContainerList: Set<string> = new Set([
  * 在顶层组件中调用一次即可生效。
  */
 export function useShortcutKeys() {
-  const { components, pasteComponents, deleteComponent } = useComponentsStore();
+  const { components, rootId, pasteComponents, deleteComponent } =
+    useComponentsStore();
 
   // history store 中的撤销 / 重做能力
   const { undo, redo, past, future } = useHistoryStore();
@@ -77,7 +78,7 @@ export function useShortcutKeys() {
           if (isCmdOrCtrl && curComponentId) {
             e.preventDefault();
 
-            const tree = buildClipboardTree(curComponentId, components);
+            const tree = buildClipboardTree(curComponentId, components, rootId);
             if (tree) {
               setClipboard(tree);
               debouncedMessage("复制成功");
@@ -165,7 +166,8 @@ export function useShortcutKeys() {
 function buildClipboardTree(
   id: number,
   components: Record<number, Component>,
-): ComponentTree | null {
+  rootId?: number,
+): ClipboardData | null {
   const rootNode = components[id];
   if (!rootNode) return null;
 
@@ -209,5 +211,8 @@ function buildClipboardTree(
     });
   }
 
-  return treeNodeMap.get(id) ?? null;
+  const tree = treeNodeMap.get(id) ?? null;
+  if (!tree) return null;
+
+  return id === rootId ? tree.children ?? null : tree;
 }

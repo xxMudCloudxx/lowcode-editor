@@ -7,6 +7,7 @@ import path from "path";
 const REPO_NAME = "lowcode-editor";
 
 export default defineConfig({
+  root: __dirname,
   base: `/${REPO_NAME}/`,
   plugins: [
     react(),
@@ -42,8 +43,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: "./src/test/setup.ts", // 指向我们的测试配置文件
-    // 如果需要，可以配置 UI
-    ui: true,
+    setupFiles: path.resolve(__dirname, "src/test/setup.ts"),
+    // 默认关闭 UI，避免 CLI/CI 环境缺少 @vitest/ui 时启动失败。
+    ui: process.env.VITEST_UI === "true",
   },
 });

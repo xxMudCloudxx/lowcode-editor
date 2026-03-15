@@ -265,6 +265,39 @@ describe("useComponentsStore 核心 actions", () => {
     expect(pastedButton.props.text).toBe("来自剪切板");
   });
 
+  it("pasteComponents: 剪切板为 Page 的 children 列表时应粘贴多个根子节点", () => {
+    act(() => {
+      useUIStore.getState().setClipboard([
+        {
+          id: 2000,
+          name: "Container",
+          desc: "根子容器",
+          props: {},
+        },
+        {
+          id: 2001,
+          name: "Button",
+          desc: "根子按钮",
+          props: { text: "来自页面子节点" },
+        },
+      ]);
+    });
+
+    act(() => {
+      useComponentsStore.getState().pasteComponents(1);
+    });
+
+    const state = useComponentsStore.getState();
+    const page = state.components[1];
+    expect(page.children && page.children.length).toBe(2);
+
+    const firstChild = state.components[page.children![0]];
+    const secondChild = state.components[page.children![1]];
+    expect(firstChild.name).toBe("Container");
+    expect(secondChild.name).toBe("Button");
+    expect(secondChild.props.text).toBe("来自页面子节点");
+  });
+
   it("historyStore: 超过最大步数时应丢弃最早的历史记录", () => {
     for (let i = 0; i < 55; i++) {
       act(() => {
@@ -290,7 +323,7 @@ describe("useComponentsStore 核心 actions", () => {
       expect.arrayContaining([
         expect.objectContaining({
           op: "add",
-          path: ["components", 10005],
+          path: ["components", "10005"],
         }),
       ])
     );

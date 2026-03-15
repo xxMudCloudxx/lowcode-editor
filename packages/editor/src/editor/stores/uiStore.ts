@@ -34,12 +34,14 @@ export const CANVAS_PRESETS: Record<CanvasMode, CanvasSize> = {
 
 // ===== Store 类型定义 =====
 
+export type ClipboardData = ComponentTree | ComponentTree[];
+
 interface UIState {
   curComponentId: number | null;
   mode: "edit" | "preview";
   canvasSize: CanvasSize;
   // 剪切板仍使用树状结构，方便 regenerateIds 做递归处理
-  clipboard: ComponentTree | null;
+  clipboard: ClipboardData | null;
 }
 
 interface UIActions {
@@ -47,7 +49,7 @@ interface UIActions {
   setMode: (mode: UIState["mode"]) => void;
   setCanvasSize: (size: CanvasSize) => void;
   setCanvasPreset: (preset: CanvasMode) => void;
-  setClipboard: (component: ComponentTree | null) => void;
+  setClipboard: (component: ClipboardData | null) => void;
 }
 
 export type UIStore = UIState & UIActions;
