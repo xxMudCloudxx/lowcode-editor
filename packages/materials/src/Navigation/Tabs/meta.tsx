@@ -20,6 +20,7 @@ const TabsProtocol: ComponentProtocol = {
   editor: {
     isContainer: true,
     parentTypes: PT_LAYOUT,
+    interactiveInEditor: true,
   },
 
   setter: [

@@ -16,6 +16,10 @@ export interface MaterialProps {
   style?: CSSProperties;
   /** 编辑器注入的组件 ID */
   "data-component-id"?: number | string;
+  /** 编辑器注入的组件类型，用于拖拽命中和选择态识别 */
+  "data-component-type"?: string;
+  /** 编辑器标记当前组件是否为容器 */
+  "data-is-container"?: string;
   /** 子组件 */
   children?: ReactNode;
 }

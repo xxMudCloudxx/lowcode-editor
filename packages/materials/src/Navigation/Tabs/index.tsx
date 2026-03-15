@@ -23,6 +23,8 @@ const Tabs = forwardRef<HTMLDivElement, TabsProps>(
       tabPosition = "top",
       centered,
       "data-component-id": id,
+      "data-component-type": componentType,
+      "data-is-container": isContainer,
       ...restProps
     },
     ref
@@ -54,6 +56,8 @@ const Tabs = forwardRef<HTMLDivElement, TabsProps>(
       <div
         ref={ref}
         data-component-id={id}
+        data-component-type={componentType}
+        data-is-container={isContainer}
         style={{
           minHeight: 100,
           ...style,

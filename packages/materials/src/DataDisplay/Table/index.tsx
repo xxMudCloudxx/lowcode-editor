@@ -55,6 +55,8 @@ const Table = forwardRef<HTMLDivElement, TableProps>(
       style,
       className,
       "data-component-id": id,
+      "data-component-type": componentType,
+      "data-is-container": isContainer,
       showHeader = true,
       ...props
     },
@@ -114,6 +116,8 @@ const Table = forwardRef<HTMLDivElement, TableProps>(
       <div
         ref={ref}
         data-component-id={id}
+        data-component-type={componentType}
+        data-is-container={isContainer}
         style={{
           width: "100%",
           minHeight: 100,
