@@ -236,4 +236,70 @@ describe("exportSourceCode", () => {
     expect(runtimeFile?.content).not.toContain("customJs:");
     expect(runtimeFile?.content).not.toContain("goToLink:");
   });
+
+  it("should keep the Page root component in generated jsx", async () => {
+    const materialPack = createMaterialPack({
+      descriptors: [
+        createDescriptor({
+          name: "Page",
+          dependency: {
+            package: "./components/Page",
+            destructuring: false,
+          },
+          isContainer: true,
+        }),
+        createDescriptor({
+          name: "Button",
+          dependency: {
+            package: "antd",
+            version: "^5.0.0",
+            destructuring: true,
+            exportName: "Button",
+          },
+          propTransforms: {
+            rename: { text: "children" },
+          },
+        }),
+      ],
+    });
+
+    const schema = [
+      {
+        id: 1,
+        name: "Page",
+        props: {
+          className: "root-page",
+        },
+        children: [
+          {
+            id: 2,
+            name: "Button",
+            props: {
+              text: "按钮",
+            },
+          },
+        ],
+      },
+    ];
+
+    const result = await exportSourceCode(schema, {
+      solution: "react-vite",
+      materialPack,
+      skipPublisher: true,
+    });
+
+    expect(result.success).toBe(true);
+
+    const indexFile = result.files?.find(
+      (file) => file.filePath === "src/pages/Index/Index.tsx",
+    );
+
+    expect(indexFile).toBeDefined();
+    expect(indexFile?.content).toContain(
+      "import Page from '../../components/Page';",
+    );
+    expect(indexFile?.content).toContain("<Page className={`root-page`}>");
+    expect(indexFile?.content).toContain("</Page>");
+    expect(indexFile?.content).not.toContain("<>");
+  });
 });

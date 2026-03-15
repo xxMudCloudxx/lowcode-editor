@@ -52,7 +52,7 @@ import {
   entryPlugin as vueEntryPlugin,
   packageJsonPlugin as vuePackageJsonPlugin,
   componentsPlugin as vueComponentsPlugin,
-  customJsRuntimePlugin as vueCustomJsRuntimePlugin,
+  runtimePlugin as vueCustomJsRuntimePlugin,
 } from "../plugins/project/vue";
 
 /**

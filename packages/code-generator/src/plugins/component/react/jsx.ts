@@ -7,6 +7,7 @@
 
 import type {
   IRAction,
+  IRDependency,
   IRNode,
   IRPage,
   IRPropValue,
@@ -21,6 +22,17 @@ import type { IActionHandlerContext } from "../shared/handlers/actions";
 import { buildActionHandlerContext } from "../shared/action-handler-context";
 
 const getActionHandler = createActionHandlerRegistry("antd");
+
+function normalizeReactPageDependency(dep: IRDependency): IRDependency {
+  if (dep.package.startsWith("./components/")) {
+    return {
+      ...dep,
+      package: `../..${dep.package.slice(1)}`,
+    };
+  }
+
+  return dep;
+}
 
 /**
  * 生成单条 Action 的核心调用代码字符串
@@ -91,23 +103,9 @@ const jsxPlugin: IComponentPlugin = {
       }
     }
 
-    // [!> 逻辑修改：现在只处理 page.node <!]
-    const irNode = page.node;
-    if (irNode.componentName === "Page" && irNode.children) {
-      const childrenJsxStrings = irNode.children
-        .map((childNode) =>
-          generateJSX(childNode, moduleBuilder, 0, page, registry),
-        ) // [!> 传递 page 和 registry <!]
-        .join("\n");
-      moduleBuilder.setJSX(
-        `<>
-${childrenJsxStrings}
-</>`,
-      );
-    } else {
-      const jsxString = generateJSX(irNode, moduleBuilder, 0, page, registry); // [!> 传递 page 和 registry <!]
-      moduleBuilder.setJSX(jsxString);
-    }
+    // 根节点也应走统一 JSX 流程，避免丢失 Page 的样式、className 和运行时容器能力。
+    const jsxString = generateJSX(page.node, moduleBuilder, 0, page, registry);
+    moduleBuilder.setJSX(jsxString);
   },
 };
 
@@ -240,7 +238,10 @@ function generateJSX(
   const tagName = meta.getTagName(irNode.props);
 
   // 2. 处理组件导入
-  moduleBuilder.addImport(irNode.dependency, irNode.componentName);
+  moduleBuilder.addImport(
+    normalizeReactPageDependency(irNode.dependency),
+    irNode.componentName,
+  );
 
   const jsxProps = meta.getTransformedProps(irNode.props);
 

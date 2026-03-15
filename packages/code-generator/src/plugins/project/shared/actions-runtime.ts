@@ -27,7 +27,9 @@ function isIRNodeLike(value: unknown): value is IRNode {
   );
 }
 
-function collectRuntimeActions(builder: ProjectBuilder): SupportedRuntimeAction[] {
+function collectRuntimeActions(
+  builder: ProjectBuilder,
+): SupportedRuntimeAction[] {
   const actionSet = new Set<SupportedRuntimeAction>();
 
   const visitPropValue = (value: IRPropValue) => {
@@ -74,15 +76,14 @@ function collectRuntimeActions(builder: ProjectBuilder): SupportedRuntimeAction[
     node.children?.forEach(visitNode);
   };
 
-  builder
-    .getIrProject()
-    .pages.forEach((page: IRPage) => visitNode(page.node));
+  builder.getIrProject().pages.forEach((page: IRPage) => visitNode(page.node));
 
   return Array.from(actionSet).sort();
 }
 
 function getRuntimeContent(actions: SupportedRuntimeAction[]): string {
-  const needsMessageApi = actions.includes("showMessage") || actions.includes("customJs");
+  const needsMessageApi =
+    actions.includes("showMessage") || actions.includes("customJs");
   const includesShowMessage = actions.includes("showMessage");
   const includesGoToLink = actions.includes("goToLink");
   const includesCustomJs = actions.includes("customJs");
@@ -267,7 +268,7 @@ ${registryEntries}
   return `${parts.join("\n\n")}\n`;
 }
 
-export function createCustomJsRuntimePlugin(name: string): IProjectPlugin {
+export function createRuntimePlugin(name: string): IProjectPlugin {
   return {
     type: "project",
     name,
