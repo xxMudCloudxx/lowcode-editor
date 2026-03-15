@@ -21,6 +21,61 @@ export const isIRActionArray = (propValue: any): propValue is IRAction[] => {
   );
 };
 
+const isIRNodeProp = (propValue: unknown): propValue is IRNode => {
+  return (
+    typeof propValue === "object" &&
+    propValue !== null &&
+    "componentName" in propValue
+  );
+};
+
+const isIRNodeArrayProp = (propValue: unknown): propValue is IRNode[] => {
+  return (
+    Array.isArray(propValue) &&
+    propValue.length > 0 &&
+    isIRNodeProp(propValue[0])
+  );
+};
+
+/**
+ * 深度遍历 IRNode 树，覆盖 children 和 props 中承载的 slot 节点。
+ * @param irNode - 当前遍历的根 IRNode
+ * @param visit - 每访问一个节点时执行的回调
+ */
+export const walkIrNodes = (
+  irNode: IRNode,
+  visit: (node: IRNode) => void,
+) => {
+  const stack: IRNode[] = [irNode];
+
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    visit(current);
+
+    const propValues = Object.values(current.props);
+    for (let i = propValues.length - 1; i >= 0; i--) {
+      const prop = propValues[i];
+
+      if (isIRNodeProp(prop)) {
+        stack.push(prop);
+        continue;
+      }
+
+      if (isIRNodeArrayProp(prop)) {
+        for (let j = prop.length - 1; j >= 0; j--) {
+          stack.push(prop[j]);
+        }
+      }
+    }
+
+    if (current.children) {
+      for (let i = current.children.length - 1; i >= 0; i--) {
+        stack.push(current.children[i]);
+      }
+    }
+  }
+};
+
 /**
  * 深度遍历 IRNode 树并构建 ID -> IRNode 的索引映射（显式栈迭代）。
  * @param irNode - 当前遍历的根 IRNode
@@ -30,34 +85,7 @@ export const buildIrNodeMap = (
   irNode: IRNode,
   map: Map<number | string, IRNode>,
 ) => {
-  const stack: IRNode[] = [irNode];
-
-  while (stack.length > 0) {
-    const current = stack.pop()!;
+  walkIrNodes(irNode, (current) => {
     map.set(current.id, current);
-
-    // 子节点入栈（逆序以保持遍历顺序）
-    if (current.children) {
-      for (let i = current.children.length - 1; i >= 0; i--) {
-        stack.push(current.children[i]);
-      }
-    }
-
-    // Prop 中的 JSSlot 入栈
-    for (const prop of Object.values(current.props)) {
-      if (prop && typeof prop === "object") {
-        if ((prop as IRNode).componentName) {
-          stack.push(prop as IRNode);
-        } else if (
-          Array.isArray(prop) &&
-          prop[0] &&
-          (prop[0] as IRNode).componentName
-        ) {
-          for (let i = (prop as IRNode[]).length - 1; i >= 0; i--) {
-            stack.push((prop as IRNode[])[i]);
-          }
-        }
-      }
-    }
-  }
+  });
 };

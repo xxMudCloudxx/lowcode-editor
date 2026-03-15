@@ -239,4 +239,88 @@ describe("runStateLifter", () => {
     const resultBtn = result.pages[0].node.children![0];
     expect(resultBtn.props.onClick).toBeUndefined();
   });
+
+  it("should traverse slot node stored in props", () => {
+    const modalId = "modal_slot_single";
+    const modal = createIRNode({
+      id: modalId,
+      componentName: "Modal",
+      props: {},
+    });
+    const slotButton = createIRNode({
+      id: "slot_btn_1",
+      componentName: "Button",
+      props: {
+        onClick: {
+          type: "Action",
+          actionType: "componentMethod",
+          config: { componentId: modalId, method: "open" },
+        } as IRAction,
+      },
+    });
+    const page = createIRPage({
+      node: createIRNode({
+        id: "root",
+        componentName: "Page",
+        props: {
+          header: slotButton as any,
+        },
+        children: [modal],
+      }),
+    });
+
+    const result = runStateLifter(createIRProject({ pages: [page] }), registry);
+    const resultSlotButton = result.pages[0].node.props.header as any;
+
+    expect((resultSlotButton.props.onClick as IRAction).actionType).toBe(
+      "callMethod",
+    );
+    expect(result.pages[0].states?.[`visible_${modalId}`]).toEqual({
+      type: "Literal",
+      value: false,
+    });
+  });
+
+  it("should traverse slot node arrays stored in props", () => {
+    const modalId = "modal_slot_array";
+    const modal = createIRNode({
+      id: modalId,
+      componentName: "Modal",
+      props: {},
+    });
+    const slotTab1 = createIRNode({
+      id: "slot_tab_1",
+      componentName: "Button",
+      props: {},
+    });
+    const slotTab2 = createIRNode({
+      id: "slot_tab_2",
+      componentName: "Button",
+      props: {
+        onClick: {
+          type: "Action",
+          actionType: "componentMethod",
+          config: { componentId: modalId, method: "open" },
+        } as IRAction,
+      },
+    });
+    const page = createIRPage({
+      node: createIRNode({
+        id: "root",
+        componentName: "Page",
+        props: {
+          tabs: [slotTab1, slotTab2] as any,
+        },
+        children: [modal],
+      }),
+    });
+
+    const result = runStateLifter(createIRProject({ pages: [page] }), registry);
+    const resultTabs = result.pages[0].node.props.tabs as any[];
+
+    expect((resultTabs[1].props.onClick as IRAction).actionType).toBe(
+      "callMethod",
+    );
+    expect(result.pages[0].methods?.[`handleOpen_${modalId}`]).toBeDefined();
+  });
 });

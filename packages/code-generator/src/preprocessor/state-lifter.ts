@@ -16,7 +16,11 @@ import type {
   IRLiteral,
   IRPage,
 } from "@lowcode/schema";
-import { buildIrNodeMap, isIRActionArray } from "../utils/ir-helper";
+import {
+  buildIrNodeMap,
+  isIRActionArray,
+  walkIrNodes,
+} from "../utils/ir-helper";
 
 /**
  * 遍历并转换单个页面的 IR 树
@@ -43,7 +47,7 @@ function transformComponentMethods(
   irNodeMap: Map<number | string, IRNode>,
   registry: CodeGenRegistry,
 ) {
-  const traverse = (irNode: IRNode) => {
+  walkIrNodes(page.node, (irNode) => {
     // 1. 遍历当前节点的所有 Props
     for (const [key, propValue] of Object.entries(irNode.props)) {
       let actions: IRAction[] = [];
@@ -74,30 +78,7 @@ function transformComponentMethods(
         }
       }
     }
-
-    // 5. 递归遍历子节点和 JSSlot...
-    if (irNode.children) {
-      irNode.children.forEach(traverse);
-    }
-    // ... (JSSlot 递归逻辑) ...
-    for (const prop of Object.values(irNode.props)) {
-      if (prop && typeof prop === "object") {
-        if ((prop as IRNode).componentName) {
-          traverse(prop as IRNode);
-        } else if (
-          Array.isArray(prop) &&
-          prop[0] &&
-          (prop[0] as IRNode).componentName
-        ) {
-          for (const node of prop as IRNode[]) {
-            traverse(node);
-          }
-        }
-      }
-    }
-  };
-
-  traverse(page.node); // 从页面的根节点开始遍历
+  });
 }
 
 /**
