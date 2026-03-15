@@ -10,8 +10,8 @@ import MonacoEditor, {
   type EditorProps,
 } from "@monaco-editor/react";
 import { Button } from "antd";
-import { editor } from "monaco-editor";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { editor } from "monaco-editor";
 
 export interface EditorFile {
   name: string;
@@ -22,6 +22,8 @@ export interface EditorFile {
 interface Props {
   /** 外部传入的 CSS 初始值 */
   value: string;
+  /** Monaco model path，用于在组件切换时重建正确的编辑上下文 */
+  path?: string;
   /** 点击保存按钮时的回调函数 */
   onSave?: (newValue: string) => void;
   /** Monaco Editor 的其他配置项 */
@@ -29,7 +31,7 @@ interface Props {
 }
 
 export default function CssEditor(props: Props) {
-  const { value, onSave, options } = props;
+  const { value, path = "component.css", onSave, options } = props;
 
   /**
    * @description 内部状态，用于存储编辑器当前的内容。
@@ -49,12 +51,10 @@ export default function CssEditor(props: Props) {
    * 当父组件通过某种方式（例如，从服务器加载新数据或保存成功后）更新了 `value` 时，
    * 我们需要同步更新编辑器的内部值，并重置“脏”状态。
    */
-  const [prevValue, setPrevValue] = useState(value);
-  if (value !== prevValue) {
-    setPrevValue(value);
+  useEffect(() => {
     setInternalValue(value);
     setIsDirty(false);
-  }
+  }, [value]);
 
   /**
    * @description 编辑器挂载后的回调。
@@ -101,7 +101,7 @@ export default function CssEditor(props: Props) {
 
       <MonacoEditor
         height={"100%"}
-        path="component.css"
+        path={path}
         language="css"
         onMount={handleEditorMount}
         // 4. 编辑器的值绑定到内部状态 `internalValue`

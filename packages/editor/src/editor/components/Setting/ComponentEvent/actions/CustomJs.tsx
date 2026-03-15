@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUIStore } from "../../../../stores/uiStore";
 import type { OnMount } from "@monaco-editor/react";
 import MonacoEditor from "@monaco-editor/react";
@@ -21,29 +21,53 @@ const DEFAULT_CODE_TEMPLATE = `// 可用 API:
 // - context.name           当前组件名称
 // - context.props          当前组件属性
 // - args                   事件触发时的参数
-
-ShowMessage("按钮被点击了！");
 `;
+
+function ensureEditorTemplate(code?: string): string {
+  if (!code || code.trim().length === 0) {
+    return DEFAULT_CODE_TEMPLATE;
+  }
+
+  if (code.startsWith(DEFAULT_CODE_TEMPLATE)) {
+    return code;
+  }
+
+  return `${DEFAULT_CODE_TEMPLATE}\n${code.trimStart()}`;
+}
+
+function resolveEditorValue(
+  value?: string,
+  defaultValue?: string,
+): string {
+  return ensureEditorTemplate(value || defaultValue);
+}
+
+function stripDefaultTemplateComments(code: string): string {
+  if (!code.startsWith(DEFAULT_CODE_TEMPLATE)) {
+    return code;
+  }
+
+  return code.slice(DEFAULT_CODE_TEMPLATE.length).replace(/^\s+/, "");
+}
 
 export function CustomJS(props: CustomJsProps) {
   const { value: val, defaultValue, onChange } = props;
   const curComponentId = useUIStore((s) => s.curComponentId);
-  const [value, setValue] = useState(defaultValue || DEFAULT_CODE_TEMPLATE);
+  const [value, setValue] = useState(resolveEditorValue(val, defaultValue));
 
-  const [prevVal, setPrevVal] = useState(val);
-  if (val !== prevVal) {
-    setPrevVal(val);
-    setValue(val || DEFAULT_CODE_TEMPLATE);
-  }
+  useEffect(() => {
+    setValue(resolveEditorValue(val, defaultValue));
+  }, [defaultValue, val]);
 
   function codeChange(value?: string) {
     if (!curComponentId) return;
 
-    setValue(value || "");
+    const nextValue = value || "";
+    setValue(nextValue);
 
     onChange?.({
       type: "customJs",
-      code: value || "",
+      code: stripDefaultTemplateComments(nextValue),
     });
   }
 
@@ -63,7 +87,7 @@ export function CustomJS(props: CustomJsProps) {
           <MonacoEditor
             width={"100%"}
             height={"300px"}
-            path="action.js"
+            path={`action-${curComponentId ?? "new"}.js`}
             language="javascript"
             onMount={handleEditorMount}
             onChange={codeChange}

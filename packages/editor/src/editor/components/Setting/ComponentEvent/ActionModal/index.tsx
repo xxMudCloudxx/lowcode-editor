@@ -5,7 +5,7 @@
  * 根据用户选择的动作类型，渲染对应的配置表单。
  * @module Components/Setting/ComponentEvent/ActionModal
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, Segmented } from "antd";
 import { GoToLink, type GoToLinkConfig } from "../actions/GoToLink";
 import { ShowMessage, type ShowMessageConfig } from "../actions/ShowMessage";
@@ -38,27 +38,21 @@ const ACTION_TYPE_MAP: Record<string, string> = {
 
 export function ActionModal(props: ActionModalProps) {
   const { visible, handleCancel, handleOk, action } = props;
+  const defaultActionLabel = "访问链接";
 
   // State: 当前选中的动作类型 Tab
-  const [key, setKey] = useState<string>("访问链接");
+  const [key, setKey] = useState<string>(defaultActionLabel);
   // State: 当前模态框中正在编辑的动作配置对象
   const [curConfig, setCurConfig] = useState<ActionConfig>();
 
-  // 在模态框可见或 action 变化时，用 action prop 初始化内部状态（render-time sync）
-  const [prevVisible, setPrevVisible] = useState(visible);
-  const [prevAction, setPrevAction] = useState(action);
-  if (visible !== prevVisible || action !== prevAction) {
-    setPrevVisible(visible);
-    setPrevAction(action);
-    if (visible) {
-      setCurConfig(action);
-      if (action?.type) {
-        setKey(ACTION_TYPE_MAP[action.type]);
-      } else {
-        setKey("访问链接");
-      }
+  useEffect(() => {
+    if (!visible) {
+      return;
     }
-  }
+
+    setCurConfig(action);
+    setKey(action?.type ? ACTION_TYPE_MAP[action.type] : defaultActionLabel);
+  }, [action, defaultActionLabel, visible]);
 
   return (
     <Modal

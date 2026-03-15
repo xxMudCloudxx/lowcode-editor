@@ -1,8 +1,6 @@
 // src/editor/hooks/useComponentStyleManager.ts
-
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { CSSProperties } from "react";
-import { debounce } from "lodash-es";
 import { useComponentsStore, getComponentById } from "../stores/components";
 import { useUIStore } from "../stores/uiStore";
 import type { Component } from "@lowcode/schema";
@@ -27,25 +25,13 @@ export function useComponentStyleManager(form: any) {
     [curComponentId, components],
   );
 
-  // State: 存储 CSS 编辑器中的文本内容
-  const [css, setCss] = useState<string>(".comp{\n\n}");
-
-  // 当选中组件变化时，同步 CSS 编辑器的内容（render-time sync）
-  const [prevSyncKey, setPrevSyncKey] = useState({
-    id: curComponent?.id,
-    styles: curComponent?.styles,
-  });
-  if (
-    curComponent?.id !== prevSyncKey.id ||
-    curComponent?.styles !== prevSyncKey.styles
-  ) {
-    setPrevSyncKey({ id: curComponent?.id, styles: curComponent?.styles });
-    setCss(
+  const css = useMemo(
+    () =>
       curComponent?.styles
         ? convertStyleObjectToCssString(curComponent.styles)
-        : ".comp{\n\n}",
-    );
-  }
+        : ".comp {\n\n}",
+    [curComponent?.styles],
+  );
 
   // Effect: 当选中组件变化时，同步表单内容
   useEffect(() => {
@@ -65,21 +51,17 @@ export function useComponentStyleManager(form: any) {
   };
 
   // CSS 编辑器驱动的样式更新 (带防抖)
-  const handleEditorChange = useMemo(
-    () =>
-      debounce((value: string) => {
-        if (!curComponent?.id) return;
+  const handleEditorChange = (value: string) => {
+    if (!curComponent?.id) return;
 
-        const newStyles = parseCssStringToObject(value);
+    const newStyles = parseCssStringToObject(value);
 
-        updateComponentStyles(
-          curComponent.id,
-          { ...form.getFieldsValue(), ...newStyles },
-          true,
-        );
-      }, 500),
-    [curComponent?.id, form, updateComponentStyles],
-  );
+    updateComponentStyles(
+      curComponent.id,
+      { ...form.getFieldsValue(), ...newStyles },
+      true,
+    );
+  };
 
   return {
     css,

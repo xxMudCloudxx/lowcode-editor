@@ -57,7 +57,12 @@ export function ComponentStyle() {
       title: "CSS编辑器",
       component: (
         <div className="border border-neutral-300 h-[20vh] w-[95%]">
-          <CssEditor value={css} onSave={handleEditorChange} />
+          <CssEditor
+            key={curComponent.id}
+            path={`component-${curComponent.id}.css`}
+            value={css}
+            onSave={handleEditorChange}
+          />
         </div>
       ),
     },
