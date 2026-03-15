@@ -48,6 +48,16 @@ export function getRegisteredSolutions(): string[] {
   return Object.keys(solutionRegistry);
 }
 
+function createModuleBuilderOrThrow(solution: ISolution) {
+  if (!solution.createModuleBuilder) {
+    throw new Error(
+      `[CodeGenerator] 解决方案 ${solution.name} 未提供 createModuleBuilder 实现。`,
+    );
+  }
+
+  return solution.createModuleBuilder();
+}
+
 /**
  * 导出源代码的选项接口
  */
@@ -202,9 +212,7 @@ export async function exportSourceCode(
 
     // --- 6. 执行 Component Plugins（逐页面） ---
     irProject.pages.forEach((page: IRPage) => {
-      const moduleBuilder = solution.createModuleBuilder
-        ? solution.createModuleBuilder()
-        : projectBuilder.createModuleBuilder();
+      const moduleBuilder = createModuleBuilderOrThrow(solution);
 
       // 应用所有组件插件
       solution.componentPlugins.forEach((plugin) => {

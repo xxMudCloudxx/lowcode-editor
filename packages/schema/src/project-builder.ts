@@ -2,10 +2,8 @@
 
 /**
  * @file 项目构建器
- * @description 管理整个项目的文件生成，并提供创建 ModuleBuilder 的能力。
+ * @description 管理整个项目的文件生成，以及插件附加依赖和后处理流程。
  */
-
-import { ModuleBuilder } from "./module-builder";
 import type { IRProject, IGeneratedFile } from "./ir";
 import type { IPostProcessor } from "./plugin";
 
@@ -94,14 +92,6 @@ export class ProjectBuilder {
   }
 
   // --- 辅助方法 ---
-
-  /**
-   * 创建一个新的 ModuleBuilder 实例。
-   * @returns ModuleBuilder 实例。
-   */
-  createModuleBuilder(): ModuleBuilder {
-    return new ModuleBuilder();
-  }
 
   /**
    * 注册一个运行时依赖（用于 package.json 生成）。

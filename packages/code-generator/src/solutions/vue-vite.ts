@@ -82,7 +82,7 @@ const vueSolution: ISolution = {
   publisher: zipPublisher,
 
   /**
-   * 使用 VueModuleBuilder 替代默认的 React ModuleBuilder
+   * 使用 VueModuleBuilder 作为 Vue 方案的模块构建器
    */
   createModuleBuilder: () => new VueModuleBuilder(),
 

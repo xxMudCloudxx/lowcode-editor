@@ -92,6 +92,16 @@ function createFilesSnapshot(projectBuilder: ProjectBuilder) {
   return cloneSnapshot(projectBuilder.generateFiles());
 }
 
+function createModuleBuilderOrThrow(solution: ISolution) {
+  if (!solution.createModuleBuilder) {
+    throw new Error(
+      `[traceCodegenPipeline] 解决方案 ${solution.name} 未提供 createModuleBuilder 实现。`,
+    );
+  }
+
+  return solution.createModuleBuilder();
+}
+
 function collectNodeStats(node: IRNode): {
   nodeCount: number;
   actionCount: number;
@@ -326,9 +336,7 @@ function emitPageFiles(
   projectBuilder: ProjectBuilder,
   registry: CodeGenRegistry,
 ) {
-  const moduleBuilder = solution.createModuleBuilder
-    ? solution.createModuleBuilder()
-    : projectBuilder.createModuleBuilder();
+  const moduleBuilder = createModuleBuilderOrThrow(solution);
 
   solution.componentPlugins.forEach((plugin) => {
     plugin.run(page, moduleBuilder, projectBuilder, { registry });

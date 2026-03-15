@@ -8,6 +8,7 @@ import { reactViteTemplate } from "../templates/react-vite-template";
 import { prettierPostProcessor } from "../postprocessor/prettier";
 import { zipPublisher } from "../publisher/zip-publisher";
 import { stateLifterPreprocessor } from "../preprocessor";
+import { ReactModuleBuilder } from "../utils/react-module-builder";
 
 // --- 组件级插件 ---
 import jsxPlugin from "../plugins/component/react/jsx";
@@ -55,6 +56,8 @@ const reactViteSolution: ISolution = {
   postProcessors: [prettierPostProcessor()],
 
   publisher: zipPublisher,
+
+  createModuleBuilder: () => new ReactModuleBuilder(),
 };
 
 export default reactViteSolution;

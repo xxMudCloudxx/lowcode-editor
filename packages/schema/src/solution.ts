@@ -92,8 +92,8 @@ export interface ISolution {
 
   /**
    * 自定义模块构建器工厂
-   * @description 不同框架可提供各自的 ModuleBuilder 实现（如 Vue SFC Builder）。
-   *              若为空则使用默认的 React ModuleBuilder。
+   * @description 由具体 Solution 提供模块构建器实现（如 React TSX Builder、Vue SFC Builder）。
+   *              schema 层仅定义契约，不提供框架默认实现。
    */
   createModuleBuilder?: () => IModuleBuilder;
 
