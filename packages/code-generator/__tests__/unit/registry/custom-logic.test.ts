@@ -3,7 +3,7 @@ import {
   iconCustomLogic,
   tableCustomLogic,
   formItemCustomLogic,
-} from "../../../src/registry/custom-logic";
+} from "../../../../materials/src/custom-logic";
 import type { IModuleBuilder } from "@lowcode/schema";
 
 // ============================================================

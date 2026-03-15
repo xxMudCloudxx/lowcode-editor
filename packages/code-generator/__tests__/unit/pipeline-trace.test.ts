@@ -2,8 +2,11 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { execFileSync } from "child_process";
+import { createRequire } from "module";
 import { fileURLToPath } from "url";
 import { describe, expect, it } from "vitest";
+
+const require = createRequire(import.meta.url);
 
 describe("parse-with-stages snapshot", () => {
   it("should match the committed output and total snapshots for scripts/input.json", () => {
@@ -21,17 +24,15 @@ describe("parse-with-stages snapshot", () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "codegen-trace-"));
     const tempOutputPath = path.join(tempDir, "output.json");
     const tempTotalPath = path.join(tempDir, "total.json");
-    const tsxPath = path.resolve(packageRoot, "node_modules/.bin/tsx.CMD");
+    const tsxPath = require.resolve("tsx/cli", {
+      paths: [packageRoot],
+    });
     const scriptPath = path.join(packageRoot, "scripts/parse-with-stages.ts");
     const inputPath = path.join(packageRoot, "scripts/input.json");
-    const psQuote = (value: string) => `'${value.replace(/'/g, "''")}'`;
 
     execFileSync(
-      "powershell.exe",
-      [
-        "-Command",
-        `& ${psQuote(tsxPath)} ${psQuote(scriptPath)} ${psQuote(inputPath)} ${psQuote(tempOutputPath)} ${psQuote(tempTotalPath)}`,
-      ],
+      process.execPath,
+      [tsxPath, scriptPath, inputPath, tempOutputPath, tempTotalPath],
       {
         cwd: packageRoot,
         stdio: "pipe",
