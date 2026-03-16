@@ -29,12 +29,26 @@ describe("parse-with-stages snapshot", () => {
     });
     const scriptPath = path.join(packageRoot, "scripts/parse-with-stages.ts");
     const inputPath = path.join(packageRoot, "scripts/input.json");
+    const aliasBootstrapPath = path.join(
+      packageRoot,
+      "scripts/register-workspace-aliases.cjs",
+    );
+    const nodeOptions = [
+      process.env.NODE_OPTIONS,
+      `--require=${aliasBootstrapPath}`,
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     execFileSync(
       process.execPath,
       [tsxPath, scriptPath, inputPath, tempOutputPath, tempTotalPath],
       {
         cwd: packageRoot,
+        env: {
+          ...process.env,
+          NODE_OPTIONS: nodeOptions,
+        },
         stdio: "pipe",
       },
     );
