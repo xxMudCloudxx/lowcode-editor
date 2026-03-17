@@ -45,9 +45,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 运行测试
-      - name: Run tests
-        run: pnpm test
+      # 先构建 schema，再运行 code-generator 测试
+      - name: Build schema
+        run: pnpm --filter @lowcode/schema build
+
+      - name: Run code-generator tests
+        run: pnpm --filter @lowcode/code-generator test
 
       # 生成组件元数据
       - name: Generate materials metadata

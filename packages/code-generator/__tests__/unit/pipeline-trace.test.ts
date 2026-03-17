@@ -2,11 +2,8 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { execFileSync } from "child_process";
-import { createRequire } from "module";
 import { fileURLToPath } from "url";
 import { describe, expect, it } from "vitest";
-
-const require = createRequire(import.meta.url);
 
 describe("parse-with-stages snapshot", () => {
   it("should match the committed output and total snapshots for scripts/input.json", () => {
@@ -21,34 +18,26 @@ describe("parse-with-stages snapshot", () => {
       fs.readFileSync(path.join(fixturesDir, "total.json"), "utf-8"),
     );
     const packageRoot = path.resolve(fixturesDir, "../../../..");
+    const workspaceRoot = path.resolve(packageRoot, "../..");
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "codegen-trace-"));
     const tempOutputPath = path.join(tempDir, "output.json");
     const tempTotalPath = path.join(tempDir, "total.json");
-    const tsxPath = require.resolve("tsx/cli", {
-      paths: [packageRoot],
-    });
+    const tsxPath = path.join(
+      workspaceRoot,
+      "node_modules/.pnpm/node_modules/tsx/dist/cli.mjs",
+    );
     const scriptPath = path.join(packageRoot, "scripts/parse-with-stages.ts");
     const inputPath = path.join(packageRoot, "scripts/input.json");
-    const aliasBootstrapPath = path.join(
-      packageRoot,
-      "scripts/register-workspace-aliases.cjs",
-    );
-    const nodeOptions = [
-      process.env.NODE_OPTIONS,
-      `--require=${aliasBootstrapPath}`,
-    ]
-      .filter(Boolean)
-      .join(" ");
+
+    if (!fs.existsSync(tsxPath)) {
+      throw new Error(`tsx CLI not found: ${tsxPath}`);
+    }
 
     execFileSync(
       process.execPath,
       [tsxPath, scriptPath, inputPath, tempOutputPath, tempTotalPath],
       {
         cwd: packageRoot,
-        env: {
-          ...process.env,
-          NODE_OPTIONS: nodeOptions,
-        },
         stdio: "pipe",
       },
     );
