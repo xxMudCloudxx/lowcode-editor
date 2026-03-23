@@ -18,7 +18,10 @@ export interface CodegenWorkerLike {
 interface PendingRequest {
   resolve: (result: GenerateCodeWithWorkerResult) => void;
   reject: (error: Error) => void;
+  timeoutId: ReturnType<typeof setTimeout>;
 }
+
+const DEFAULT_CODEGEN_TIMEOUT_MS = 5000;
 
 /**
  * Worker 出码请求参数。
@@ -44,6 +47,16 @@ export class CodegenCancelledError extends Error {
   constructor(message: string = "已取消过期的出码请求") {
     super(message);
     this.name = "CodegenCancelledError";
+  }
+}
+
+/**
+ * 出码超时错误。
+ */
+export class CodegenTimeoutError extends Error {
+  constructor(message: string = "出码超时，已重置 worker，请重试") {
+    super(message);
+    this.name = "CodegenTimeoutError";
   }
 }
 
@@ -89,9 +102,14 @@ export class CodegenWorkerClient {
   private worker: CodegenWorkerLike | null;
   private readonly pendingRequests = new Map<number, PendingRequest>();
   private requestId = 0;
+  private readonly timeoutMs: number;
 
-  constructor(createWorker: () => CodegenWorkerLike = createCodegenWorker) {
+  constructor(
+    createWorker: () => CodegenWorkerLike = createCodegenWorker,
+    timeoutMs: number = DEFAULT_CODEGEN_TIMEOUT_MS,
+  ) {
     this.createWorker = createWorker;
+    this.timeoutMs = timeoutMs;
     this.worker = this.createAndBindWorker();
   }
 
@@ -115,7 +133,19 @@ export class CodegenWorkerClient {
     const worker = this.ensureWorker();
 
     return new Promise<GenerateCodeWithWorkerResult>((resolve, reject) => {
-      this.pendingRequests.set(requestId, { resolve, reject });
+      const timeoutId = setTimeout(() => {
+        if (!this.pendingRequests.has(requestId)) {
+          return;
+        }
+
+        this.restartWorker(
+          new CodegenTimeoutError(
+            `出码超时（>${this.timeoutMs}ms），已重置 worker，请重试`,
+          ),
+        );
+      }, this.timeoutMs);
+
+      this.pendingRequests.set(requestId, { resolve, reject, timeoutId });
       worker.postMessage({
         type: "generate",
         requestId,
@@ -145,6 +175,7 @@ export class CodegenWorkerClient {
       return;
     }
 
+    clearTimeout(pendingRequest.timeoutId);
     this.pendingRequests.delete(data.requestId);
 
     if (data.success && data.files) {
@@ -228,6 +259,7 @@ export class CodegenWorkerClient {
     const normalizedError = toError(error);
 
     for (const pendingRequest of this.pendingRequests.values()) {
+      clearTimeout(pendingRequest.timeoutId);
       pendingRequest.reject(normalizedError);
     }
 

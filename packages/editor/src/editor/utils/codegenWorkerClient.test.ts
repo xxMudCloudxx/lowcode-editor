@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Component, IGeneratedFile } from "@lowcode/schema";
 import {
   CodegenCancelledError,
+  CodegenTimeoutError,
   CodegenWorkerClient,
   type CodegenWorkerLike,
-  type GenerateCodeWithWorkerResult,
 } from "./codegenWorkerClient";
 import type {
   CodegenWorkerRequest,
@@ -191,5 +191,57 @@ describe("CodegenWorkerClient", () => {
       stats: { ...defaultStats, fileCount: 0 },
     });
     client.dispose();
+  });
+
+  it("应在超时未收到结果时重置 worker 并抛出超时错误", async () => {
+    vi.useFakeTimers();
+
+    const firstWorker = new MockCodegenWorker();
+    const secondWorker = new MockCodegenWorker();
+    let createCount = 0;
+    const client = new CodegenWorkerClient(
+      () => {
+        createCount += 1;
+        return createCount === 1 ? firstWorker : secondWorker;
+      },
+      5000,
+    );
+
+    try {
+      const firstPromise = client.generateCode({
+        components: defaultComponents,
+        rootId: 1,
+        solution: "react-vite",
+      });
+      const firstOutcome = firstPromise.catch((error: unknown) => error);
+
+      await vi.advanceTimersByTimeAsync(5000);
+
+      await expect(firstOutcome).resolves.toBeInstanceOf(CodegenTimeoutError);
+      expect(firstWorker.terminated).toBe(true);
+      expect(createCount).toBe(2);
+
+      const secondPromise = client.generateCode({
+        components: defaultComponents,
+        rootId: 1,
+        solution: "react-vite",
+      });
+
+      secondWorker.emitMessage({
+        type: "result",
+        requestId: secondWorker.lastMessage!.requestId,
+        success: true,
+        files: [],
+        stats: { ...defaultStats, fileCount: 0 },
+      });
+
+      await expect(secondPromise).resolves.toEqual({
+        files: [],
+        stats: { ...defaultStats, fileCount: 0 },
+      });
+    } finally {
+      client.dispose();
+      vi.useRealTimers();
+    }
   });
 });
