@@ -58,6 +58,7 @@ export class SimulatorHost {
   // ---------- 分片传输 ----------
   private static readonly CHUNK_SIZE = 100;
   private static _transferCounter = 0;
+  private _activeChunkStreamId = 0;
 
   // ---------- L5: WAL 运行时统计 ----------
   private walStats = {
@@ -103,6 +104,7 @@ export class SimulatorHost {
     this.pendingPatches = [];
     this.flushScheduled = false;
     this.walBuffer = [];
+    this._activeChunkStreamId++;
   }
 
   /**
@@ -209,7 +211,10 @@ export class SimulatorHost {
    * 不能覆盖 → 降级为全量快照。
    */
   private onRequestFullSnapshot(payload?: RequestFullSnapshotPayload) {
-    if (payload?.localVersion != null) {
+    if (
+      payload?.reason === "version-mismatch" &&
+      payload.localVersion != null
+    ) {
       const replayed = this.tryReplayFromWAL(payload.localVersion);
       if (replayed) {
         this.send<SyncComponentsPatchPayload>(
@@ -233,6 +238,7 @@ export class SimulatorHost {
    * @param onComplete 全部 chunk 发送完成后的回调
    */
   syncFullState(onComplete?: () => void) {
+    const chunkStreamId = ++this._activeChunkStreamId;
     const { components, rootId, version } = useComponentsStore.getState();
     const { curComponentId, mode } = useUIStore.getState();
 
@@ -263,6 +269,10 @@ export class SimulatorHost {
     const transferId = `xfer_${++SimulatorHost._transferCounter}`;
 
     const sendChunk = (index: number) => {
+      if (chunkStreamId !== this._activeChunkStreamId) {
+        return;
+      }
+
       if (index >= totalChunks) {
         // 所有 chunk 发送完毕，发送 UI 状态
         this.postToIframe(

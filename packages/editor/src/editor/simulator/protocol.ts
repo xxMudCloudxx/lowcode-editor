@@ -91,6 +91,8 @@ export interface SyncComponentsPatchPayload {
 export interface RequestFullSnapshotPayload {
   /** Renderer 侧当前持有的版本号，Host 据此判断是否可通过 WAL 补发缺失 patches */
   localVersion?: number;
+  /** 恢复原因：版本断层可优先尝试 WAL，分片异常直接走全量重建 */
+  reason?: "version-mismatch" | "chunk-timeout" | "chunk-invalid";
 }
 
 /** UI Store 状态子集 (只同步 iframe 需要的) */

@@ -49,12 +49,17 @@ export interface RendererStoreAPI {
 }
 
 export class SimulatorRenderer {
+  private static readonly CHUNK_TIMEOUT_MS = 3000;
+
   private storeAPI: RendererStoreAPI | null = null;
 
   // ---------- 分片接收缓冲 ----------
-  private _chunkBuffer: Record<number, import("@lowcode/schema").Component> = {};
+  private _chunkBuffer: Record<number, import("@lowcode/schema").Component> =
+    {};
   private _currentTransferId: string | null = null;
-  private _chunksReceived = 0;
+  private _receivedChunkIndices = new Set<number>();
+  private _expectedTotalChunks = 0;
+  private _chunkTimeoutId: number | null = null;
 
   // ==================== 生命周期 ====================
 
@@ -80,6 +85,7 @@ export class SimulatorRenderer {
   destroy() {
     window.removeEventListener("message", this.handleMessage);
     window.removeEventListener("keydown", this.handleKeyDown);
+    this.resetChunkTransfer();
     this.storeAPI = null;
   }
 
@@ -137,6 +143,7 @@ export class SimulatorRenderer {
    * 全量快照覆盖：建立版本基准
    */
   private onSyncComponentsState(payload: SyncComponentsStatePayload) {
+    this.resetChunkTransfer();
     this.storeAPI?.setComponentsState(
       payload.components,
       payload.rootId,
@@ -150,26 +157,37 @@ export class SimulatorRenderer {
    */
   private onSyncComponentsStateChunk(payload: SyncComponentsStateChunkPayload) {
     if (this._currentTransferId !== payload.transferId) {
-      // 开启新一轮分片接收
-      this._chunkBuffer = {};
-      this._currentTransferId = payload.transferId;
-      this._chunksReceived = 0;
+      this.startChunkTransfer(payload.transferId, payload.totalChunks);
     }
 
-    // 合并当前分片数据
-    Object.assign(this._chunkBuffer, payload.components);
-    this._chunksReceived++;
+    if (
+      payload.chunkIndex < 0 ||
+      payload.chunkIndex >= payload.totalChunks ||
+      payload.totalChunks !== this._expectedTotalChunks
+    ) {
+      this.requestFullSnapshot("chunk-invalid");
+      return;
+    }
 
-    // 如果接收完整，一次性触发 Store 更新
-    if (this._chunksReceived === payload.totalChunks) {
+    this.armChunkTimeout();
+
+    if (this._receivedChunkIndices.has(payload.chunkIndex)) {
+      return;
+    }
+
+    this._receivedChunkIndices.add(payload.chunkIndex);
+    Object.assign(this._chunkBuffer, payload.components);
+
+    if (
+      this._receivedChunkIndices.size === payload.totalChunks &&
+      this.hasCompleteChunkSet()
+    ) {
       this.storeAPI?.setComponentsState(
         this._chunkBuffer,
         payload.rootId,
         payload.version,
       );
-      // 清理内存
-      this._chunkBuffer = {};
-      this._currentTransferId = null;
+      this.resetChunkTransfer();
     }
   }
 
@@ -189,9 +207,7 @@ export class SimulatorRenderer {
       console.warn(
         `[SimulatorRenderer] Version mismatch: local=${localVersion}, base=${payload.baseVersion}. Requesting full snapshot.`,
       );
-      this.sendToHost(MessageType.REQUEST_FULL_SNAPSHOT, {
-        localVersion,
-      });
+      this.requestFullSnapshot("version-mismatch");
       return;
     }
 
@@ -212,6 +228,54 @@ export class SimulatorRenderer {
 
   private onDragEnd() {
     this.storeAPI?.setDraggingMaterial(null);
+  }
+
+  private startChunkTransfer(transferId: string, totalChunks: number) {
+    this.resetChunkTransfer();
+    this._currentTransferId = transferId;
+    this._expectedTotalChunks = totalChunks;
+    this.armChunkTimeout();
+  }
+
+  private hasCompleteChunkSet(): boolean {
+    for (let i = 0; i < this._expectedTotalChunks; i++) {
+      if (!this._receivedChunkIndices.has(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private armChunkTimeout() {
+    if (this._chunkTimeoutId != null) {
+      window.clearTimeout(this._chunkTimeoutId);
+    }
+
+    this._chunkTimeoutId = window.setTimeout(() => {
+      this.requestFullSnapshot("chunk-timeout");
+    }, SimulatorRenderer.CHUNK_TIMEOUT_MS);
+  }
+
+  private resetChunkTransfer() {
+    if (this._chunkTimeoutId != null) {
+      window.clearTimeout(this._chunkTimeoutId);
+      this._chunkTimeoutId = null;
+    }
+
+    this._chunkBuffer = {};
+    this._currentTransferId = null;
+    this._receivedChunkIndices.clear();
+    this._expectedTotalChunks = 0;
+  }
+
+  private requestFullSnapshot(
+    reason: "version-mismatch" | "chunk-timeout" | "chunk-invalid",
+  ) {
+    this.resetChunkTransfer();
+    this.sendToHost(MessageType.REQUEST_FULL_SNAPSHOT, {
+      localVersion: this.storeAPI?.getVersion(),
+      reason,
+    });
   }
 
   // ==================== Iframe -> Host：对外 API ====================
