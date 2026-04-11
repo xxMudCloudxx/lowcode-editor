@@ -18,6 +18,8 @@ import { useRendererStore } from "../stores/rendererStore";
 import { simulatorRenderer } from "../../editor/simulator/SimulatorRenderer";
 import { materials, type ComponentConfig } from "@lowcode/materials";
 
+const DRAG_OVER_CLASS = "is-drag-over";
+
 // ==================== 物料配置 Map ====================
 
 const componentConfigMap: Record<string, ComponentConfig> = {};
@@ -142,7 +144,7 @@ export function useDelegatedDnD(
       if (pendingHighlight === null) {
         // 清除
         if (state.currentOverEl) {
-          delete state.currentOverEl.dataset.isOver;
+          state.currentOverEl.classList.remove(DRAG_OVER_CLASS);
           state.currentOverEl = null;
         }
       } else {
@@ -152,9 +154,9 @@ export function useDelegatedDnD(
           return;
         }
         if (state.currentOverEl) {
-          delete state.currentOverEl.dataset.isOver;
+          state.currentOverEl.classList.remove(DRAG_OVER_CLASS);
         }
-        pendingHighlight.dataset.isOver = "true";
+        pendingHighlight.classList.add(DRAG_OVER_CLASS);
         state.currentOverEl = pendingHighlight;
       }
       pendingHighlight = undefined;
@@ -176,7 +178,7 @@ export function useDelegatedDnD(
         rafId = 0;
       }
       if (state.currentOverEl) {
-        delete state.currentOverEl.dataset.isOver;
+        state.currentOverEl.classList.remove(DRAG_OVER_CLASS);
         state.currentOverEl = null;
       }
     }

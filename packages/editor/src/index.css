@@ -241,7 +241,7 @@ body {
 
 /* 容器组件基础样式 — 通过 data-is-container 属性自动匹配，新增容器类型无需修改 CSS
    Page 作为根容器排除，不需要编辑指示边框 */
-.edit-area [data-is-container="true"]:not([data-component-type="Page"]) {
+.edit-area .editor-container:not(.editor-type-page) {
   min-height: 60px;
   outline: 1px dashed var(--color-neutral-300);
   outline-offset: -1px;
@@ -251,15 +251,15 @@ body {
 /* 🚨 Card 和 Table 特殊处理：
    Antd 组件的背景会遮挡父级的 outline（因为层叠上下文）
    改用 ::after 伪元素在最顶层绘制边框 */
-.edit-area [data-component-type="Card"],
-.edit-area [data-component-type="Table"] {
+.edit-area .editor-type-card,
+.edit-area .editor-type-table {
   min-height: 60px;
   outline: none !important;
   position: relative;
 }
 
-.edit-area [data-component-type="Card"]::after,
-.edit-area [data-component-type="Table"]::after {
+.edit-area .editor-type-card::after,
+.edit-area .editor-type-table::after {
   content: "";
   position: absolute;
   top: 0;
@@ -274,31 +274,31 @@ body {
     border-width 0.2s ease;
 }
 
-.edit-area [data-component-type="Card"]:hover::after,
-.edit-area [data-component-type="Table"]:hover::after {
+.edit-area .editor-type-card:hover::after,
+.edit-area .editor-type-table:hover::after {
   border-color: var(--color-accent-400);
 }
 
-/*拖拽悬停状态 (data-is-over) - 通用规则 */
-.edit-area [data-is-over="true"] {
+/* 拖拽悬停状态 - 通用规则 */
+.edit-area .editor-node.is-drag-over {
   outline: 2px solid var(--ant-color-primary, #1677ff);
   outline-offset: -2px;
 }
 
 /* Card 和 Table 拖拽悬停特权规则：用 ::after 覆盖层 */
-.edit-area [data-component-type="Card"][data-is-over="true"],
-.edit-area [data-component-type="Table"][data-is-over="true"] {
+.edit-area .editor-type-card.is-drag-over,
+.edit-area .editor-type-table.is-drag-over {
   outline: none !important;
 }
 
-.edit-area [data-component-type="Card"][data-is-over="true"]::after,
-.edit-area [data-component-type="Table"][data-is-over="true"]::after {
+.edit-area .editor-type-card.is-drag-over::after,
+.edit-area .editor-type-table.is-drag-over::after {
   border: 2px solid var(--ant-color-primary, #1677ff);
   z-index: 999;
 }
 
 /* 容器悬浮高亮（Card/Table 的 outline:none !important 使此规则对它们无效，由 ::after 处理） */
-.edit-area [data-is-container="true"]:not([data-component-type="Page"]):hover {
+.edit-area .editor-container:not(.editor-type-page):hover {
   outline-color: var(--color-accent-400);
 }
 
@@ -332,39 +332,46 @@ body {
  * 内部的组件包装器（[data-component-id]）设为 auto 后仍然可拖拽。
  * =============================================================================
  */
-.edit-area .is-dragging * {
+.edit-area .simulator-container.is-dragging {
   pointer-events: none;
 }
-.edit-area .is-dragging [data-component-id] {
+.edit-area .simulator-container.is-dragging .editor-node {
   pointer-events: auto;
 }
 
 /* 拖拽期间禁用所有 transition，消除逐帧动画开销 */
-.edit-area .is-dragging [data-component-type] {
+.edit-area .simulator-container.is-dragging .editor-node {
   transition: none !important;
 }
 
+/* 给 editor-node 的“第一层子元素”设为 none。
+   这会利用 CSS 的继承特性，让组件内部的所有深层 DOM 瞬间失去交互能力，
+   既省去了 * 选择器的计算开销，又完美避开了命中测试的灾难。 */
+/* .edit-area .simulator-container.is-dragging .editor-node > * {
+  pointer-events: none;
+} */
+
 /* 拖拽期间抑制容器 :hover 样式变化（通用选择器，新增容器无需修改）
    不隐藏轮廓本身 — 用户需要看到容器边界来决定放置位置 */
-.edit-area .is-dragging [data-is-container="true"]:hover {
+/* .edit-area .simulator-container.is-dragging .editor-container:hover {
   outline-color: var(--color-neutral-300) !important;
 }
-.edit-area .is-dragging [data-component-type="Card"]:hover::after,
-.edit-area .is-dragging [data-component-type="Table"]:hover::after {
+.edit-area .simulator-container.is-dragging .editor-type-card:hover::after,
+.edit-area .simulator-container.is-dragging .editor-type-table:hover::after {
   border-color: var(--color-neutral-300) !important;
-}
+} */
 
-/* 拖拽期间 data-is-over 高亮必须覆盖上面的 :hover 抑制规则 */
-.edit-area .is-dragging [data-is-over="true"] {
+/* 拖拽期间 is-drag-over 高亮必须覆盖上面的 :hover 抑制规则 */
+.edit-area .simulator-container.is-dragging .editor-node.is-drag-over {
   outline: 2px solid var(--ant-color-primary, #1677ff) !important;
   outline-offset: -2px !important;
 }
 .edit-area
-  .is-dragging
-  [data-component-type="Card"][data-is-over="true"]::after,
+  .simulator-container.is-dragging
+  .editor-type-card.is-drag-over::after,
 .edit-area
-  .is-dragging
-  [data-component-type="Table"][data-is-over="true"]::after {
+  .simulator-container.is-dragging
+  .editor-type-table.is-drag-over::after {
   border: 2px solid var(--ant-color-primary, #1677ff) !important;
   z-index: 999;
 }
