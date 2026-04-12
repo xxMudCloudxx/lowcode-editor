@@ -344,12 +344,10 @@ body {
   transition: none !important;
 }
 
-/* 给 editor-node 的“第一层子元素”设为 none。
-   这会利用 CSS 的继承特性，让组件内部的所有深层 DOM 瞬间失去交互能力，
-   既省去了 * 选择器的计算开销，又完美避开了命中测试的灾难。 */
-/* .edit-area .simulator-container.is-dragging .editor-node > * {
+/* 拖拽期间仅让组件壳子继续参与命中，内部内容节点统一失去交互能力 */
+.edit-area .simulator-container.is-dragging .editor-content-passive {
   pointer-events: none;
-} */
+}
 
 /* 拖拽期间抑制容器 :hover 样式变化（通用选择器，新增容器无需修改）
    不隐藏轮廓本身 — 用户需要看到容器边界来决定放置位置 */

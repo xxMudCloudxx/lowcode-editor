@@ -12,6 +12,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   useCallback,
 } from "react";
@@ -51,6 +52,7 @@ export function RendererSelectedMask({
   const components = useRendererStore((s) => s.components);
   const curComponentId = useRendererStore((s) => s.curComponentId);
   const [portalEl, setPortalEl] = useState<Element | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const el = document.querySelector(`.${portalWrapperClassName}`);
@@ -74,12 +76,15 @@ export function RendererSelectedMask({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [containerClassName, componentId]);
 
-  useLayoutEffect(() => {
-    updatePosition();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentId, components]);
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current != null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
 
-  function updatePosition() {
+  const updatePosition = useCallback(() => {
     if (!componentId) return;
 
     const container = document.querySelector(`.${containerClassName}`);
@@ -110,7 +115,21 @@ export function RendererSelectedMask({
       labelTop,
       labelFlipToRight,
     });
-  }
+  }, [componentId, containerClassName]);
+
+  useLayoutEffect(() => {
+    updatePosition();
+    if (rafIdRef.current != null) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
+    // SchemaRenderer notifies child nodes in a passive effect, so the selected
+    // node can finish moving one frame after the store changed.
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      updatePosition();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [componentId, components]);
 
   const curComponent = useMemo<Component | null>(
     () =>
