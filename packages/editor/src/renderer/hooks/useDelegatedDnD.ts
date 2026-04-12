@@ -17,8 +17,10 @@ import { useEffect, useRef } from "react";
 import { useRendererStore } from "../stores/rendererStore";
 import { simulatorRenderer } from "../../editor/simulator/SimulatorRenderer";
 import { materials, type ComponentConfig } from "@lowcode/materials";
+import { createDragHighlightScheduler } from "./dragHighlightScheduler";
 
 const DRAG_OVER_CLASS = "is-drag-over";
+const DRAG_OVER_THROTTLE_MS = 50;
 
 // ==================== 物料配置 Map ====================
 
@@ -131,56 +133,23 @@ export function useDelegatedDnD(
 
     const state = stateRef.current;
 
-    /**
-     * 挂起的高亮目标 — 由 dragover 同步写入，由 RAF 异步消费刷新 DOM。
-     * 使用哨兵值区分 "无变更" / "清除高亮" / "设置高亮"。
-     */
-    let pendingHighlight: HTMLElement | null | undefined; // undefined = 无变更
-    let rafId = 0;
-
-    function flushHighlight() {
-      rafId = 0;
-      if (pendingHighlight === undefined) return;
-      if (pendingHighlight === null) {
-        // 清除
-        if (state.currentOverEl) {
-          state.currentOverEl.classList.remove(DRAG_OVER_CLASS);
-          state.currentOverEl = null;
-        }
-      } else {
-        // 设置
-        if (state.currentOverEl === pendingHighlight) {
-          pendingHighlight = undefined;
-          return;
-        }
-        if (state.currentOverEl) {
-          state.currentOverEl.classList.remove(DRAG_OVER_CLASS);
-        }
-        pendingHighlight.classList.add(DRAG_OVER_CLASS);
-        state.currentOverEl = pendingHighlight;
-      }
-      pendingHighlight = undefined;
-    }
+    const highlightScheduler = createDragHighlightScheduler({
+      className: DRAG_OVER_CLASS,
+      throttleMs: DRAG_OVER_THROTTLE_MS,
+      onApply: (el) => {
+        state.currentOverEl = el;
+      },
+    });
 
     function scheduleHighlight(el: HTMLElement | null) {
-      pendingHighlight = el;
-      if (!rafId) {
-        rafId = requestAnimationFrame(flushHighlight);
-      }
+      highlightScheduler.schedule(el);
     }
 
     // ---- 高亮管理（立即版本，用于 drop/dragend 等需要即时清理的场景） ----
 
     function clearHighlightNow() {
-      pendingHighlight = undefined;
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = 0;
-      }
-      if (state.currentOverEl) {
-        state.currentOverEl.classList.remove(DRAG_OVER_CLASS);
-        state.currentOverEl = null;
-      }
+      highlightScheduler.clearNow();
+      state.currentOverEl = null;
     }
 
     // ---- dragstart: 画布内组件开始拖拽 ----
@@ -375,7 +344,7 @@ export function useDelegatedDnD(
     container.addEventListener("dragleave", handleDragLeave);
 
     return () => {
-      if (rafId) cancelAnimationFrame(rafId);
+      highlightScheduler.dispose();
       container.removeEventListener("dragstart", handleDragStart);
       container.removeEventListener("dragover", handleDragOver);
       container.removeEventListener("drop", handleDrop);
