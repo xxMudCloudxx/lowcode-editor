@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Drawer, Layout, Tree, Button, Spin, Empty, Space, Select } from "antd";
+import {
+  Drawer,
+  Layout,
+  Tree,
+  Button,
+  Spin,
+  Empty,
+  Space,
+  Select,
+  Tabs,
+} from "antd";
 import type { TreeDataNode } from "antd";
 import Editor from "@monaco-editor/react";
 import type { IGeneratedFile } from "@lowcode/schema";
@@ -7,6 +17,7 @@ import { buildFileTree, getFileLanguage } from "../../utils/fileTree";
 import { openInCodeSandbox } from "../../utils/openInCodeSandbox"; // 保留
 import { downloadBlob, getRegisteredSolutions } from "@lowcode/code-generator";
 import { zipPublisher } from "@lowcode/code-generator/src/publisher/zip-publisher";
+import { CodePreview } from "../CodePreview";
 
 const { Sider, Content } = Layout;
 
@@ -32,6 +43,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
   const [isSandboxLoading, setIsSandboxLoading] = useState(false);
   const [isZipLoading, setIsZipLoading] = useState(false);
   const [availableSolutions, setAvailableSolutions] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
 
   useEffect(() => {
     // 获取所有注册的 Solutions
@@ -106,6 +118,16 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
           options={availableSolutions.map((s) => ({ label: s, value: s }))}
           size="small"
         />
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as "code" | "preview")}
+          size="small"
+          items={[
+            { key: "code", label: "源码" },
+            { key: "preview", label: "运行预览" },
+          ]}
+          style={{ marginBottom: 0 }}
+        />
       </Space>
       <Space>
         <Button loading={isZipLoading} onClick={handleDownloadZip}>
@@ -122,6 +144,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
     </div>
   );
 
+  // 从 solution 名称推断框架类型
+  const framework: "react" | "vue" = solution.includes("vue") ? "vue" : "react";
+
   return (
     <Drawer
       title={drawerTitle}
@@ -133,46 +158,72 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({
     >
       <Spin spinning={loading} size="large" className="h-full">
         {!loading && files.length > 0 ? (
-          <Layout className="h-full overflow-hidden">
-            {/* Sider: 文件树 */}
-            <Sider
-              width={250}
-              theme="light"
-              className="overflow-auto border-r border-gray-200 h-full"
+          <div style={{ height: "calc(100vh - 110px)", position: "relative" }}>
+            {/* 源码查看模式 - 用 CSS 控制显示隐藏 */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: activeTab === "code" ? "block" : "none",
+              }}
             >
-              <Tree
-                showLine
-                showIcon
-                treeData={treeData}
-                onSelect={handleSelect}
-                defaultExpandAll
-                defaultExpandParent
-                selectedKeys={selectedFile ? [selectedFile.filePath] : []}
-                className="p-2 file-tree"
-              />
-            </Sider>
+              <Layout className="h-full overflow-hidden">
+                {/* Sider: 文件树 */}
+                <Sider
+                  width={250}
+                  theme="light"
+                  className="overflow-auto border-r border-gray-200 h-full"
+                >
+                  <Tree
+                    showLine
+                    showIcon
+                    treeData={treeData}
+                    onSelect={handleSelect}
+                    defaultExpandAll
+                    defaultExpandParent
+                    selectedKeys={selectedFile ? [selectedFile.filePath] : []}
+                    className="p-2 file-tree"
+                  />
+                </Sider>
 
-            {/* Content: 代码编辑器 */}
-            <Content className="h-screen overflow-hidden">
-              <div className="h-full">
-                {selectedFile ? (
-                  <Editor
-                    height="100%" // 占满 Content
-                    language={getFileLanguage(selectedFile.fileType)}
-                    value={selectedFile.content}
-                    options={{ readOnly: true }}
-                  />
-                ) : (
-                  <Empty
-                    description="请在左侧选择一个文件"
-                    className="flex flex-col items-center justify-center h-full"
-                  />
-                )}
-              </div>
-            </Content>
-          </Layout>
+                {/* Content: 代码编辑器 */}
+                <Content className="overflow-hidden" style={{ height: "100%" }}>
+                  <div style={{ height: "100%" }}>
+                    {selectedFile ? (
+                      <Editor
+                        height="100%"
+                        language={getFileLanguage(selectedFile.fileType)}
+                        value={selectedFile.content}
+                        options={{ readOnly: true }}
+                      />
+                    ) : (
+                      <Empty
+                        description="请在左侧选择一个文件"
+                        className="flex flex-col items-center justify-center h-full"
+                      />
+                    )}
+                  </div>
+                </Content>
+              </Layout>
+            </div>
+
+            {/* 运行预览模式 - 用 CSS 控制显示隐藏，避免 Sandpack 重新编译 */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: activeTab === "preview" ? "block" : "none",
+              }}
+            >
+              <CodePreview
+                files={files}
+                framework={framework}
+                loading={loading}
+                height="calc(100vh - 110px)"
+              />
+            </div>
+          </div>
         ) : (
-          // 切换了判断条件
           !loading && (
             <Empty
               description="未生成任何文件"
