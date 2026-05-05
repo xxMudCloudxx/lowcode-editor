@@ -16,5 +16,7 @@ dist-ssr
 # Generated files
 packages/materials/src/_generated
 # Editor directories and files
-/docs
 .agent
+.claude
+.codex
+参考

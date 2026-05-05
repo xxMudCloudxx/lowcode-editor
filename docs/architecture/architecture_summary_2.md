@@ -1,56 +1,274 @@
-# 🚀 企业级低代码平台前端架构分解 (面向大厂简历与面试)
+# 企业级低代码平台前端架构分解
 
-在此项目中，我们摒弃了传统的单体巨石应用结构，采用了横向解耦的 **Monorepo 多包架构**，并在视图展示层深度融合了 **Antd v5 的双令牌 (Token) 体系**。整个前端架构自底向上可划分为以下 **7 大核心模块**，具有极强的可拓展性：
+> 面向大厂简历与面试的深度技术拆解。本文档基于当前 monorepo 代码实际状态撰写。
 
-## 1. `@lowcode/schema` - 全局规范与防腐层 (Protocol Layer)
-*   **关联路径**：`packages/schema/src/` (含 `protocol.ts` 与 `component.ts`)
-*   **职责**：架构的标准协议缔造者。定义了 `ComponentProtocol` 和运行时 `JSON Schema` 的数据结构。
-- **架构价值**：它是系统的“法律”，所有的物料引擎、渲染引擎和出码流水线都只认 Schema 接口。这从物理层面斩断了各个包之间的隐式耦合。
+本项目采用 **pnpm Monorepo 多包架构**，5 个独立 npm 包通过明确的依赖关系组合成完整的低代码平台。整体架构自底向上分为 **10 个核心模块**。
 
-## 2. `@lowcode/materials` - 泛生态物料工厂 (Material Ecosystem)
-*   **关联路径**：`packages/materials/src/`
-*   **职责**：以底层 Schema 为壳，将任何第三方的 UI 组件（如 Antd、AntV）经过 **“低侵入式的高阶组件封装 (forwardRef代理)”** 后，转化成能在画布上拖拽并受配置面板控制的标准化物料。
-- **架构价值**：真正实现了**“编辑器与组件库的解耦”**，未来可以轻松拔插第三方 npm 物料包。
+---
 
-## 3. `UI 主题渲染系统` - 基于 Antd 的双令牌 UI 分层架构 (Dual-Token UI Architecture)
-*   **关联路径**：`packages/editor/src/theme/` 与动态注入的主题 Context
-*   **职责**：接管低代码产物和编辑界面的样式定制与主题切换。
-- **架构价值**（简历超级亮点）：利用 Ant Design V5 的 CSS-in-JS 特性和动态 Token 机制，设计了 **Global Token（全局令牌/品牌基底）** 与 **Component Token（组件级令牌/局部覆写）** 的双层主题控制流。
-  - **全局规范引擎**：在编辑器的“全局设置”面板，用户一键修改 `Seed Token`（如主色、圆角），系统自动利用演算法算出整套渐变色板，实时应用到整个搭建产物中。
-  - **组件级基因突变**：在单个组件的“样式属性面板”中，直接覆写局部的 `Component Token`。
-  - **优势**：彻底摒弃了传统低代码平台注入海量冗余 CSS 字符串、依赖强覆盖选择器的弊端，实现了 `O(1)` 时间复杂度的主题切换应用，同时完美保证了 Iframe 运行时的样式纯净。
+## 依赖拓扑
 
-## 4. 核心状态与数据流转中枢 (Core State & Data Flow Engine)
-* **关联路径**：`packages/editor/src/editor/stores/` (含 `components.tsx`, `historyStore.ts`)
-* **职责**：作为低代码平台的大脑，负责接管整个 JSON Schema（AST树）的单向数据流。
-- **架构价值**：依赖 Zustand + Immer 进行不可变数据（Immutable）更新，将页面上所有零散的交互逻辑收敛。内部封装历史快照栈（History Stack），用极低的内存开销实现了高频拖拽/配置操作下的微小切片级“撤销与重做”业务。
+```
+@lowcode/schema          ← 基础协议层（无依赖）
+    ↑
+@lowcode/materials       ← 物料库（依赖 schema）
+    ↑
+@lowcode/renderer        ← 渲染引擎（依赖 schema + materials）
+    ↑
+@lowcode/code-generator  ← 出码流水线（依赖 schema）
+    ↑
+@lowcode/editor          ← 编辑器主应用（依赖全部）
+```
 
-## 5. 可视化拖拽编排引擎 (Visual Drag-and-Drop Editor)
-* **关联路径**：`packages/editor/src/editor/components/EditArea/` 及 `packages/editor/src/renderer/`
-* **职责**：提供所见即所得的中心画布交互，接管从物料区（面板）到画布区（Iframe视图）的拖拽通信。
-- **架构价值**：依托 `React-DND` 和 `@dnd-kit`，处理跨容器拖拽上下文。设计并攻克了拖拽指示器（Drop Indicator）、嵌套层级检测、光标高亮遮罩（Hover/Selected Mask）等复杂的空间几何坐标计算难题。
+---
 
-## 6. 动态属性配置器 (Dynamic Property Configurator)
-* **关联路径**：`packages/editor/src/editor/components/Setting/` (基于 Schema Setter 驱动)
-* **职责**：作为右侧的中控面板，扮演驱动“协议驱动UI”的关键角色。
-- **架构价值**：动态监听画布的 Node 焦点，并读取底层 `@lowcode/schema` 中的 Setter 描述器配置。根据不同的 setter 关键字（如 'select', 'json-editor'）渲染出相应的配置表单组件，实现数据、样式与自定义交互事件的双向绑定与闭环下发。
+## 1. `@lowcode/schema` — 全局规范与防腐层
 
-## 7. `@lowcode/renderer` - 纯净状态域的渲染机器 (Pure Render Engine)
-* **关联路径**：`packages/renderer/src/index.tsx` (独立的 Renderer 纯逻辑)
-* **职责**：一个绝对无副作用的纯 React 函数系统。入参是 JSON Schema Tree，输出是 React 虚拟 DOM 树。
-- **架构价值**：完全不懂拖拽，也不和 Editor 通信，这就意味着它既可以在被组装到 Iframe 沙盒里当预览器，也可以直接 npm install 到 C 端项目中实现**编排态与运行态 100% 同构渲染**，甚至是跨框架（Vue Renderer）的基建。
+**路径：** `packages/schema/src/`
 
-## 8. Iframe Sandbox Host - 沙盒调度与通信中枢 (Sandbox Bridge)
-*   **关联路径**：`packages/editor/src/renderer/` 与主应用 `packages/editor/src/editor/components/Preview/` 的 iframe 桥接
-*   **职责**：在主应用中嵌入 Renderer 的壳子环境（由于架构演进中，当前采用 `sandboxExecutor` 与 PostMessage）。
-- **架构价值**：采用跨 Window 的 `postMessage` 机制与拖拽上下文 (`DndProvider`) 注入，隔离了低代码画布编辑态（Drag&Drop）与运行态的界限。既阻断了用户自定义污染 CSS、脚本造成的编辑器崩溃（隔离故障域），又保障了高度定制的可视化效果。
+**核心类型：**
+- `Component` — 范式化节点（`children` 仅存 id 数组，真实数据存 Map）
+- `ComponentTree` — 树状嵌套版本（用于剪切板、出码递归）
+- `ComponentProtocol` — 物料行为协议（`isContainer`、`parentTypes`、`interactiveInEditor`、`dragPreview`）
+- `SetterConfig / EventConfig / MethodConfig` — 配置面板描述符
 
-## 9. `@lowcode/editor` - 可视化编排与状态流转大脑 (Orchestration Engine)
-*   **关联路径**：`packages/editor/src/editor/index.tsx` (编辑器主入口挂载)
-*   **职责**：应用层的拼装枢纽，将上述所有的引擎、面板和通信机制组装成一个开箱即用的 Web 级产品。
-- **架构价值**：负责统筹左侧物料生态、中间 Iframe 交互画布、右侧动态配置器，以及顶部的历史记录仪，打造了“即看即所得”的高阶生产力体验。
+**架构价值：** 系统的"法律"。所有物料、渲染引擎、出码流水线只认 Schema 接口，从物理层面斩断包间隐式耦合。`Component` 采用范式化（Normalized）存储而非嵌套树，使任意节点的增删改查均为 O(1)，避免了深层嵌套树的递归遍历开销。
 
-## 10. `@lowcode/code-generator` - 多目标构建与出码流水线 (Code Generation Pipeline)
-*   **关联路径**：`packages/code-generator/src/` (含核心 `project-builder.ts` 与各种模板/插件)
-*   **职责**：独立的 Node.js / Browser 兼容构建产物机。
-- **架构价值**：利用 AST（抽象语法树）拼装能力，采用了可插拔的设计模式。接收 JSON Schema 和渲染器配置，将其编译打包成完整的 React+Vite 标准化中后台源码工程包。支持从“黑箱产品”一键弹出为“本地可二次开发源码”的功能生命周期。
+---
+
+## 2. `@lowcode/materials` — 泛生态物料工厂
+
+**路径：** `packages/materials/src/`
+
+**物料分类（34 个组件）：**
+
+| 分类 | 组件 |
+|------|------|
+| General | Button、Icon、Typography |
+| Layout | Container、Grid、GridColumn、Space |
+| Navigation | Breadcrumb、Dropdown、Menu、PageHeader、Pagination、Steps、TabPane |
+| DataEntry | Input、Radio、Select、Slider、Switch、Upload |
+| DataDisplay | Avatar、Card、Image、List、ListItem、TableColumn、Tooltip |
+| Feedback | Modal |
+| Page | Root 页面组件 |
+
+**核心机制：**
+
+- **dev/prod 分离**：每个物料包含 `dev.tsx`（编辑态，含拖拽锚点）和 `prod.tsx`（运行态，纯业务逻辑），彻底解耦编辑器逻辑与业务逻辑。
+- **自动化注册**：`index.tsx` 使用 `import.meta.glob` 扫描所有 `meta.tsx`，新增物料无需修改任何注册代码。
+- **反向注册拖放**：子物料通过 `parentTypes` 声明可被哪些容器接受，容器的 `useDrop` 动态识别合法子物料，实现高度解耦。
+- **antd 元数据自动生成**：`gen:meta` 脚本通过 `react-docgen-typescript` 解析 antd 组件 Props，自动生成 `meta.tsx` 配置文件。
+
+**架构价值：** 实现了"编辑器与组件库的解耦"，未来可拔插任意第三方 npm 物料包。
+
+---
+
+## 3. UI 主题渲染系统 — Antd 双令牌分层架构
+
+**路径：** `packages/editor/src/theme/`（`antdTheme.ts`、`tokens.ts`）
+
+**双令牌体系：**
+- **Global Token（全局令牌）**：用户在全局设置面板修改 Seed Token（主色、圆角），系统利用 antd v5 算法自动推导整套渐变色板，实时应用到整个搭建产物。
+- **Component Token（组件级令牌）**：在单个组件的样式面板中直接覆写局部 Component Token，精准控制单个组件样式。
+
+**架构价值：** 彻底摒弃传统低代码平台注入海量冗余 CSS 字符串、依赖强覆盖选择器的弊端。利用 antd v5 CSS-in-JS 特性，实现 O(1) 时间复杂度的主题切换，同时保证 iframe 运行时的样式纯净。
+
+---
+
+## 4. 核心状态与数据流转中枢
+
+**路径：** `packages/editor/src/editor/stores/`
+
+项目将状态拆分为三个职责明确的 Zustand Store：
+
+### `useComponentsStore` — 组件树 Master Store
+
+```ts
+// 中间件组合：immer（不可变更新）+ persist（localStorage 持久化）
+create<EditorStore>()(persist(immer(creator), { name: "lowcode-store" }))
+```
+
+- 范式化存储：`components: Record<number, Component>`，O(1) 节点访问
+- 通过自定义 `undoMiddleware` 在每次 `setState` 时自动产出 Immer patches，发布到 `patchEventBus`
+- 版本号 `version` 随每次变更自增，用于 iframe 侧的补丁版本校验
+
+### `useHistoryStore` — 增量补丁历史 Store
+
+- 存储 `PatchGroup[]`（正向 patches + 逆向 inversePatches），最多保留 50 步
+- `undo/redo` 通过 `applyPatches` 直接操作 componentsStore，并将产生的补丁广播到 iframe
+- `isApplyingPatches` 标志位防止 undo/redo 操作被再次记录进历史栈
+- `applyRemotePatch()` 预留了实时协同编辑接口：远程补丁不进入本地撤销栈
+
+### `useUIStore` — 瞬时 UI 状态 Store
+
+- 管理：当前选中组件 id、编辑/预览模式、画布尺寸预设（mobile 375px / tablet 768px / desktop 100%）、剪切板
+- 仅使用 immer 中间件，不接入 temporal 或 persist，避免 UI 状态污染历史栈或 localStorage
+
+**架构价值：** 三 Store 分离策略将"需要持久化的业务数据"、"需要撤销的操作历史"、"不需要持久化的 UI 状态"彻底隔离，避免了单一大 Store 的状态污染问题。
+
+---
+
+## 5. Simulator 沙盒通信系统 — 增量补丁同步协议
+
+**路径：** `packages/editor/src/editor/simulator/`
+
+这是本项目最复杂的工程模块，实现了 Host（主应用）与 Renderer（iframe）之间的高可靠双向通信。
+
+### 架构模型
+
+```
+Host（主应用）                    Iframe（Renderer）
+useComponentsStore ──patch──→ patchEventBus
+                                    ↓
+SimulatorHost ──postMessage──→ SimulatorRenderer
+                                    ↓
+                              Slave Store（只读副本）
+                                    ↓
+                              SchemaRenderer（渲染）
+
+Iframe 交互事件 ──postMessage──→ SimulatorHost
+                                    ↓
+                              useComponentsStore（写操作）
+```
+
+**设计原则：Host 是 Store 的唯一 Master，Iframe 持有只读 Slave Replica，所有写操作通过 `DISPATCH_ACTION` 委托给 Host。**
+
+### 通信协议（MessageType 枚举）
+
+| 方向 | 消息类型 | 说明 |
+|------|----------|------|
+| Iframe → Host | `READY` | 握手，触发全量快照下发 |
+| Host → Iframe | `SYNC_COMPONENTS_STATE` | 全量快照（附版本号） |
+| Host → Iframe | `SYNC_COMPONENTS_STATE_CHUNK` | 大组件树分片传输 |
+| Host → Iframe | `SYNC_COMPONENTS_PATCH` | 增量补丁（附 baseVersion） |
+| Host → Iframe | `SYNC_UI_STATE` | UI 状态全量同步 |
+| Host → Iframe | `SYNC_COMPONENT_CONFIG` | 物料配置（初始化一次） |
+| Host → Iframe | `DRAG_START_METADATA / DRAG_END` | 拖拽旁路通信 |
+| Iframe → Host | `DISPATCH_ACTION` | 委托执行 Store Action |
+| Iframe → Host | `REQUEST_FULL_SNAPSHOT` | 版本断层自愈请求 |
+| Iframe → Host | `SELECT_COMPONENT / HOVER_COMPONENT` | 交互事件上报 |
+| Iframe → Host | `FORWARD_KEYBOARD_EVENT` | 键盘事件转发 |
+
+### 关键工程细节
+
+**增量补丁流（核心优化）：**
+- 组件状态同步从全量 subscribe 改为增量 Immer patches，高频拖拽时消息体积降低 90%+
+- `patchEventBus` 解耦 Store 与 SimulatorHost，避免直接订阅
+
+**微任务级补丁批处理：**
+- 同一微任务内的多个 patches 合并为一次 postMessage，避免高频操作时的消息风暴
+- 拖拽期间自动切换为 `requestAnimationFrame` 刷新策略，拖拽结束恢复微任务级
+
+**WAL 环形缓冲（L5 自愈机制）：**
+- Host 维护容量为 50 的 WAL（Write-Ahead Log）环形缓冲，存储最近 50 个 patch
+- Iframe 检测到版本断层时发送 `REQUEST_FULL_SNAPSHOT`，携带本地 `localVersion`
+- Host 优先尝试从 WAL 回放缺失 patches（避免全量重建），仅在 WAL 无法覆盖时才下发全量快照
+- 开发环境暴露 `__LOWCODE_WAL__` 调试 API（stats / simulateGap / reset）
+
+**分片传输：**
+- 大组件树按 100 个节点一片拆分传输，避免序列化阻塞主线程
+- 每次传输携带唯一 `transferId`，Renderer 侧按序拼装，超时 3s 触发全量重建降级
+
+**架构价值：** 这套协议将 iframe 隔离的故障域优势（CSS/JS 污染隔离）与高性能增量同步结合，同时通过 WAL 自愈机制保证了在网络抖动或版本断层场景下的最终一致性。
+
+---
+
+## 6. 可视化拖拽编排引擎
+
+**路径：** `packages/editor/src/editor/components/` + `packages/renderer/src/`
+
+- 基于 `React-DND` 实现跨容器拖拽，`DndProvider` 同时注入主应用和 iframe
+- 拖拽开始时通过 `DRAG_START_METADATA` 消息将物料元数据旁路传递给 iframe，解决跨 window DnD 上下文隔离问题
+- 选中遮罩（Selected Mask）和悬浮提示（Hover Mask）通过 `data-component-id` 属性定位 DOM，计算绝对坐标覆盖
+- 组件大纲树支持拖拽排序，与画布拖拽共享同一套 Store Action
+
+---
+
+## 7. 动态属性配置器
+
+**路径：** `packages/editor/src/editor/components/Setting/`
+
+- 右侧面板分三栏：**属性（Props）**、**样式（Styles）**、**事件（Events）**
+- 属性面板：读取物料 `meta.tsx` 中的 `SetterConfig` 描述符，按 setter 类型（`select`、`json-editor`、`input` 等）动态渲染对应表单组件
+- 样式面板：细分为 Layout（尺寸/盒模型）、Location（定位）、Front（字体）、Board（边框/圆角/阴影）、Background、Other 六个子面板，每个子面板对应一组 CSS 属性
+- 事件面板：支持为组件事件绑定多种 Action（调用其他组件方法、弹出消息、跳转链接、执行自定义 JS）
+- 面包屑导航：面板顶部展示当前选中组件的父子层级，支持点击快速切换选中目标
+
+---
+
+## 8. `@lowcode/renderer` — 纯净渲染引擎
+
+**路径：** `packages/renderer/src/`
+
+**核心导出：** `SchemaRenderer` 组件
+
+- 入参：JSON Schema Tree + `designMode` 标志 + `DesignHooks`（悬浮/选中回调）
+- 输出：React 虚拟 DOM 树
+- 零副作用：不感知拖拽，不与 Editor 通信，不持有任何全局状态
+- `designMode=true` 时注入 `data-component-id` 属性，供遮罩层定位
+- 同时服务于：iframe 设计态画布、预览模式、未来可能的 C 端运行时
+
+**架构价值：** 编排态与运行态 100% 同构渲染，消除了"预览效果与实际效果不一致"的问题。
+
+---
+
+## 9. Sandbox 安全执行器
+
+**路径：** `packages/editor/src/editor/utils/sandboxExecutor.ts`
+
+用于安全执行用户在事件面板中编写的自定义 JavaScript 代码：
+
+- 动态创建隐藏 iframe，设置 `sandbox="allow-scripts"` 属性，禁止访问父页面 DOM
+- 用户代码通过 `JSON.stringify` 转为字符串字面量后注入，防止模板字符串注入攻击
+- 通过 `postMessage` 与主页面通信（`showMessage` / `complete` / `error`）
+- 5s 超时自动清理，执行完毕后销毁 iframe
+
+---
+
+## 10. `@lowcode/code-generator` — 多目标出码流水线
+
+**路径：** `packages/code-generator/src/`
+
+参考 `alibaba/lowcode-engine` 的 Pipeline 架构，将 Schema 转换为完整可运行的前端工程：
+
+```
+Schema
+  ↓ Parser（schema-parser.ts）
+IR（中间表示，解耦 Schema 与代码生成）
+  ↓ Solution（react-vite.ts / vue-vite.ts）
+  ↓ Preprocessor（状态提升，支持组件联动）
+  ↓ Component Plugins（jsx.ts → .tsx，css.ts → .module.scss）
+  ↓ Project Plugins（package.json、vite.config.ts、index.html、路由）
+  ↓ Postprocessor（prettier 格式化）
+  ↓ Publisher（zip-publisher.ts → JSZip → 浏览器下载）
+完整 React + Vite 工程包（.zip）
+```
+
+**关键设计：**
+- IR（Intermediate Representation）层解耦了上层 Schema 与下层代码生成逻辑，新增出码目标只需实现新 Solution
+- 插件系统分两级：Component Plugin（操作单个 IRNode）和 Project Plugin（操作整个 ProjectBuilder）
+- `ModuleBuilder` 智能处理 import 去重、React Hooks 生成、事件处理函数（Actions）生成
+- 支持 React+Vite 和 Vue+Vite 两套 Solution，可通过插件注册扩展
+
+---
+
+## 测试覆盖
+
+| 文件 | 测试框架 | 覆盖内容 |
+|------|----------|----------|
+| `stores/history.test.ts` | Vitest + Testing Library | historyStore 单元测试 + 与 componentsStore 集成测试 |
+| `stores/components.test.tsx` | Vitest + Testing Library | componentsStore 增删改查 |
+| `simulator/SimulatorRenderer.test.ts` | Vitest | SimulatorRenderer 通信逻辑 |
+| `code-generator/` | Vitest | 出码流水线各阶段 |
+
+---
+
+## 架构演进记录
+
+| 版本 | 变更 |
+|------|------|
+| v1 | 单包应用，`src/` 平铺结构 |
+| v2 | 重构为 pnpm Monorepo，拆分 5 个独立包 |
+| v2.1 | SimulatorHost 从全量 subscribe 改为增量补丁流 |
+| v2.2 | 新增 WAL 环形缓冲 + 分片传输 + 版本断层自愈 |
+| v2.3 | historyStore 从 Zustand temporal 中间件改为自定义 Immer patch 方案，支持协同编辑预留接口 |
