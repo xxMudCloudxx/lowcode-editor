@@ -1,0 +1,87 @@
+﻿<section class="module" id="module-4" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">iframe 沙箱是怎么稳定同步的</h1>
+      <p class="module-subtitle">真正难的不是“放一个 iframe”，而是“在高频拖拽和大节点树更新时怎样既快又不丢状态”。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">先记住这条主从关系</h2>
+      <p>主编辑器是 <span class="term" data-definition="Master 可以理解成掌握真相的主控端。所有真正写状态的动作都由它负责执行。">Master</span>，iframe 画布只是副本。所有写操作最终都要回到 Host 执行，再通过 <span class="term" data-definition="postMessage 是浏览器提供的跨窗口通信机制，主页面和 iframe 可以用它互相传递消息。">postMessage</span> 把结果同步给 iframe。</p>
+      <div class="pattern-cards">
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)"><div class="pattern-icon" style="background: var(--color-actor-1)">握</div><h4 class="pattern-title">Ready 握手</h4><p class="pattern-desc">先确认 iframe 准备好了，再开始真实同步。</p></div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)"><div class="pattern-icon" style="background: var(--color-actor-2)">队</div><h4 class="pattern-title">离线队列</h4><p class="pattern-desc">没准备好时先排队，避免初始化消息丢失。</p></div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)"><div class="pattern-icon" style="background: var(--color-actor-3)">补</div><h4 class="pattern-title">增量 Patch</h4><p class="pattern-desc">平时优先发变化补丁，而不是每次都全量同步整棵树。</p></div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)"><div class="pattern-icon" style="background: var(--color-actor-5)">救</div><h4 class="pattern-title">WAL 回放</h4><p class="pattern-desc">如果版本断层，优先补发缺失 patch，不行再降级全量快照。</p></div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">Ready 握手解决的是“第一屏丢消息”</h2>
+      <p>重点不在语法，而在顺序。Host 不会在 iframe 一加载就盲发消息，而是等它 Ready 之后，先清理过期 patch，再重发完整状态，最后才打开实时同步。</p>
+      <div class="translation-block animate-in">
+        <div class="translation-code">
+          <span class="translation-label">CODE</span>
+          <pre><code><span class="code-line">  private onReady() {</span>
+<span class="code-line">    this.messageQueue = this.messageQueue.filter(</span>
+<span class="code-line">      (msg) =&gt; msg.type !== MessageType.SYNC_COMPONENTS_PATCH,</span>
+<span class="code-line">    );</span>
+<span class="code-line">    this.pendingPatches = [];</span>
+<span class="code-line">    this.flushScheduled = false;</span>
+<span class="code-line">    this.syncFullState(() =&gt; {</span>
+<span class="code-line">      this.iframeReady = true;</span>
+<span class="code-line">      this.flushQueue();</span>
+<span class="code-line">    });</span>
+<span class="code-line">  }</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">PLAIN ENGLISH</span>
+          <div class="translation-lines">
+            <p class="tl">iframe 一说“我准备好了”，Host 先把已经过期的 patch 消息过滤掉。</p>
+            <p class="tl">再把等待发送的 patch 缓存清空，避免旧增量干扰新的完整状态。</p>
+            <p class="tl">接着立刻发一份完整状态过去。</p>
+            <p class="tl">只有完整状态同步完了，才真正把 iframeReady 打开，并继续发送排队消息。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">高频更新时，性能和恢复要一起设计</h2>
+      <div class="step-cards">
+        <div class="step-card"><div class="step-num">1</div><div class="step-body"><strong>小树就整包发</strong><p>如果节点不多，直接同步完整状态最简单。</p></div></div>
+        <div class="step-card"><div class="step-num">2</div><div class="step-body"><strong>大树按 chunk 分片</strong><p>避免 structured clone 一次处理太多数据，阻塞主线程。</p></div></div>
+        <div class="step-card"><div class="step-num">3</div><div class="step-body"><strong>平时优先发增量 patch</strong><p>通过 patchEventBus 和 patch 压缩，把同步成本压低。</p></div></div>
+        <div class="step-card"><div class="step-num">4</div><div class="step-body"><strong>如果版本对不上，就触发恢复</strong><p>Renderer 检测 baseVersion 不匹配后，会请求快照或走 WAL 回放恢复。</p></div></div>
+      </div>
+      <div class="callout callout-warning">
+        <div class="callout-icon">Note</div>
+        <div class="callout-content">
+          <strong class="callout-title">这组亮点怎么讲更高级</strong>
+          <p>不要只说“用了 iframe 隔离”。更好的说法是：我围绕 iframe 同步设计了握手、离线队列、增量 patch、分片快照和版本恢复策略，重点解决了高频渲染场景下的一致性与性能问题。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">小测验：为什么 Ready 握手和离线队列是必需品</h2>
+      <div class="quiz-container" id="quiz-module4">
+        <div class="quiz-question-block"
+             data-correct="option-a"
+             data-explanation-right="对。iframe 初始化期间可能还没绑定好监听器，这时直接发消息最容易出现首屏状态丢失或基线不一致。"
+             data-explanation-wrong="不止是慢一点的问题。这里最先出问题的是时序，iframe 可能根本还没准备好接收消息。">
+          <h3 class="quiz-question">如果 Host 一创建 iframe 就立刻发送状态和 patch，不等 Ready，也不排队，最可能出现什么问题？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>首屏状态可能丢失，后续还会因为基线不一致导致 patch 恢复困难</span></button>
+            <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>只是网络慢一点，但最终总会自动对齐</span></button>
+            <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>不会有问题，因为浏览器会自动缓存所有 postMessage</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <button class="quiz-check-btn" onclick="checkQuiz('quiz-module4')">检查答案</button>
+        <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module4')">再试一次</button>
+      </div>
+    </section>
+  </div>
+</section>

@@ -1,0 +1,99 @@
+﻿<section class="module" id="module-6" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">06</span>
+      <h1 class="module-title">面试里怎么把这个项目讲得又准又高级</h1>
+      <p class="module-subtitle">最后一步不是再学新知识点，而是把前面的链路压缩成一套能直接说出口的面试答案。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">先给你一版 1 分钟项目介绍</h2>
+      <div class="callout callout-accent">
+        <div class="callout-icon">Pitch</div>
+        <div class="callout-content">
+          <strong class="callout-title">可直接复述的版本</strong>
+          <p>“这个项目是一个基于 React 体系的 Schema 驱动型低代码平台。用户可以通过拖拽组件、配置属性、样式和事件的方式快速搭建 Web 原型。架构上我重点做了两条链路：一条是跨框架出码流水线，先把编辑器 Schema 转成通用 IR，再通过 Solution 抽象接入 React 和 Vue 出码；另一条是 iframe 沙箱同步机制，通过 Ready 握手、离线队列、增量 patch、分片快照和版本恢复，解决高频渲染下的同步稳定性问题。”</p>
+        </div>
+      </div>
+      <div class="pattern-cards">
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)"><div class="pattern-icon" style="background: var(--color-actor-5)">1</div><h4 class="pattern-title">跨框架出码</h4><p class="pattern-desc">通过 IR 和 Solution 让 React 与 Vue 共用同一套生成主流程。</p></div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)"><div class="pattern-icon" style="background: var(--color-actor-2)">2</div><h4 class="pattern-title">物料注册机制</h4><p class="pattern-desc">把依赖、标签映射、属性重命名和自定义逻辑抽成可注册描述。</p></div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)"><div class="pattern-icon" style="background: var(--color-actor-4)">3</div><h4 class="pattern-title">Worker 异步出码</h4><p class="pattern-desc">把重计算下沉到 Worker，并做最新任务优先的取消与超时控制。</p></div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)"><div class="pattern-icon" style="background: var(--color-actor-3)">4</div><h4 class="pattern-title">iframe 沙箱同步</h4><p class="pattern-desc">围绕握手、队列、patch、chunk 和恢复机制设计稳定同步方案。</p></div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">追问时，最好按“问题 - 方案 - 收益”来答</h2>
+      <div class="translation-block animate-in">
+        <div class="translation-code">
+          <span class="translation-label">CODE</span>
+          <pre><code><span class="code-line">  const generateCode = async (solutionName: string) =&gt; {</span>
+<span class="code-line">    const currentRequestId = ++latestGenerateRequestRef.current;</span>
+<span class="code-line">    const requestStartedAt = performance.now();</span>
+<span class="code-line">    setIsExporting(true);</span>
+<span class="code-line">    const { components, rootId } = useComponentsStore.getState();</span>
+<span class="code-line">    try {</span>
+<span class="code-line">      const result = await getWorkerClient().generateCode({</span>
+<span class="code-line">        components,</span>
+<span class="code-line">        rootId,</span>
+<span class="code-line">        solution: solutionName,</span>
+<span class="code-line">      });</span>
+<span class="code-line">      if (currentRequestId !== latestGenerateRequestRef.current) {</span>
+<span class="code-line">        return;</span>
+<span class="code-line">      }</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">PLAIN ENGLISH</span>
+          <div class="translation-lines">
+            <p class="tl">每次点导出，先给这次任务一个新的请求编号。</p>
+            <p class="tl">然后拿当前组件树，交给 Worker 执行真正的出码。</p>
+            <p class="tl">结果回来后，再检查一次它是不是“最新那次任务”。</p>
+            <p class="tl">如果不是，就直接丢弃旧结果，避免覆盖用户刚刚切换后的新状态。</p>
+          </div>
+        </div>
+      </div>
+      <div class="step-cards">
+        <div class="step-card"><div class="step-num">问</div><div class="step-body"><strong>问题是什么</strong><p>比如频繁切换 Solution 时，旧的出码结果可能覆盖新的状态。</p></div></div>
+        <div class="step-card"><div class="step-num">解</div><div class="step-body"><strong>方案是什么</strong><p>把出码下沉到 Worker，并用 requestId、取消旧 Worker、拒绝过期 Promise 做最新任务优先。</p></div></div>
+        <div class="step-card"><div class="step-num">值</div><div class="step-body"><strong>收益是什么</strong><p>既减少主线程阻塞，又避免旧结果覆盖新状态，交互体验更稳定。</p></div></div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">三个高频追问，你可以这样接</h2>
+      <div class="icon-rows">
+        <div class="icon-row"><div class="icon-circle" style="background: var(--color-actor-3)">Q1</div><div><strong>为什么用 iframe？</strong><p>因为画布需要一个隔离渲染沙箱，既减少样式和事件污染，又能把 Host 作为唯一写端，通过协议做稳定同步。</p></div></div>
+        <div class="icon-row"><div class="icon-circle" style="background: var(--color-actor-5)">Q2</div><div><strong>为什么先转 IR？</strong><p>因为 IR 能把页面语义和目标框架解耦，让 React、Vue 通过不同 Solution 共用同一套主流程。</p></div></div>
+        <div class="icon-row"><div class="icon-circle" style="background: var(--color-actor-4)">Q3</div><div><strong>为什么 Worker 还要做取消和超时？</strong><p>因为出码是重任务，而且用户可能连续切换方案；如果不做控制，旧结果覆盖新结果或任务卡死都很常见。</p></div></div>
+      </div>
+      <div class="callout callout-info">
+        <div class="callout-icon">Tip</div>
+        <div class="callout-content">
+          <strong class="callout-title">真正拉开差距的不是术语，而是取舍</strong>
+          <p>高质量回答一定要包含：为什么会有这个问题、为什么选这个方案、它带来了什么收益。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">最终小测验：如果面试官追问，你该怎么答</h2>
+      <div class="quiz-container" id="quiz-module6">
+        <div class="quiz-question-block"
+             data-correct="option-c"
+             data-explanation-right="对。这种答法同时交代了问题、抽象层、扩展性和工程收益，层次最完整。"
+             data-explanation-wrong="还可以更深入。高质量回答不仅要说“能扩展”，还要说清楚 IR 和 Solution 分别解决了什么耦合问题。">
+          <h3 class="quiz-question">面试官问“为什么不直接根据 Schema 拼 React JSX”，下面哪种回答最有说服力？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>因为我个人更喜欢 IR，这样架构看起来更高级</span></button>
+            <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>因为直接拼 JSX 不太好维护，所以我就抽象了一层</span></button>
+            <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>因为直接拼 React JSX 会让主流程和框架强耦合，而 IR 先统一页面语义，Solution 再承接不同框架模板、插件和发布策略，后续接入新技术栈时复用度更高</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <button class="quiz-check-btn" onclick="checkQuiz('quiz-module6')">检查答案</button>
+        <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module6')">再试一次</button>
+      </div>
+    </section>
+  </div>
+</section>

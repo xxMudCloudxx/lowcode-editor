@@ -1,0 +1,137 @@
+﻿<section class="module" id="module-5" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">跨框架出码流水线怎么跑起来</h1>
+      <p class="module-subtitle">这是你简历里最值钱的主线：Schema 先转成通用 IR，再通过 Solution 切到 React 或 Vue 出码。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">先看整条出码流水线</h2>
+      <p>更高级的讲法不是“能导出代码”，而是“先把页面语义标准化，再通过不同 Solution 接入不同框架”。这就是为什么 React 和 Vue 能共用同一套主流程。</p>
+      <div class="flow-animation" data-steps='[
+        {"highlight":"flow-m5-actor-1","label":"编辑器把当前组件树整理成 Schema"},
+        {"highlight":"flow-m5-actor-1","label":"SchemaParser 把 Schema 转成通用 IR","packet":true,"from":"m5-actor-1","to":"m5-actor-2"},
+        {"highlight":"flow-m5-actor-2","label":"CodeGenRegistry 装入物料描述符和自定义逻辑"},
+        {"highlight":"flow-m5-actor-2","label":"根据 solution 名称切到 React 或 Vue 车间","packet":true,"from":"m5-actor-2","to":"m5-actor-3"},
+        {"highlight":"flow-m5-actor-3","label":"component plugins 和 project plugins 生成页面文件与工程文件"},
+        {"highlight":"flow-m5-actor-4","label":"postProcessor 格式化代码，publisher 打包输出","packet":true,"from":"m5-actor-3","to":"m5-actor-4"}
+      ]'>
+        <div class="flow-actors">
+          <div class="flow-actor" id="flow-m5-actor-1"><div class="flow-actor-icon">S</div><span>Schema</span></div>
+          <div class="flow-actor" id="flow-m5-actor-2"><div class="flow-actor-icon">IR</div><span>IR + Registry</span></div>
+          <div class="flow-actor" id="flow-m5-actor-3"><div class="flow-actor-icon">So</div><span>Solution + Plugins</span></div>
+          <div class="flow-actor" id="flow-m5-actor-4"><div class="flow-actor-icon">Pub</div><span>Builder + Publisher</span></div>
+        </div>
+        <div class="flow-packet" id="flow-packet"></div>
+        <div class="flow-step-label" id="flow-label">点击“下一步”开始追踪出码链路</div>
+        <div class="flow-controls">
+          <button class="btn flow-next-btn">下一步</button>
+          <button class="btn flow-reset-btn">重新开始</button>
+          <span class="flow-progress"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">exportSourceCode 是总调度器</h2>
+      <div class="translation-block animate-in">
+        <div class="translation-code">
+          <span class="translation-label">CODE</span>
+          <pre><code><span class="code-line">export async function exportSourceCode(</span>
+<span class="code-line">  schema: ISchema,</span>
+<span class="code-line">  options: IExportOptions = {},</span>
+<span class="code-line">): Promise&lt;IExportResult&gt; {</span>
+<span class="code-line">  const {</span>
+<span class="code-line">    solution: solutionInput = "react-vite",</span>
+<span class="code-line">    materialPack,</span>
+<span class="code-line">    skipPublisher = false,</span>
+<span class="code-line">    projectName = "lowcode-project",</span>
+<span class="code-line">  } = options;</span>
+<span class="code-line">  try {</span>
+<span class="code-line">    const solution = resolveSolution(solutionInput);</span>
+<span class="code-line">    const registry = new CodeGenRegistry();</span>
+<span class="code-line">    if (materialPack) {</span>
+<span class="code-line">      registry.loadPack(materialPack);</span>
+<span class="code-line">    }</span>
+<span class="code-line">    const parser = new SchemaParser(registry);</span>
+<span class="code-line">    let irProject = parser.parse(schema);</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">PLAIN ENGLISH</span>
+          <div class="translation-lines">
+            <p class="tl">先拿到原始 Schema 和导出选项。</p>
+            <p class="tl">solutionInput 决定这次要走 React 方案还是 Vue 方案。</p>
+            <p class="tl">注册中心会先装入物料包里的描述符和自定义逻辑。</p>
+            <p class="tl">接着由 SchemaParser 把页面蓝图转成更通用的 IR。</p>
+            <p class="tl">后面的具体框架差异，都建立在已经统一好的 IR 之上。</p>
+          </div>
+        </div>
+      </div>
+      <div class="pattern-cards">
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)"><div class="pattern-icon" style="background: var(--color-actor-1)">IR</div><h4 class="pattern-title">先标准化，再分流</h4><p class="pattern-desc">IR 负责统一页面语义，避免主流程直接绑定某个框架。</p></div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)"><div class="pattern-icon" style="background: var(--color-actor-2)">Reg</div><h4 class="pattern-title">物料注册中心</h4><p class="pattern-desc">组件依赖、标签映射、属性过滤和自定义逻辑都通过注册接入。</p></div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)"><div class="pattern-icon" style="background: var(--color-actor-5)">Sol</div><h4 class="pattern-title">Solution 抽象</h4><p class="pattern-desc">React 和 Vue 只是不同方案，而不是两套独立流程。</p></div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">Web Worker 也是这条亮点的一部分</h2>
+      <p>不要把 Worker 讲成孤立优化。这里的出码是重计算任务，所以被下沉到 Worker；而且还做了“终止旧 Worker、拒绝过期 Promise、超时重启”的最新任务优先策略。</p>
+      <div class="translation-block animate-in">
+        <div class="translation-code">
+          <span class="translation-label">CODE</span>
+          <pre><code><span class="code-line">  generateCode(</span>
+<span class="code-line">    payload: GenerateCodeWithWorkerPayload,</span>
+<span class="code-line">  ): Promise&lt;GenerateCodeWithWorkerResult&gt; {</span>
+<span class="code-line">    const requestId = ++this.requestId;</span>
+<span class="code-line">    if (this.pendingRequests.size &gt; 0) {</span>
+<span class="code-line">      this.restartWorker(new CodegenCancelledError());</span>
+<span class="code-line">    }</span>
+<span class="code-line">    const worker = this.ensureWorker();</span>
+<span class="code-line">    return new Promise&lt;GenerateCodeWithWorkerResult&gt;((resolve, reject) =&gt; {</span>
+<span class="code-line">      const timeoutId = setTimeout(() =&gt; {</span>
+<span class="code-line">        if (!this.pendingRequests.has(requestId)) {</span>
+<span class="code-line">          return;</span>
+<span class="code-line">        }</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">PLAIN ENGLISH</span>
+          <div class="translation-lines">
+            <p class="tl">每次点导出，先给这次任务一个新的请求编号。</p>
+            <p class="tl">如果还有旧任务没结束，就先重启 Worker，把旧任务当作取消处理。</p>
+            <p class="tl">这样连续切换方案时，永远只保留最后一次请求的结果。</p>
+            <p class="tl">同时再挂一个超时器，防止 Worker 卡死后一直占着这次任务不返回。</p>
+          </div>
+        </div>
+      </div>
+      <div class="callout callout-accent">
+        <div class="callout-icon">Aha</div>
+        <div class="callout-content">
+          <strong class="callout-title">一句面试表达</strong>
+          <p>“我把重型源码生成下沉到 Web Worker，并且设计了最新任务优先的取消策略，避免频繁切换方案时旧结果覆盖新状态。”</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">小测验：为什么不是直接拼 React JSX</h2>
+      <div class="quiz-container" id="quiz-module5">
+        <div class="quiz-question-block"
+             data-correct="option-b"
+             data-explanation-right="对。直接拼 React JSX 会让主流程和 React 强耦合，后续接 Vue 或其他方案时很难复用。"
+             data-explanation-wrong="问题不只是代码变长，而是主流程和目标框架强耦合，扩展性会明显受限。">
+          <h3 class="quiz-question">如果一开始就把编辑器页面直接拼成 React JSX，不引入 IR 和 Solution，最大风险是什么？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>只是代码量会稍微长一点，但架构不会受影响</span></button>
+            <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>出码主流程会和 React 强耦合，跨框架扩展和物料复用都会更困难</span></button>
+            <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>IR 只是为了调试方便，不做也没关系</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <button class="quiz-check-btn" onclick="checkQuiz('quiz-module5')">检查答案</button>
+        <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module5')">再试一次</button>
+      </div>
+    </section>
+  </div>
+</section>

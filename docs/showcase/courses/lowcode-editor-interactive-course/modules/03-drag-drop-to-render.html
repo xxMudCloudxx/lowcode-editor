@@ -1,0 +1,131 @@
+﻿<section class="module" id="module-3" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">拖进去的组件为什么能出现在画布上</h1>
+      <p class="module-subtitle">关键不是“往 DOM 里塞一个节点”，而是“先改数据，再由渲染器递归解释”。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">先追踪完整链路</h2>
+      <p>在低代码系统里，拖拽只是入口。真正重要的是后面的四步：把物料元数据带进上下文、校验容器能不能接收、更新组件树、让渲染器根据新状态重画。</p>
+      <div class="flow-animation" data-steps='[
+        {"highlight":"flow-m3-actor-1","label":"用户在左侧物料区按住一个组件"},
+        {"highlight":"flow-m3-actor-1","label":"物料卡片把 componentName 和 defaultProps 带进拖拽上下文","packet":true,"from":"m3-actor-1","to":"m3-actor-2"},
+        {"highlight":"flow-m3-actor-2","label":"iframe 画布检查当前容器是否允许接收这个组件"},
+        {"highlight":"flow-m3-actor-2","label":"drop 成功后通过 simulatorRenderer 把动作委托回主编辑器","packet":true,"from":"m3-actor-2","to":"m3-actor-3"},
+        {"highlight":"flow-m3-actor-3","label":"components store 更新规范化组件树"},
+        {"highlight":"flow-m3-actor-4","label":"SchemaRenderer 只重渲染受影响节点","packet":true,"from":"m3-actor-3","to":"m3-actor-4"}
+      ]'>
+        <div class="flow-actors">
+          <div class="flow-actor" id="flow-m3-actor-1"><div class="flow-actor-icon">物</div><span>物料卡片</span></div>
+          <div class="flow-actor" id="flow-m3-actor-2"><div class="flow-actor-icon">画</div><span>iframe 画布</span></div>
+          <div class="flow-actor" id="flow-m3-actor-3"><div class="flow-actor-icon">树</div><span>components store</span></div>
+          <div class="flow-actor" id="flow-m3-actor-4"><div class="flow-actor-icon">渲</div><span>SchemaRenderer</span></div>
+        </div>
+        <div class="flow-packet" id="flow-packet"></div>
+        <div class="flow-step-label" id="flow-label">点击“下一步”开始追踪拖拽链路</div>
+        <div class="flow-controls">
+          <button class="btn flow-next-btn">下一步</button>
+          <button class="btn flow-reset-btn">重新开始</button>
+          <span class="flow-progress"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">第一步：拖拽时先带上物料档案</h2>
+      <p>物料卡片并不是只说“我被拖起来了”，它还会把组件名、默认属性和描述发给宿主。这样 drop 成功后，主编辑器能立刻创建出一个带默认配置的新节点。</p>
+      <div class="translation-block animate-in">
+        <div class="translation-code">
+          <span class="translation-label">CODE</span>
+          <pre><code><span class="code-line">  const handleDragStart = (e: React.DragEvent) =&gt; {</span>
+<span class="code-line">    e.dataTransfer.setData("text/plain", `lowcode-component:${name}`);</span>
+<span class="code-line">    e.dataTransfer.effectAllowed = "copy";</span>
+<span class="code-line"></span>
+<span class="code-line">    const config = componentConfig[name];</span>
+<span class="code-line">    if (config) {</span>
+<span class="code-line">      simulatorHost.sendDragStartMetadata({</span>
+<span class="code-line">        componentName: name,</span>
+<span class="code-line">        defaultProps: config.defaultProps ?? {},</span>
+<span class="code-line">        desc: config.desc,</span>
+<span class="code-line">      });</span>
+<span class="code-line">    }</span>
+<span class="code-line">  };</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">PLAIN ENGLISH</span>
+          <div class="translation-lines">
+            <p class="tl">拖拽开始时，先给浏览器原生拖拽系统放一个标识。</p>
+            <p class="tl">然后去物料配置中心找到这个组件的默认信息。</p>
+            <p class="tl">如果找到了，就把组件名、默认属性和描述发给宿主通信层。</p>
+            <p class="tl">所以后面的 drop 不是凭空造节点，而是带着一份完整的物料档案在处理。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">第二步：先写入规范化组件树</h2>
+      <p>这个仓库没有把页面存成一棵深层嵌套对象，而是把实例都放进按 id 索引的 Map。这样增删改查更稳定，也更适合做撤销重做和局部重渲染。</p>
+      <div class="translation-block animate-in">
+        <div class="translation-code">
+          <span class="translation-label">CODE</span>
+          <pre><code><span class="code-line">  addComponent: (component, parentId) =&gt; {</span>
+<span class="code-line">    set((state) =&gt; {</span>
+<span class="code-line">      const parent = state.components[parentId];</span>
+<span class="code-line">      if (!parent) return;</span>
+<span class="code-line"></span>
+<span class="code-line">      const newComponent: Component = structuredClone(component);</span>
+<span class="code-line">      if (!newComponent.id) {</span>
+<span class="code-line">        newComponent.id = generateUniqueId();</span>
+<span class="code-line">      }</span>
+<span class="code-line">      newComponent.parentId = parentId;</span>
+<span class="code-line">      newComponent.children = [];</span>
+<span class="code-line">      state.components[newComponent.id] = newComponent;</span>
+<span class="code-line">      if (!parent.children) parent.children = [];</span>
+<span class="code-line">      parent.children.push(newComponent.id);</span>
+<span class="code-line">    });</span>
+<span class="code-line">  },</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">PLAIN ENGLISH</span>
+          <div class="translation-lines">
+            <p class="tl">新增组件时，先找到它要挂到哪个父节点下面。</p>
+            <p class="tl">把模板克隆一份，并补上新的实例 id。</p>
+            <p class="tl">再把 parentId、children 等结构信息补齐，写进 components Map。</p>
+            <p class="tl">最后只要把这个新 id 挂到父节点 children 列表里，树结构就成立了。</p>
+          </div>
+        </div>
+      </div>
+      <div class="callout callout-accent">
+        <div class="callout-icon">Aha</div>
+        <div class="callout-content">
+          <strong class="callout-title">一句面试表达</strong>
+          <p>“拖拽只是动作入口，真正的单一数据源是规范化组件树；渲染只是对这份数据的解释结果。”</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">小测验：为什么低代码平台常先改数据再改 UI</h2>
+      <div class="quiz-container" id="quiz-module3">
+        <div class="quiz-question-block"
+             data-correct="option-b"
+             data-explanation-right="对。把动作先收敛成组件树，系统才能稳定支持撤销、持久化、预览和出码。"
+             data-explanation-wrong="还不够完整。直接改 DOM 也许更直观，但后续的撤销、同步和出码都会变得很脆弱。">
+          <h3 class="quiz-question">用户把一个按钮拖进画布时，为什么这个项目没有直接操作 DOM？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>因为 React 不能动态创建 DOM 节点</span></button>
+            <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>因为 Schema 和组件树才是单一数据源，渲染、持久化、撤销和出码都依赖它</span></button>
+            <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>因为 DOM 操作在任何场景下都一定比状态更新更慢</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <button class="quiz-check-btn" onclick="checkQuiz('quiz-module3')">检查答案</button>
+        <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module3')">再试一次</button>
+      </div>
+    </section>
+  </div>
+</section>
+

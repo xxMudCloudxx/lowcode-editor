@@ -1,0 +1,98 @@
+﻿<section class="module" id="module-2" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">Monorepo 里的五个主角</h1>
+      <p class="module-subtitle">把 schema、materials、renderer、editor、code-generator 的边界讲清楚，后面任何追问都更好接。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">五个角色分别干什么</h2>
+      <div class="icon-rows">
+        <div class="icon-row"><div class="icon-circle" style="background: var(--color-actor-1)">S</div><div><strong>schema</strong><p>定义共享类型、协议和组件树结构，是全项目的共同语言。</p></div></div>
+        <div class="icon-row"><div class="icon-circle" style="background: var(--color-actor-2)">M</div><div><strong>materials</strong><p>定义物料的默认属性、setter、事件和出码描述，是零件仓库。</p></div></div>
+        <div class="icon-row"><div class="icon-circle" style="background: var(--color-actor-3)">R</div><div><strong>renderer</strong><p>负责把组件树递归渲染成真正界面，是舞台执行层。</p></div></div>
+        <div class="icon-row"><div class="icon-circle" style="background: var(--color-actor-4)">E</div><div><strong>editor</strong><p>负责工具栏、物料区、iframe 画布和设置面板，是工作台。</p></div></div>
+        <div class="icon-row"><div class="icon-circle" style="background: var(--color-actor-5)">C</div><div><strong>code-generator</strong><p>负责把 Schema 转成 IR，再进入不同 Solution 的出码流程，是成品工厂。</p></div></div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">用群聊记忆这五个角色最有效</h2>
+      <p>谁负责定义规则，谁负责准备零件，谁负责工作台，谁负责画出来，谁负责导出成品，这样记比背目录更容易。</p>
+      <div class="chat-window" id="chat-module2">
+        <div class="chat-messages">
+          <div class="chat-message" data-msg="0" data-sender="actor-a" style="display:none"><div class="chat-avatar" style="background: var(--color-actor-1)">S</div><div class="chat-bubble"><span class="chat-sender" style="color: var(--color-actor-1)">schema</span><p>我先定义组件树和协议，所有包都按这个格式协作。</p></div></div>
+          <div class="chat-message" data-msg="1" data-sender="actor-b" style="display:none"><div class="chat-avatar" style="background: var(--color-actor-2)">M</div><div class="chat-bubble"><span class="chat-sender" style="color: var(--color-actor-2)">materials</span><p>我给每个物料准备默认属性、编辑配置和出码描述。</p></div></div>
+          <div class="chat-message" data-msg="2" data-sender="actor-c" style="display:none"><div class="chat-avatar" style="background: var(--color-actor-4)">E</div><div class="chat-bubble"><span class="chat-sender" style="color: var(--color-actor-4)">editor</span><p>用户在我这里拖拽、配置、预览，我管理交互和状态。</p></div></div>
+          <div class="chat-message" data-msg="3" data-sender="actor-d" style="display:none"><div class="chat-avatar" style="background: var(--color-actor-3)">R</div><div class="chat-bubble"><span class="chat-sender" style="color: var(--color-actor-3)">renderer</span><p>拿到组件树后，我负责把它递归解释成真正的界面。</p></div></div>
+          <div class="chat-message" data-msg="4" data-sender="actor-e" style="display:none"><div class="chat-avatar" style="background: var(--color-actor-5)">C</div><div class="chat-bubble"><span class="chat-sender" style="color: var(--color-actor-5)">code-generator</span><p>最后我把 Schema 送进 IR、Solution 和 Plugin 流水线，导出真实项目。</p></div></div>
+        </div>
+        <div class="chat-typing" id="chat-module2-typing" style="display:none">
+          <div class="chat-avatar" id="chat-module2-typing-avatar">?</div>
+          <div class="chat-typing-dots"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+        </div>
+        <div class="chat-controls">
+          <button class="btn chat-next-btn">下一条</button>
+          <button class="btn chat-all-btn">自动播放</button>
+          <button class="btn chat-reset-btn">重播</button>
+          <span class="chat-progress"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">物料层并不只是“放组件”</h2>
+      <p>这段代码很能说明 materials 和 code-generator 的关系。物料包会把出码描述和少量自定义逻辑打成一个 pack，交给生成器消费。</p>
+      <div class="translation-block animate-in">
+        <div class="translation-code">
+          <span class="translation-label">CODE</span>
+          <pre><code><span class="code-line">export const antdCodeGenPack: IMaterialCodeGenPack = {</span>
+<span class="code-line">  descriptors: antdCodeGenDescriptors,</span>
+<span class="code-line">  customLogic: {</span>
+<span class="code-line">    Icon: iconCustomLogic,</span>
+<span class="code-line">    Table: tableCustomLogic,</span>
+<span class="code-line">    FormItem: formItemCustomLogic,</span>
+<span class="code-line">  },</span>
+<span class="code-line">};</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">PLAIN ENGLISH</span>
+          <div class="translation-lines">
+            <p class="tl">先把整套 antd 物料的出码能力打成一个包。</p>
+            <p class="tl">大部分组件只靠描述符就够了，比如依赖、标签映射和属性转换。</p>
+            <p class="tl">少数复杂物料再补程序化逻辑，比如 Icon、Table、FormItem。</p>
+            <p class="tl">这让新增物料时更像“注册协议”，而不是“改核心流程”。</p>
+          </div>
+        </div>
+      </div>
+      <div class="callout callout-info">
+        <div class="callout-icon">Tip</div>
+        <div class="callout-content">
+          <strong class="callout-title">一句面试表达</strong>
+          <p>“我把具体物料知识留在 materials 层，把流程调度留在 code-generator 层，这样新增物料时不会反复改核心流水线。”</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">小测验：新增一个复杂物料时，应该先改哪层</h2>
+      <div class="quiz-container" id="quiz-module2">
+        <div class="quiz-question-block"
+             data-correct="option-b"
+             data-explanation-right="对。优先补物料协议和出码描述，其他层按协议消费，扩展性最好。"
+             data-explanation-wrong="不够理想。直接改 editor 或 code-generator 核心流程，会把具体组件细节塞进错误的层里。">
+          <h3 class="quiz-question">如果你要新增一个支持编辑、渲染和出码的复杂图表物料，最合理的入口是什么？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>直接去 editor 里硬编码新的设置面板和导出逻辑</span></button>
+            <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>优先在 materials 层补齐物料协议与 codegen 描述，再让其他包按协议消费</span></button>
+            <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先在 code-generator 里把 React 和 Vue 的代码写死，后面再慢慢抽</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <button class="quiz-check-btn" onclick="checkQuiz('quiz-module2')">检查答案</button>
+        <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module2')">再试一次</button>
+      </div>
+    </section>
+  </div>
+</section>

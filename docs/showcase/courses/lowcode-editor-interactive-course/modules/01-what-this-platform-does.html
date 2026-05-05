@@ -1,0 +1,116 @@
+﻿<section class="module" id="module-1" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">这个项目到底在解决什么问题</h1>
+      <p class="module-subtitle">先把项目定位讲准：它不是单纯的拖拽编辑器，而是一套以 Schema 为单一数据源的低代码平台。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">一句话先定性</h2>
+      <p>更准确的说法是：这是一个基于 <span class="term" data-definition="Schema 是一份结构化页面蓝图。页面里有哪些组件、每个组件有什么属性、它们的层级怎么组织，都可以写进 Schema。">Schema</span> 驱动的低代码平台。用户通过拖拽和配置搭建页面，系统再把这些操作沉淀成统一的组件树和后续代码产物。</p>
+      <div class="pattern-cards">
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+          <div class="pattern-icon" style="background: var(--color-actor-1)">拖</div>
+          <h4 class="pattern-title">拖拽搭建</h4>
+          <p class="pattern-desc">从物料区把按钮、表单、容器拖进画布。</p>
+        </div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+          <div class="pattern-icon" style="background: var(--color-actor-2)">配</div>
+          <h4 class="pattern-title">配置驱动</h4>
+          <p class="pattern-desc">右侧面板改的是属性、样式和事件，而不是直接写 JSX。</p>
+        </div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+          <div class="pattern-icon" style="background: var(--color-actor-4)">看</div>
+          <h4 class="pattern-title">实时预览</h4>
+          <p class="pattern-desc">同一份组件树既能驱动画布，也能驱动预览态。</p>
+        </div>
+        <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+          <div class="pattern-icon" style="background: var(--color-actor-5)">出</div>
+          <h4 class="pattern-title">导出源码</h4>
+          <p class="pattern-desc">最终还能走进出码流水线，生成真实项目文件。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">用户看到的是一个三栏工作台</h2>
+      <p>左边是物料区，中间是隔离在 <span class="term" data-definition="iframe 是浏览器中的独立小页面。把画布放进 iframe，可以减少样式和事件污染，也更适合做沙箱隔离。">iframe</span> 里的画布，右边是设置面板；切到预览态后，就直接进入最终页面展示。</p>
+      <div class="translation-block animate-in">
+        <div class="translation-code">
+          <span class="translation-label">CODE</span>
+          <pre><code><span class="code-line">  return (</span>
+<span class="code-line">    &lt;div className="h-screen flex flex-col bg-surface"&gt;</span>
+<span class="code-line">      &lt;div className="h-16 flex items-center bg-surface-elevated border-b border-border shadow-sm px-6"&gt;</span>
+<span class="code-line">        &lt;Header /&gt;</span>
+<span class="code-line">      &lt;/div&gt;</span>
+<span class="code-line">      {mode === "edit" ? (</span>
+<span class="code-line">        &lt;div className="flex-1 flex overflow-hidden"&gt;</span>
+<span class="code-line">          &lt;Allotment&gt;</span>
+<span class="code-line">            &lt;Allotment.Pane preferredSize={280} minSize={240}&gt;</span>
+<span class="code-line">              &lt;MaterialWrapper /&gt;</span>
+<span class="code-line">            &lt;/Allotment.Pane&gt;</span>
+<span class="code-line">            &lt;Allotment.Pane&gt;</span>
+<span class="code-line">              &lt;SimulatorView /&gt;</span>
+<span class="code-line">            &lt;/Allotment.Pane&gt;</span>
+<span class="code-line">            &lt;Allotment.Pane preferredSize={360} maxSize={480} minSize={320}&gt;</span>
+<span class="code-line">              &lt;Setting /&gt;</span>
+<span class="code-line">            &lt;/Allotment.Pane&gt;</span>
+<span class="code-line">          &lt;/Allotment&gt;</span>
+<span class="code-line">        &lt;/div&gt;</span>
+<span class="code-line">      ) : (</span>
+<span class="code-line">        &lt;div className="flex-1 overflow-hidden"&gt;</span>
+<span class="code-line">          &lt;Preview /&gt;</span>
+<span class="code-line">        &lt;/div&gt;</span>
+<span class="code-line">      )}</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">PLAIN ENGLISH</span>
+          <div class="translation-lines">
+            <p class="tl">整个应用先搭了一个全屏编辑器外壳。</p>
+            <p class="tl">上面是一条工具栏，下面根据模式切成编辑态或预览态。</p>
+            <p class="tl">编辑态下主区域被拆成三栏，分别对应物料、画布和设置。</p>
+            <p class="tl">预览态则直接显示最终页面，不再展示工作台结构。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">完整动作其实是“拖、配、看、出”</h2>
+      <div class="step-cards">
+        <div class="step-card"><div class="step-num">1</div><div class="step-body"><strong>拖一个组件进画布</strong><p>用户做拖拽动作，系统开始收集物料信息。</p></div></div>
+        <div class="step-card"><div class="step-num">2</div><div class="step-body"><strong>在右侧改属性、样式、事件</strong><p>这些修改会回到组件树，而不是直接写死在 DOM 上。</p></div></div>
+        <div class="step-card"><div class="step-num">3</div><div class="step-body"><strong>切到预览态</strong><p>同一份数据会被重新解释成最终页面。</p></div></div>
+        <div class="step-card"><div class="step-num">4</div><div class="step-body"><strong>导出源码</strong><p>当前 Schema 会被送入 Worker 和出码流水线，生成真实项目。</p></div></div>
+      </div>
+      <div class="callout callout-accent">
+        <div class="callout-icon">Aha</div>
+        <div class="callout-content">
+          <strong class="callout-title">一句高质量项目定位</strong>
+          <p>“我做的不是单纯的拖拽编辑器，而是一套同时支持可视化编辑与源码导出的 Schema 驱动低代码平台。”</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading">小测验：哪种开场最到位</h2>
+      <div class="quiz-container" id="quiz-module1">
+        <div class="quiz-question-block"
+             data-correct="option-c"
+             data-explanation-right="对。更准确的定位要把 Schema 驱动、可视化搭建、预览和出码四件事连起来。"
+             data-explanation-wrong="还不够完整。只讲拖拽编辑器或组件库，会把这个项目最值钱的统一数据源和出码能力讲丢。">
+          <h3 class="quiz-question">面试官问“这个项目本质是什么”，下面哪种回答最强？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>一个用 React 写的拖拽页面编辑器</span></button>
+            <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>一个封装了很多 antd 组件的可视化平台</span></button>
+            <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>一个基于 Schema 驱动的低代码平台，支持拖拽搭建、配置化编辑、实时预览和跨框架出码</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <button class="quiz-check-btn" onclick="checkQuiz('quiz-module1')">检查答案</button>
+        <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module1')">再试一次</button>
+      </div>
+    </section>
+  </div>
+</section>
