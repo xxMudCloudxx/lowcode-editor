@@ -32,6 +32,7 @@ import {
   TabletOutlined,
   MobileOutlined,
   LoadingOutlined,
+  DatabaseOutlined,
 } from "@ant-design/icons";
 
 const { Text, Title } = Typography;
@@ -43,6 +44,7 @@ import { useHistoryStore } from "../../stores/historyStore";
 import type { IGeneratedFile } from "@lowcode/schema";
 import { useEffect, useRef, useState } from "react";
 import { CodePreviewDrawer } from "../CodePreviewDrawer";
+import { VariablePanel } from "../VariablePanel";
 import type { CodegenWorkerStats } from "../../workers/codegenWorkerProtocol";
 import {
   CodegenWorkerClient,
@@ -109,6 +111,7 @@ interface CodegenTelemetrySnapshot extends CodegenWorkerStats {
 export function Header() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+  const [isVariablePanelOpen, setIsVariablePanelOpen] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<IGeneratedFile[]>([]);
   const [lastCodegenStats, setLastCodegenStats] =
     useState<CodegenTelemetrySnapshot | null>(null);
@@ -440,6 +443,13 @@ export function Header() {
                 solution={currentSolution}
                 onSolutionChange={handleSolutionChange}
               />
+              <Button
+                onClick={() => setIsVariablePanelOpen(true)}
+                size="middle"
+                icon={<DatabaseOutlined />}
+              >
+                变量
+              </Button>
 
               {/* 预览（Primary Action） */}
               <Button
@@ -466,6 +476,14 @@ export function Header() {
             </>
           )}
 
+          <Button
+            onClick={() => setIsVariablePanelOpen(true)}
+            size="middle"
+            icon={<DatabaseOutlined />}
+          >
+            变量
+          </Button>
+
           {mode === "preview" && (
             <Button
               onClick={() => setMode("edit")}
@@ -478,6 +496,10 @@ export function Header() {
           )}
         </Space>
       </div>
+      <VariablePanel
+        open={isVariablePanelOpen}
+        onClose={() => setIsVariablePanelOpen(false)}
+      />
     </div>
   );
 }
