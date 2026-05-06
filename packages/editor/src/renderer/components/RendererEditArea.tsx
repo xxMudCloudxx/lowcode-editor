@@ -26,6 +26,7 @@ import { SchemaRenderer, type DesignHooks } from "@lowcode/renderer";
 import { useRendererStore } from "../stores/rendererStore";
 import { simulatorRenderer } from "../../editor/simulator/SimulatorRenderer";
 import { materials, type ComponentConfig } from "@lowcode/materials";
+import { useExpressionStore } from "../../editor/stores/expressionStore";
 import { RendererDraggableNode } from "./RendererDraggableNode";
 import { RendererHoverMask } from "./RendererHoverMask";
 import { RendererSelectedMask } from "./RendererSelectedMask";
@@ -42,6 +43,16 @@ export function RendererEditArea() {
   const components = useRendererStore((s) => s.components);
   const rootId = useRendererStore((s) => s.rootId);
   const curComponentId = useRendererStore((s) => s.curComponentId);
+
+  // 设计态也需要解析表达式，否则绑定了表达式的 prop 会把原始对象传给组件导致崩溃
+  const buildContext = useExpressionStore((s) => s.buildContext);
+  const globalValues = useExpressionStore((s) => s.globalValues);
+  const pageValues = useExpressionStore((s) => s.pageValues);
+  const dataValues = useExpressionStore((s) => s.dataValues);
+  const expressionContext = useMemo(
+    () => buildContext(),
+    [buildContext, globalValues, pageValues, dataValues],
+  );
   const [hoverComponentId, setHoverComponentId] = useState<number>();
   const simulatorRef = useRef<HTMLDivElement>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -198,6 +209,7 @@ export function RendererEditArea() {
           componentMap={componentConfigMap}
           designMode="design"
           designHooks={designHooks}
+          expressionContext={expressionContext}
         />
 
         {/* Hover Mask */}

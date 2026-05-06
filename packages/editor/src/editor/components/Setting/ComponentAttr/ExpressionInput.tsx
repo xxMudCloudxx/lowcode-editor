@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Alert, Input, Typography } from "antd";
-import { evaluate, type ExpressionBinding } from "@lowcode/expression";
+import { evaluate, type ExpressionBinding, type EvalResult } from "@lowcode/expression";
 import { useExpressionStore } from "../../../stores/expressionStore";
 
 interface ExpressionInputProps {
@@ -37,13 +37,19 @@ export function ExpressionInput({
     return sections.join(" | ");
   }, [dataSources, globalVariables, pageVariables]);
 
-  const preview = useMemo(() => {
+  const preview: EvalResult | null = useMemo(() => {
     if (!value?.value?.trim()) {
       return null;
     }
 
     return evaluate(value.value, buildContext(componentProps));
   }, [buildContext, componentProps, value]);
+
+  const previewMessage = preview
+    ? preview.ok
+      ? `预览结果：${String(preview.value)}`
+      : `表达式错误：${"error" in preview ? preview.error : "未知错误"}`
+    : null;
 
   return (
     <div className="flex flex-col gap-2">
@@ -63,16 +69,13 @@ export function ExpressionInput({
         {hints}
       </Typography.Text>
 
-      {preview &&
-        (preview.ok ? (
-          <Alert
-            type="success"
-            showIcon
-            message={`预览结果：${String(preview.value)}`}
-          />
-        ) : (
-          <Alert type="error" showIcon message={`表达式错误：${preview.error}`} />
-        ))}
+      {preview && previewMessage && (
+        <Alert
+          type={preview.ok ? "success" : "error"}
+          showIcon
+          message={previewMessage}
+        />
+      )}
     </div>
   );
 }

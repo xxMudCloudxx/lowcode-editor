@@ -48,16 +48,20 @@ import type {
 interface RendererContextValue {
   getComponent: (id: number) => Component | undefined;
   subscribe: (callback: () => void) => () => void;
+  getExpressionContext: () => ExpressionContext | undefined;
+  subscribeExpression: (callback: () => void) => () => void;
   componentMap: Record<string, ComponentConfig>;
   designMode: "design" | "live";
   designHooks: DesignHooks;
   onEvent?: EventHandler;
   onCompRef?: (componentId: number, ref: unknown) => void;
   suspenseFallback: ReactElement;
-  expressionContext?: ExpressionContext;
 }
 
 const RendererContext = createContext<RendererContextValue | null>(null);
+
+const noopUnsubscribe = () => {};
+const noopSubscribe = (_cb: () => void) => noopUnsubscribe;
 
 function resolveExpressionProps(
   props: Record<string, unknown>,
@@ -107,13 +111,14 @@ const RenderNode: React.FC<RenderNodeProps> = React.memo(({ id }) => {
   const {
     getComponent,
     subscribe,
+    getExpressionContext,
+    subscribeExpression,
     componentMap,
     designMode,
     designHooks,
     onEvent,
     onCompRef,
     suspenseFallback,
-    expressionContext,
   } = useRendererContext();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,6 +144,18 @@ const RenderNode: React.FC<RenderNodeProps> = React.memo(({ id }) => {
     ...component.props,
     style: component.styles,
   };
+
+  // 检查是否有表达式绑定，只有有表达式的节点才订阅上下文变化
+  const hasExpressions = Object.values(mergedProps).some(isExpression);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const getExprCtxSnapshot = useCallback(() => getExpressionContext(), [getExpressionContext]);
+  const expressionContext = useSyncExternalStore(
+    hasExpressions ? subscribeExpression : noopSubscribe,
+    getExprCtxSnapshot,
+    getExprCtxSnapshot,
+  );
+
   const resolvedProps = resolveExpressionProps(mergedProps, expressionContext);
 
   // ---- 设计态：注入 data-component-id 用于蒙层定位 ----
@@ -246,15 +263,29 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = React.memo(
     const componentsRef = useRef(components);
     componentsRef.current = components;
 
+    const expressionContextRef = useRef(expressionContext);
+    expressionContextRef.current = expressionContext;
+
     const listenersRef = useRef(new Set<() => void>());
+    const expressionListenersRef = useRef(new Set<() => void>());
 
     // components 引用变化时通知所有订阅者
     useEffect(() => {
       listenersRef.current.forEach((fn) => fn());
     }, [components]);
 
+    // expressionContext 变化时只通知表达式订阅者
+    useEffect(() => {
+      expressionListenersRef.current.forEach((fn) => fn());
+    }, [expressionContext]);
+
     const getComponent = useCallback(
       (id: number) => componentsRef.current[id],
+      [],
+    );
+
+    const getExpressionContext = useCallback(
+      () => expressionContextRef.current,
       [],
     );
 
@@ -265,29 +296,38 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = React.memo(
       };
     }, []);
 
-    // Context 值不包含 components → 引用稳定 → 不会击穿子树 memo
+    const subscribeExpression = useCallback((listener: () => void) => {
+      expressionListenersRef.current.add(listener);
+      return () => {
+        expressionListenersRef.current.delete(listener);
+      };
+    }, []);
+
+    // Context 值不包含 components 和 expressionContext → 引用稳定 → 不会击穿子树 memo
     const contextValue = useMemo<RendererContextValue>(
       () => ({
         getComponent,
         subscribe,
+        getExpressionContext,
+        subscribeExpression,
         componentMap,
         designMode,
         designHooks,
         onEvent,
         onCompRef,
         suspenseFallback,
-        expressionContext,
       }),
       [
         getComponent,
         subscribe,
+        getExpressionContext,
+        subscribeExpression,
         componentMap,
         designMode,
         designHooks,
         onEvent,
         onCompRef,
         suspenseFallback,
-        expressionContext,
       ],
     );
 

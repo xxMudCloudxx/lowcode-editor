@@ -39,9 +39,11 @@ export function Preview() {
     componentConfig,
   });
 
+  const dataSources = useExpressionStore((state) => state.dataSources);
+
   React.useEffect(() => {
     void fetchAllAutoDataSources();
-  }, [fetchAllAutoDataSources]);
+  }, [fetchAllAutoDataSources, dataSources]);
 
   const expressionContext = React.useMemo(
     () => buildContext(),

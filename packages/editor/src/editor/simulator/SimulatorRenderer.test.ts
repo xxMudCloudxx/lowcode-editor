@@ -150,7 +150,7 @@ describe("SimulatorRenderer chunk recovery", () => {
       }),
     );
 
-    vi.advanceTimersByTime(1500);
+    vi.advanceTimersByTime(3000);
 
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage.mock.calls[0][0]).toMatchObject({

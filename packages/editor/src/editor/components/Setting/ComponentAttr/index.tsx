@@ -143,15 +143,17 @@ export function ComponentAttr() {
 
           const handleToggleBinding = () => {
             if (bound) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               form.setFieldValue(
-                setter.name,
+                setter.name as any,
                 staticValueCacheRef.current[itemKey] ?? undefined,
               );
               return;
             }
 
             staticValueCacheRef.current[itemKey] = currentValue;
-            form.setFieldValue(setter.name, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            form.setFieldValue(setter.name as any, {
               type: "JSExpression",
               value: "",
             } satisfies ExpressionBinding);
