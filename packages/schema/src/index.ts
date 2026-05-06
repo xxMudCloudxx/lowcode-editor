@@ -1,4 +1,5 @@
 export * from "./component";
+export * from "./expression";
 export * from "./protocol";
 export * from "./ir";
 export * from "./plugin";
