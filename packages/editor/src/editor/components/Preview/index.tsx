@@ -20,16 +20,33 @@ import { ConfigProvider } from "antd";
 import { SchemaRenderer } from "@lowcode/renderer";
 import { useComponentConfigStore } from "../../stores/component-config";
 import { useComponentsStore } from "../../stores/components";
+import { useExpressionStore } from "../../stores/expressionStore";
 import { useEventOrchestrator } from "../../hooks/useEventOrchestrator";
 
 export function Preview() {
   const { components, rootId } = useComponentsStore();
   const { componentConfig } = useComponentConfigStore();
+  const buildContext = useExpressionStore((state) => state.buildContext);
+  const fetchAllAutoDataSources = useExpressionStore(
+    (state) => state.fetchAllAutoDataSources,
+  );
+  const globalValues = useExpressionStore((state) => state.globalValues);
+  const pageValues = useExpressionStore((state) => state.pageValues);
+  const dataValues = useExpressionStore((state) => state.dataValues);
 
   const { handleEvent, handleCompRef } = useEventOrchestrator({
     components,
     componentConfig,
   });
+
+  React.useEffect(() => {
+    void fetchAllAutoDataSources();
+  }, [fetchAllAutoDataSources]);
+
+  const expressionContext = React.useMemo(
+    () => buildContext(),
+    [buildContext, globalValues, pageValues, dataValues],
+  );
 
   return (
     <ConfigProvider theme={{ inherit: false }}>
@@ -42,6 +59,7 @@ export function Preview() {
             designMode="live"
             onEvent={handleEvent}
             onCompRef={handleCompRef}
+            expressionContext={expressionContext}
           />
         )}
       </div>

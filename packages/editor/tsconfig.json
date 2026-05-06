@@ -12,6 +12,7 @@
   "include": ["src", "vite.config.ts"],
   "references": [
     { "path": "../schema" },
+    { "path": "../expression" },
     { "path": "../materials" },
     { "path": "../renderer" },
     { "path": "../code-generator" }
