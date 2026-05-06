@@ -36,10 +36,12 @@
 
 - `packages/schema`
   - 共享类型、协议、IR、plugin/publisher/solution 等契约层
+- `packages/expression`
+  - 表达式引擎，负责求值、依赖提取、上下文类型与运行时类型守卫
 - `packages/materials`
   - 物料实现、meta、生成脚本、物料测试
 - `packages/renderer`
-  - 纯渲染核心，负责 schema 到 React 渲染
+  - 纯渲染核心，负责 schema 到 React 渲染，以及运行时表达式 prop 求值
 - `packages/code-generator`
   - 从 schema 到项目代码的生成流水线
 - `packages/editor`
@@ -147,7 +149,7 @@ spec 不需要很重，但至少写清楚：
 
 目标不是把文档全读完，而是先用最少 token 建立：
 
-- 五包职责
+- 六包职责
 - 核心数据流
 - 设计态 / 运行态 / 出码态的边界
 - 哪些地方是高风险契约面
@@ -222,6 +224,7 @@ spec 不需要很重，但至少写清楚：
 改这些地方时，通常需要先写 spec，再写 plan：
 
 - `packages/schema` 的公开导出
+- `packages/expression` 的求值策略、上下文层级、依赖提取与订阅模型
 - 共享协议和 IR 结构
 - renderer props、render mode、hook 注入点
 - materials 的 meta 结构，以及与 codegen 相关的物料契约
@@ -254,6 +257,7 @@ spec 不需要很重，但至少写清楚：
 
 - 必须保持为渲染核心，不要演化成 editor 状态容器
 - 禁止把 editor store 直接拉进 renderer
+- 表达式上下文必须通过 props / 注入点进入 renderer，不要反向 import editor store
 - design-only 能力优先通过注入点扩展，而不是靠反向耦合硬塞进去
 
 ### `packages/code-generator`
@@ -266,6 +270,8 @@ spec 不需要很重，但至少写清楚：
 
 - 编辑器专属编排逻辑放这里
 - simulator、UI、拖拽、mask、action orchestration 等能力不要随意下沉到 renderer，除非这次任务明确在做边界重设
+- `packages/editor/tsconfig.json` 目前对 `materials` / `renderer` / `code-generator` 使用 `paths` 直接映射源码入口，而不是 project references
+- 原因：这三个包在开发态没有稳定的 `.d.ts` 产物链，直接加 project references 会触发 TS6305；只有 `schema` 与 `expression` 保持 project references
 
 ## 默认验证
 
@@ -289,6 +295,8 @@ pnpm lint
 
 - `packages/materials`
   - 跑对应物料测试
+- `packages/expression`
+  - 跑表达式引擎单测和 build / 类型检查
 - `packages/renderer`
   - 验证 preview / simulator 相关渲染路径
 - `packages/code-generator`
