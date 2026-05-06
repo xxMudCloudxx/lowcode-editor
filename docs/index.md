@@ -16,23 +16,24 @@
 
 一句话描述：
 
-这是一个基于 `pnpm workspace` 的低代码编辑器 monorepo，核心由 5 个 package 组成，围绕三条主链路协作：
+这是一个基于 `pnpm workspace` 的低代码编辑器 monorepo，核心由 6 个 package 组成，围绕三条主链路协作：
 
-1. 编辑链路：拖拽编排、属性配置、状态管理、iframe 同步
-2. 渲染链路：schema -> materials -> renderer -> preview / simulator
+1. 编辑链路：拖拽编排、属性配置、表达式绑定、状态管理、iframe 同步
+2. 渲染链路：schema -> expression -> materials -> renderer -> preview / simulator
 3. 出码链路：schema -> IR -> solution / plugins -> 完整前端工程
 
 最重要的理解方式：
 
 - `schema` 定义规则
+- `expression` 提供表达式求值和依赖提取
 - `materials` 提供物料
-- `renderer` 负责纯渲染
+- `renderer` 负责纯渲染（含表达式 prop 自动求值）
 - `editor` 负责编排和交互
 - `code-generator` 负责把 schema 变成真实项目代码
 
 ---
 
-## 五包职责总览
+## 六包职责总览
 
 ### `packages/schema`
 
@@ -43,9 +44,26 @@
 - 组件节点结构
 - 物料协议
 - 配置面板描述
+- 表达式绑定类型（`ExpressionBinding`）
 - 出码相关 IR / plugin / publisher / solution 契约
 
-可以把它理解成全系统共同遵守的“法律层”。
+可以把它理解成全系统共同遵守的”法律层”。
+
+### `packages/expression`
+
+定位：表达式引擎。
+
+这里提供：
+
+- `evaluate(expr, context)` — 基于 `new Function` 的安全求值
+- `extractDeps(expr)` — 正则依赖路径提取
+- `isExpression()` — 类型守卫
+- `ExpressionContext` 五层上下文类型（$global / $page / $data / $props / $system）
+
+关键约束：
+
+- 纯函数包，不依赖任何 store 或 DOM
+- 仅依赖 `@lowcode/schema`
 
 ### `packages/materials`
 
@@ -67,6 +85,7 @@
 职责：
 
 - 接收 schema 和物料映射
+- 自动识别表达式类型 prop 并调用 `@lowcode/expression` 求值
 - 生成 React 渲染结果
 - 同时服务设计态画布、预览态和潜在运行态
 
@@ -74,6 +93,7 @@
 
 - 这里不是 editor 状态容器
 - 不应该直接依赖 editor store
+- 表达式上下文通过 props 注入，不在 renderer 内管理
 
 ### `packages/code-generator`
 
@@ -106,9 +126,11 @@
 
 用一行记住依赖拓扑：
 
-`schema <- materials <- renderer <- editor`
+`schema <- expression <- renderer <- editor`
 
 同时：
+
+`schema <- materials <- renderer`
 
 `schema <- code-generator <- editor`
 
@@ -147,18 +169,20 @@
 
 ### 2. 渲染链路
 
-组件树本身不会直接渲染成 UI，必须经过共享契约、物料映射和纯渲染层。
+组件树本身不会直接渲染成 UI，必须经过共享契约、表达式求值、物料映射和纯渲染层。
 
 理解顺序：
 
 1. schema 描述页面结构
-2. materials 提供组件实现和行为元信息
-3. renderer 负责把结构变成 React 渲染结果
-4. editor/preview/simulator 作为不同消费方承接渲染结果
+2. expression 对绑定了表达式的 prop 进行求值
+3. materials 提供组件实现和行为元信息
+4. renderer 负责把结构变成 React 渲染结果
+5. editor/preview/simulator 作为不同消费方承接渲染结果
 
 这条链路的关键词：
 
 - schema
+- expression
 - materials
 - renderer
 - design mode
@@ -212,6 +236,8 @@
 
 - `packages/schema`
   - 一改就可能波及所有包
+- `packages/expression`
+  - 求值逻辑影响所有绑定了表达式的组件
 - `packages/renderer`
   - 容易误把 editor 逻辑耦合进去
 - `packages/code-generator`

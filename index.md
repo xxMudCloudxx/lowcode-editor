@@ -8,20 +8,22 @@
 
 基于 React + TypeScript 的低代码编辑器。用户通过拖拽组件、配置属性搭建页面，可一键导出完整 React + Vite 源码工程。
 
-**pnpm Monorepo，5 个包：**
+**pnpm Monorepo，6 个包：**
 
 | 包 | 路径 | 职责 |
 |----|------|------|
 | `@lowcode/schema` | `packages/schema/` | 类型协议层，所有包的共同语言 |
+| `@lowcode/expression` | `packages/expression/` | 表达式引擎：安全求值、依赖提取、上下文类型 |
 | `@lowcode/materials` | `packages/materials/` | 34 个可拖拽物料组件 |
-| `@lowcode/renderer` | `packages/renderer/` | 纯渲染引擎，零副作用 |
+| `@lowcode/renderer` | `packages/renderer/` | 纯渲染引擎，零副作用，集成表达式求值 |
 | `@lowcode/code-generator` | `packages/code-generator/` | Schema → React+Vite 工程包 |
 | `@lowcode/editor` | `packages/editor/` | 编辑器主应用，依赖以上全部 |
 
 **依赖方向（单向，不可逆）：**
 ```
-schema ← materials ← renderer ← editor
-schema ←────────── code-generator ←─┘
+schema ← expression ← renderer ← editor
+schema ← materials ──────────────┘
+schema ← code-generator ←────────┘
 ```
 
 ---
@@ -42,13 +44,14 @@ packages/editor/src/
 
 ---
 
-## 三个核心 Store
+## 四个核心 Store
 
 | Store | 文件 | 中间件 | 职责 |
 |-------|------|--------|------|
 | `useComponentsStore` | `stores/components.tsx` | immer + persist | 组件树 Master，范式化存储，版本号自增 |
 | `useHistoryStore` | `stores/historyStore.ts` | 无 | Immer patch 历史栈，undo/redo |
 | `useUIStore` | `stores/uiStore.ts` | immer | 选中 id、模式、画布尺寸、剪切板（不持久化） |
+| `useExpressionStore` | `stores/expressionStore.ts` | immer + persist | 页面/全局变量、数据源配置、运行时上下文构建 |
 
 **关键约定：** `useUIStore` 不接 persist 和 temporal，UI 状态不进撤销栈。
 
