@@ -23,8 +23,12 @@ import React, {
   useContext,
   type ReactElement,
 } from "react";
-import type { Component } from "@lowcode/schema";
-import type { ComponentConfig } from "@lowcode/materials";
+import type { Component, ComponentConfig } from "@lowcode/schema";
+import {
+  evaluate,
+  isExpression,
+  type ExpressionContext,
+} from "@lowcode/expression";
 import type {
   SchemaRendererProps,
   DesignHooks,
@@ -50,9 +54,37 @@ interface RendererContextValue {
   onEvent?: EventHandler;
   onCompRef?: (componentId: number, ref: unknown) => void;
   suspenseFallback: ReactElement;
+  expressionContext?: ExpressionContext;
 }
 
 const RendererContext = createContext<RendererContextValue | null>(null);
+
+function resolveExpressionProps(
+  props: Record<string, unknown>,
+  expressionContext?: ExpressionContext,
+): Record<string, unknown> {
+  if (!expressionContext) {
+    return props;
+  }
+
+  const resolvedProps: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(props)) {
+    if (!isExpression(value)) {
+      resolvedProps[key] = value;
+      continue;
+    }
+
+    const result = evaluate(value.value, {
+      ...expressionContext,
+      $props: props,
+    });
+
+    resolvedProps[key] = result.ok ? result.value : undefined;
+  }
+
+  return resolvedProps;
+}
 
 function useRendererContext(): RendererContextValue {
   const ctx = useContext(RendererContext);
@@ -81,11 +113,12 @@ const RenderNode: React.FC<RenderNodeProps> = React.memo(({ id }) => {
     onEvent,
     onCompRef,
     suspenseFallback,
+    expressionContext,
   } = useRendererContext();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const getSnapshot = useCallback(() => getComponent(id), [getComponent, id]);
-  const component = useSyncExternalStore(subscribe, getSnapshot);
+  const component = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   if (!component) return null;
 
   const config = componentMap[component.name];
@@ -106,10 +139,11 @@ const RenderNode: React.FC<RenderNodeProps> = React.memo(({ id }) => {
     ...component.props,
     style: component.styles,
   };
+  const resolvedProps = resolveExpressionProps(mergedProps, expressionContext);
 
   // ---- 设计态：注入 data-component-id 用于蒙层定位 ----
   if (designMode === "design") {
-    mergedProps["data-component-id"] = component.id;
+    resolvedProps["data-component-id"] = component.id;
   }
 
   // ---- 运行态：绑定事件 ----
@@ -119,7 +153,7 @@ const RenderNode: React.FC<RenderNodeProps> = React.memo(({ id }) => {
         | { actions?: unknown[] }
         | undefined;
       if (eventConfig?.actions?.length) {
-        mergedProps[event.name] = (...args: unknown[]) => {
+        resolvedProps[event.name] = (...args: unknown[]) => {
           onEvent(component.id, event.name, args);
         };
       }
@@ -128,7 +162,7 @@ const RenderNode: React.FC<RenderNodeProps> = React.memo(({ id }) => {
 
   // ---- 运行态：收集组件 ref ----
   if (designMode === "live" && onCompRef) {
-    mergedProps.ref = (ref: unknown) => {
+    resolvedProps.ref = (ref: unknown) => {
       onCompRef(component.id, ref);
     };
   }
@@ -141,7 +175,7 @@ const RenderNode: React.FC<RenderNodeProps> = React.memo(({ id }) => {
   // ---- createElement ----
   const element = React.createElement(
     ComponentImpl,
-    mergedProps,
+    resolvedProps,
     childElements,
   );
 
@@ -202,6 +236,7 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = React.memo(
     onEvent,
     onCompRef,
     suspenseFallback = DEFAULT_FALLBACK,
+    expressionContext,
   }) => {
     // ---- Per-node subscription pattern ----
     // components 存入 ref（同步更新），通过 subscribe/getComponent 暴露给 RenderNode。
@@ -241,6 +276,7 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = React.memo(
         onEvent,
         onCompRef,
         suspenseFallback,
+        expressionContext,
       }),
       [
         getComponent,
@@ -251,6 +287,7 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = React.memo(
         onEvent,
         onCompRef,
         suspenseFallback,
+        expressionContext,
       ],
     );
 
@@ -267,3 +304,5 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = React.memo(
 );
 
 SchemaRenderer.displayName = "SchemaRenderer";
+
+export { resolveExpressionProps };
