@@ -17,6 +17,7 @@
   "files": [],
   "references": [
     { "path": "./packages/schema" },
+    { "path": "./packages/expression" },
     { "path": "./packages/materials" },
     { "path": "./packages/renderer" },
     { "path": "./packages/code-generator" },
