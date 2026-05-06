@@ -93,6 +93,9 @@ importers:
       '@lowcode/code-generator':
         specifier: workspace:*
         version: link:../code-generator
+      '@lowcode/expression':
+        specifier: workspace:*
+        version: link:../expression
       '@lowcode/materials':
         specifier: workspace:*
         version: link:../materials
@@ -185,6 +188,21 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@25.2.3)(jiti@2.6.1)(jsdom@27.1.0)(lightningcss@1.30.2)(tsx@4.20.6)
 
+  packages/expression:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.3
+        version: 25.2.3
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.8.3)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.2.3)(jiti@2.6.1)(jsdom@27.1.0)(lightningcss@1.30.2)(tsx@4.20.6)
+
   packages/materials:
     dependencies:
       '@ant-design/icons':
@@ -230,9 +248,9 @@ importers:
 
   packages/renderer:
     dependencies:
-      '@lowcode/materials':
+      '@lowcode/expression':
         specifier: workspace:*
-        version: link:../materials
+        version: link:../expression
       '@lowcode/schema':
         specifier: workspace:*
         version: link:../schema
@@ -261,6 +279,9 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.8.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@22.19.11)(jiti@2.6.1)(jsdom@27.1.0)(lightningcss@1.30.2)(tsx@4.20.6)
 
   packages/schema:
     dependencies:

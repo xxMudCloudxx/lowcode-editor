@@ -54,6 +54,21 @@ Object.defineProperty(globalThis, "sessionStorage", {
   configurable: true,
 });
 
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  configurable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
+});
+
 beforeEach(() => {
   localStorageMock.clear();
   sessionStorageMock.clear();

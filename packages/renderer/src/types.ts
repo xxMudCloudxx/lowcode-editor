@@ -9,8 +9,8 @@
  */
 
 import type { ReactElement } from "react";
-import type { Component } from "@lowcode/schema";
-import type { ComponentConfig } from "@lowcode/materials";
+import type { Component, ComponentConfig } from "@lowcode/schema";
+import type { ExpressionContext } from "@lowcode/expression";
 
 // ==================== 设计态注入点 ====================
 
@@ -110,6 +110,11 @@ export interface SchemaRendererProps {
    * @default <div style={{ padding: 8, color: '#999' }}>Loading...</div>
    */
   suspenseFallback?: ReactElement;
+
+  /**
+   * 表达式上下文，由外部运行时注入。
+   */
+  expressionContext?: ExpressionContext;
 }
 
 // ==================== 内部辅助 ====================

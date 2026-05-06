@@ -9,18 +9,37 @@
  */
 
 import { Form, Input } from "antd";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   useComponentsStore,
   getComponentById,
 } from "../../../stores/components";
 import { useUIStore } from "../../../stores/uiStore";
 import type { Component } from "@lowcode/schema";
+import { isExpression, type ExpressionBinding } from "@lowcode/expression";
 import { useComponentConfigStore } from "../../../stores/component-config";
 import { getValuePropNameFor } from "../../../utils/formUtils";
 import { FormElementRenderer } from "./FormElementRenderer";
 import { useComponentAttrForm } from "../../../hooks/useComponentAttrForm";
 import FormItem from "antd/es/form/FormItem";
+import { BindingToggle } from "./BindingToggle";
+import { ExpressionInput } from "./ExpressionInput";
+
+function getFieldValue(
+  values: Record<string, any>,
+  name: string | string[],
+): unknown {
+  if (Array.isArray(name)) {
+    return name.reduce<unknown>((acc, key) => {
+      if (!acc || typeof acc !== "object") {
+        return undefined;
+      }
+      return (acc as Record<string, unknown>)[key];
+    }, values);
+  }
+
+  return values[name];
+}
 
 export function ComponentAttr() {
   const { components, updateComponentDesc } = useComponentsStore();
@@ -36,11 +55,17 @@ export function ComponentAttr() {
   );
 
   const { form, handleValuesChange } = useComponentAttrForm(curComponent);
+  const formValues = Form.useWatch([], form) ?? {};
+  const staticValueCacheRef = useRef<Record<string, unknown>>({});
 
   const meta = useMemo(
     () => (curComponent ? componentConfig[curComponent.name] : null),
     [curComponent, componentConfig],
   );
+
+  useEffect(() => {
+    staticValueCacheRef.current = {};
+  }, [curComponentId]);
 
   if (!curComponent || !meta) return null;
 
@@ -113,6 +138,26 @@ export function ComponentAttr() {
           const itemKey = Array.isArray(setter.name)
             ? setter.name.join(".")
             : setter.name;
+          const currentValue = getFieldValue(formValues, setter.name);
+          const bound = isExpression(currentValue);
+
+          const handleToggleBinding = () => {
+            if (bound) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              form.setFieldValue(
+                setter.name as any,
+                staticValueCacheRef.current[itemKey] ?? undefined,
+              );
+              return;
+            }
+
+            staticValueCacheRef.current[itemKey] = currentValue;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            form.setFieldValue(setter.name as any, {
+              type: "JSExpression",
+              value: "",
+            } satisfies ExpressionBinding);
+          };
 
           return (
             <div key={itemKey} className="flex items-start min-h-8 mb-2">
@@ -122,15 +167,28 @@ export function ComponentAttr() {
               </span>
 
               {/* 控件列 */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex items-start gap-2">
                 <FormItem
                   name={setter.name}
                   valuePropName={valuePropName}
                   className="mb-0"
                   style={{ marginBottom: 0 }}
+                  extra={null}
                 >
-                  <FormElementRenderer setting={setter} />
+                  {bound ? (
+                    <ExpressionInput
+                      componentProps={formValues}
+                      value={currentValue as ExpressionBinding | undefined}
+                    />
+                  ) : (
+                    <FormElementRenderer setting={setter} />
+                  )}
                 </FormItem>
+
+                <BindingToggle
+                  isBound={bound}
+                  onToggle={handleToggleBinding}
+                />
               </div>
             </div>
           );

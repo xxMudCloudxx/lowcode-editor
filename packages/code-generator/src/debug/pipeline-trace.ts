@@ -117,7 +117,12 @@ function collectNodeStats(node: IRNode): {
 
     for (const value of Object.values(current.props)) {
       if (Array.isArray(value)) {
-        if (value.every((item) => item?.type === "Action")) {
+        if (
+          value.every(
+            (item) =>
+              item && typeof item === "object" && "type" in item && item.type === "Action",
+          )
+        ) {
           actionCount += value.length;
           continue;
         }
