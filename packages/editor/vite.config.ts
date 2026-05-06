@@ -17,10 +17,34 @@ export default defineConfig({
     }) as any,
   ],
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@assets": path.resolve(__dirname, "../../assets"),
-    },
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      { find: "@assets", replacement: path.resolve(__dirname, "../../assets") },
+      {
+        find: "@lowcode/materials/codegen",
+        replacement: path.resolve(__dirname, "../materials/src/codegen.ts"),
+      },
+      {
+        find: "@lowcode/schema",
+        replacement: path.resolve(__dirname, "../schema/src"),
+      },
+      {
+        find: "@lowcode/expression",
+        replacement: path.resolve(__dirname, "../expression/src/index.ts"),
+      },
+      {
+        find: "@lowcode/materials",
+        replacement: path.resolve(__dirname, "../materials/src/index.tsx"),
+      },
+      {
+        find: "@lowcode/renderer",
+        replacement: path.resolve(__dirname, "../renderer/src/index.tsx"),
+      },
+      {
+        find: "@lowcode/code-generator",
+        replacement: path.resolve(__dirname, "../code-generator/src/index.ts"),
+      },
+    ],
   },
   server: {
     fs: {

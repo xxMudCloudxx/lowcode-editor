@@ -49,6 +49,9 @@ jobs:
       - name: Build schema
         run: pnpm --filter @lowcode/schema build
 
+      - name: Build expression
+        run: pnpm --filter @lowcode/expression build
+
       - name: Run code-generator tests
         run: pnpm --filter @lowcode/code-generator test
 
@@ -59,7 +62,7 @@ jobs:
       # 构建项目
       # 注意: 必须先构建依赖包 (schema, code-generator)，因为它们导出的是编译后的 dist 目录
       - name: Build dependencies
-        run: pnpm --filter @lowcode/schema --filter @lowcode/code-generator build
+        run: pnpm --filter @lowcode/schema --filter @lowcode/expression --filter @lowcode/code-generator build
 
       # 构建编辑器 (包含运行时所需的所有资源)
       - name: Build editor

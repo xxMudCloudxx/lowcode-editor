@@ -18,6 +18,7 @@ import { ProjectBuilder } from "@lowcode/schema";
 // 内置 Solutions
 import reactViteSolution from "./solutions/react-vite";
 import vueSolution from "./solutions/vue-vite";
+import { zipPublisher } from "./publisher/zip-publisher";
 
 // 工具函数
 import { SchemaParser } from "./parser/schema-parser";
@@ -26,6 +27,7 @@ import { camelCase, upperFirst } from "lodash-es";
 import { CodeGenRegistry } from "./registry/codegen-registry";
 
 export { downloadBlob };
+export { zipPublisher };
 
 // --- Solution 注册表 ---
 const solutionRegistry: Record<string, ISolution> = {

@@ -9,6 +9,7 @@
       "@/*": ["./src/*"],
       "@lowcode/schema": ["../schema/src"],
       "@lowcode/expression": ["../expression/src"],
+      "@lowcode/materials/codegen": ["../materials/src/codegen.ts"],
       "@lowcode/materials": ["../materials/src/index.tsx"],
       "@lowcode/renderer": ["../renderer/src/index.tsx"],
       "@lowcode/code-generator": ["../code-generator/src/index.ts"]

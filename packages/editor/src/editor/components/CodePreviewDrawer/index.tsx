@@ -15,8 +15,11 @@ import Editor from "@monaco-editor/react";
 import type { IGeneratedFile } from "@lowcode/schema";
 import { buildFileTree, getFileLanguage } from "../../utils/fileTree";
 import { openInCodeSandbox } from "../../utils/openInCodeSandbox"; // 保留
-import { downloadBlob, getRegisteredSolutions } from "@lowcode/code-generator";
-import { zipPublisher } from "@lowcode/code-generator/src/publisher/zip-publisher";
+import {
+  downloadBlob,
+  getRegisteredSolutions,
+  zipPublisher,
+} from "@lowcode/code-generator";
 import { CodePreview } from "../CodePreview";
 
 const { Sider, Content } = Layout;
