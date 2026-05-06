@@ -50,4 +50,13 @@ describe("evaluate", () => {
       value: "undefined",
     });
   });
+
+  it("rejects binding a root scope object directly", () => {
+    const result = evaluate("$global", createEmptyContext());
+    expect(result).toEqual({
+      ok: false,
+      error:
+        "Cannot bind $global directly. Access a concrete field instead, for example $global.value",
+    });
+  });
 });

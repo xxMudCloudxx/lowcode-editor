@@ -36,9 +36,7 @@ import {
 } from "@ant-design/icons";
 
 const { Text, Title } = Typography;
-import {
-  useComponentsStore,
-} from "../../stores/components";
+import { useComponentsStore } from "../../stores/components";
 import { useUIStore } from "../../stores/uiStore";
 import { useHistoryStore } from "../../stores/historyStore";
 import type { IGeneratedFile } from "@lowcode/schema";
@@ -201,7 +199,8 @@ export function Header() {
         return;
       }
 
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("执行 exportSourceCode 时发生异常", error);
       alert(`出码异常: ${errorMessage}`);
     } finally {
@@ -429,7 +428,9 @@ export function Header() {
               >
                 <Button
                   onClick={handleOpenCodePreview}
-                  icon={isExporting ? <LoadingOutlined spin /> : <CodeOutlined />}
+                  icon={
+                    isExporting ? <LoadingOutlined spin /> : <CodeOutlined />
+                  }
                   size="middle"
                 >
                   {isExporting ? "重新生成" : "出码"}
@@ -475,14 +476,6 @@ export function Header() {
               </Dropdown>
             </>
           )}
-
-          <Button
-            onClick={() => setIsVariablePanelOpen(true)}
-            size="middle"
-            icon={<DatabaseOutlined />}
-          >
-            变量
-          </Button>
 
           {mode === "preview" && (
             <Button

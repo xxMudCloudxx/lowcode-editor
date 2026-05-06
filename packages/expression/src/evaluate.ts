@@ -26,6 +26,14 @@ const BLOCKED_GLOBALS = [
   "Function",
 ] as const;
 
+const ROOT_SCOPE_EXPRESSIONS = new Set([
+  "$global",
+  "$page",
+  "$data",
+  "$props",
+  "$system",
+]);
+
 type BlockedGlobal = (typeof BLOCKED_GLOBALS)[number];
 
 type ExpressionFn = (
@@ -55,6 +63,15 @@ export function evaluate(
   expr: string,
   context: ExpressionContext,
 ): EvalResult {
+  const normalizedExpr = expr.trim();
+
+  if (ROOT_SCOPE_EXPRESSIONS.has(normalizedExpr)) {
+    return {
+      ok: false,
+      error: `Cannot bind ${normalizedExpr} directly. Access a concrete field instead, for example ${normalizedExpr}.value`,
+    };
+  }
+
   try {
     const fn = createExpressionFunction(expr);
     const value = fn(
